@@ -1,0 +1,103 @@
+"""
+Data contracts shared by the front end, the orchestrator and the agents.
+
+Every agent (logs, docs, code) returns an AgentFinding as JSON. The orchestrator
+merges findings into a CopilotResponse, which is exactly what the front end renders.
+Keep these in sync with frontend/src/types.ts.
+"""
+from __future__ import annotations
+
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
+
+AgentName = Literal["logs", "docs", "code"]
+SourceType = Literal["log", "code", "doc", "incident", "metric"]
+
+
+class Evidence(BaseModel):
+    """One piece of evidence an agent found. `ref` is the exact pointer (file:line, log query, doc section)."""
+    source_type: SourceType
+    summary: str                      # one sentence a human can read
+    ref: str                          # e.g. "src/ad/.../AdService.java:L238-L239"
+    link: Optional[str] = None        # deep link (GitHub line, Jaeger, doc URL)
+    snippet: Optional[str] = None     # raw log lines / code excerpt
+    agent: Optional[AgentName] = None
+
+
+class AgentFinding(BaseModel):
+    """JSON contract every specialist agent returns to the orchestrator."""
+    agent: AgentName
+    status: Literal["ok", "no_evidence", "error", "no_access"] = "ok"
+    summary: str                                  # 1-2 sentence takeaway
+    hypotheses: list[str] = Field(default_factory=list)
+    evidence: list[Evidence] = Field(default_factory=list)
+    sources_searched: list[str] = Field(default_factory=list)
+    sources_unavailable: list[str] = Field(default_factory=list)
+    confidence: float = 0.0                       # 0-1, the agent's own view
+    latency_ms: int = 0
+
+
+class Step(BaseModel):
+    title: str
+    why: str                                      # rationale, shown next to the step
+    command: Optional[str] = None
+    expect: Optional[str] = None                  # what you should see if it worked
+    risk: Literal["low", "medium", "high", "other_team"] = "low"
+    kind: Literal["mitigation", "fix", "verify", "escalate"] = "mitigation"
+    link: Optional[str] = None
+
+
+class TraceEvent(BaseModel):
+    """What the orchestrator did, so the UI can show how the answer was reached."""
+    stage: int
+    agent: str
+    action: str
+    parallel: bool = False
+    latency_ms: int = 0
+
+
+class AskRequest(BaseModel):
+    question: str
+    incident_id: Optional[str] = None
+    conversation_id: Optional[str] = None
+
+
+class CopilotResponse(BaseModel):
+    kind: Literal["diagnosis", "answer"]
+    question: str
+    answer: str                                   # plain-language answer / headline
+    likely_cause: Optional[str] = None
+    confidence: Optional[int] = None              # percent
+    confidence_reasons: list[str] = Field(default_factory=list)
+    evidence: list[Evidence] = Field(default_factory=list)
+    not_ruled_out: Optional[str] = None
+    not_ruled_out_pct: Optional[int] = None
+    sources_unavailable: list[str] = Field(default_factory=list)
+    steps: list[Step] = Field(default_factory=list)
+    agents_used: list[AgentName] = Field(default_factory=list)
+    trace: list[TraceEvent] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    demo: bool = True                             # true while answers are hard-coded
+
+
+class Incident(BaseModel):
+    id: str
+    title: str
+    severity: Literal["SEV1", "SEV2", "SEV3"]
+    status: Literal["Open", "Investigating", "Resolved"]
+    service: str
+    team: str
+    started: str
+    assignee: Optional[str] = None
+    summary_label: str                            # "Likely cause (90%)" / "Fix worked"
+    summary: str
+    other_team: bool = False
+    question: str                                 # what "See diagnosis" asks the orchestrator
+
+
+class Feedback(BaseModel):
+    conversation_id: Optional[str] = None
+    question: str
+    step_index: int
+    worked: bool
