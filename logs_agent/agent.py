@@ -3,9 +3,10 @@ import json
 from ollama import chat
 
 from log_tools import (
-    list_log_sources,
-    search_logs,
     get_log_context,
+    get_trace_logs,
+    list_services,
+    search_logs,
 )
 
 
@@ -15,35 +16,40 @@ MODEL = "qwen3:4b"
 SYSTEM_PROMPT = """
 You are a software engineer investigating application logs.
 
-You have tools that let you search log files and inspect surrounding
-log lines.
+You have tools that search and correlate structured log events. Some
+fields may be null — never invent missing values.
 
 Rules:
 
 1. Always inspect the logs before making claims about an incident.
 2. Do not invent facts that are not present in the logs.
-3. Search again if the first results are insufficient.
-4. Use get_log_context when you need to understand events around
-   a particular log line.
-5. Cite the filename and line number for important evidence.
-6. Clearly distinguish:
-   - facts shown directly in the logs
-   - hypotheses based on the logs
-   - information that cannot be determined
-7. If there is insufficient evidence, say so.
+3. Service names in logs are often short identifiers. Users may say
+   phrases like "ad service". Call list_services when unsure, or pass
+   the phrase as the service filter (matching is flexible). If a
+   search returns empty, retry via list_services or omit service —
+   do not conclude nothing exists.
+4. Prefer search_logs for keyword / service / severity / time / trace
+   filters.
+5. Use get_trace_logs when you have a trace_id.
+6. Use get_log_context for a time window or trace-focused context.
+7. Cite timestamp, service, severity, and trace_id when present.
+8. Clearly distinguish facts, hypotheses, and unknowns.
+9. If there is insufficient evidence, say so.
 """
 
 
 AVAILABLE_FUNCTIONS = {
-    "list_log_sources": list_log_sources,
+    "list_services": list_services,
     "search_logs": search_logs,
     "get_log_context": get_log_context,
+    "get_trace_logs": get_trace_logs,
 }
 
 TOOLS = [
-    list_log_sources,
+    list_services,
     search_logs,
     get_log_context,
+    get_trace_logs,
 ]
 
 MAX_TOOL_STEPS = 8
@@ -52,8 +58,8 @@ FINAL_ANSWER_PROMPT = (
     "You have reached the maximum number of investigation steps. "
     "Do not call any more tools. Based only on the log evidence "
     "already gathered above, give your best final answer. Cite "
-    "filenames and line numbers where possible, and clearly say "
-    "what remains uncertain."
+    "timestamps, services, severities, and trace IDs where possible, "
+    "and clearly say what remains uncertain."
 )
 
 
@@ -145,7 +151,7 @@ def ask_agent(question):
 
 if __name__ == "__main__":
 
-    print(f"Local OpenStack Log Agent ({MODEL})")
+    print(f"Local Logs Agent ({MODEL})")
     print("Type 'quit' to exit.\n")
 
     while True:

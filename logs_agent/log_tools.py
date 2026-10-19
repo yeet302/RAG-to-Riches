@@ -1,147 +1,114 @@
-from pathlib import Path
-import re
-from functools import lru_cache
+"""
+Public tool functions used by the Foundry (and local) log agents.
 
-LOG_DIR = Path("data")
+These functions delegate to the configured LogConnector so the agent never
+talks to a concrete storage backend. Swap get_connector() to point at Azure
+Log Analytics later without changing tool names or Foundry wiring.
+"""
 
+from __future__ import annotations
 
-@lru_cache(maxsize=1)
-def load_logs():
-    logs = []
+from typing import Any, Optional
 
-    for path in sorted(LOG_DIR.glob("*.log")):
-        with path.open("r", encoding="utf-8", errors="replace") as f:
-            for line_number, line in enumerate(f, start=1):
-                line = line.rstrip("\n")
-
-                if line.strip():
-                    logs.append({
-                        "source": path.name,
-                        "line_number": line_number,
-                        "text": line
-                    })
-
-    return logs
-
-
-def list_log_sources():
-    """
-    List the available log files and the number of lines in each.
-
-    Returns:
-        Dictionary mapping filename to line count.
-    """
-
-    counts = {}
-
-    for log in load_logs():
-        source = log["source"]
-        counts[source] = counts.get(source, 0) + 1
-
-    return counts
+from connectors import get_connector
 
 
 def search_logs(
-    query: str,
-    source: str = "",
-    limit: int = 20
-):
+    query: Optional[str] = None,
+    service: Optional[str] = None,
+    severity: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    trace_id: Optional[str] = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
     """
-    Search application logs for keywords or identifiers.
+    Search logs with optional text and structured filters.
 
     Args:
-        query: Keywords, error text, component names, IDs, etc.
-        source: Optional exact filename. Leave blank to search all logs.
-        limit: Maximum number of matching lines.
-
-    Returns:
-        Relevant matching log lines.
+        query: Substring match against message/raw_text (case-insensitive).
+        service: Service name or natural-language variant (e.g. "ad",
+            "ad-service", "Ad Service"). Matching is flexible.
+        severity: Exact severity filter (e.g. "ERROR", "WARN").
+        start_time: Inclusive lower bound when timestamps are available.
+        end_time: Inclusive upper bound when timestamps are available.
+        trace_id: Exact trace ID filter.
+        limit: Maximum number of events to return (default 50).
     """
-
-    terms = [
-        term.lower()
-        for term in re.findall(r"[A-Za-z0-9_.:/-]+", query)
-        if len(term) > 1
-    ]
-
-    results = []
-
-    for log in load_logs():
-
-        if source and log["source"] != source:
-            continue
-
-        text_lower = log["text"].lower()
-
-        score = sum(
-            text_lower.count(term)
-            for term in terms
-        )
-
-        if score > 0:
-            results.append({
-                **log,
-                "score": score
-            })
-
-    results.sort(
-        key=lambda x: x["score"],
-        reverse=True
+    return get_connector().search_logs(
+        query=query,
+        service=service,
+        severity=severity,
+        start_time=start_time,
+        end_time=end_time,
+        trace_id=trace_id,
+        limit=limit,
     )
 
-    return results[:limit]
+
+def list_services() -> list[str]:
+    """Return distinct service identifiers present in the configured log source."""
+    return get_connector().list_services()
 
 
 def get_log_context(
-    source: str,
-    line_number: int,
-    before: int = 5,
-    after: int = 5
-):
+    trace_id: Optional[str] = None,
+    timestamp: Optional[str] = None,
+    before_seconds: int = 30,
+    after_seconds: int = 30,
+) -> list[dict[str, Any]]:
     """
-    Get surrounding log lines around one event.
+    Return surrounding log events for a trace and/or timestamp window.
 
-    Args:
-        source: Exact log filename.
-        line_number: Target line number.
-        before: Number of lines before the event.
-        after: Number of lines after the event.
-
-    Returns:
-        Surrounding log lines.
+    Prefer trace_id when correlating a request. Supply timestamp to inspect
+    a time window (before_seconds / after_seconds).
     """
-
-    path = LOG_DIR / source
-
-    if not path.exists():
-        return {
-            "error": f"Unknown source: {source}"
-        }
-
-    with path.open("r", encoding="utf-8", errors="replace") as f:
-        lines = [line.rstrip("\n") for line in f]
-
-    start = max(0, line_number - 1 - before)
-    end = min(len(lines), line_number + after)
-
-    return [
-        {
-            "source": source,
-            "line_number": i + 1,
-            "text": lines[i]
-        }
-        for i in range(start, end)
-    ]
+    return get_connector().get_log_context(
+        trace_id=trace_id,
+        timestamp=timestamp,
+        before_seconds=before_seconds,
+        after_seconds=after_seconds,
+    )
 
 
-if __name__ == "__main__":
-    print(list_log_sources())
+def get_trace_logs(trace_id: str) -> list[dict[str, Any]]:
+    """Return every log event associated with a trace ID, chronologically."""
+    return get_connector().get_trace_logs(trace_id=trace_id)
 
-    print("\nSample errors:\n")
 
-    for result in search_logs("ERROR", limit=5):
-        print(
-            result["source"],
-            result["line_number"],
-            result["text"]
-        )
+# Keep aligned with foundry_agent.MAX_TRACES_TO_INSPECT.
+_DEFAULT_MAX_TRACES = 3
+
+
+def get_logs_for_traces(
+    trace_ids: list[str],
+    max_traces: int = _DEFAULT_MAX_TRACES,
+) -> dict[str, Any]:
+    """
+    Fetch logs for up to max_traces distinct IDs via get_trace_logs().
+
+    Deduplicates while preserving order. Intended for root-cause / pattern
+    investigations so the agent can inspect a representative set in one call.
+    """
+    if max_traces < 1:
+        return {"inspected_trace_ids": [], "logs_by_trace_id": {}}
+
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for raw in trace_ids or []:
+        if not raw:
+            continue
+        tid = str(raw).strip()
+        if not tid or tid in seen:
+            continue
+        seen.add(tid)
+        ordered.append(tid)
+        if len(ordered) >= max_traces:
+            break
+
+    connector = get_connector()
+    logs_by_trace = {tid: connector.get_trace_logs(tid) for tid in ordered}
+    return {
+        "inspected_trace_ids": ordered,
+        "logs_by_trace_id": logs_by_trace,
+    }

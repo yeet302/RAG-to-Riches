@@ -3,3 +3,4 @@ python-dotenv
 ollama
 azure-ai-projects
 azure-identity
+pydantic>=2
