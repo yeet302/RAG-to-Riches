@@ -23,12 +23,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from demo_data import INCIDENTS, SUGGESTED_QUESTIONS
-from orchestrator import investigate
+from orchestrator import AGENTS, SETTINGS, investigate
 from router import classify
 from schemas import AskRequest, CopilotResponse, Feedback, Incident
 
 log = logging.getLogger("orchestrator")
-app = FastAPI(title="Incident Copilot Orchestrator", version="0.1.0")
+app = FastAPI(title="Incident Copilot Orchestrator", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 
@@ -37,17 +37,20 @@ FEEDBACK: list[Feedback] = []  # in-memory for the demo
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "mode": "demo"}
+    return {"status": "ok", "mode": SETTINGS.mode,
+            "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()}}
 
 
 @app.get("/api/incidents", response_model=list[Incident])
 def incidents():
-    return INCIDENTS
+    return INCIDENTS if SETTINGS.mode == "demo" else []
 
 
 @app.get("/api/suggestions")
 def suggestions():
-    return SUGGESTED_QUESTIONS
+    return SUGGESTED_QUESTIONS if SETTINGS.mode == "demo" else [
+        "How does the orchestrator route requests?", "Where is classify defined in the code?",
+    ]
 
 
 @app.get("/api/route")
@@ -63,8 +66,7 @@ async def ask(req: AskRequest):
         raise HTTPException(400, "question is empty")
     if len(q) > 2000:
         raise HTTPException(400, "question is too long (max 2000 characters)")
-    log.info("ask: %s", q)
-    return await investigate(q)
+    return await investigate(q, incident_id=req.incident_id, conversation_id=req.conversation_id)
 
 
 @app.post("/api/feedback")

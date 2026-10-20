@@ -1,94 +1,83 @@
-# Orchestrator routing notes
+# Selective routing and execution
 
-How the orchestrator will route a question to the logs, docs and code agents.
-Status: routing and the stage flow are implemented (`router.py`, `orchestrator.py`).
-The agents themselves are stubs that return hard-coded findings for 3 demo questions.
+This implementation follows Option 1 of the supplied architecture diagram. Routing
+selects specialists; concurrency is used inside that plan. Selective routing and
+parallel execution are compatible.
 
-## Choice: Option 1, selective routing (from our architecture diagram)
-
-The orchestrator calls only the agents a question needs, instead of calling all of them every time
-(Option 2, parallel routing). Why: lower token cost, less irrelevant evidence, and it scales as we add agents.
-To limit Option 1's main risk (missing evidence because the wrong agent was skipped), an incident question
-calls **all three agents**, and the unclear-intent case falls back to the full path too.
-
-## The flow for an incident question
-
-```
-Engineer question
-   │
-   ▼
-Orchestrator: classify -> RoutePlan {intent, stage1, stage2}
-   │
-   ├── Stage 1 (parallel, asyncio.gather) ──┬── Logs agent  -> AgentFinding JSON
-   │                                        └── Docs agent  -> AgentFinding JSON
-   │
-   ├── merge_findings(): one evidence bundle (summaries, hypotheses, evidence, sources it couldn't see)
-   │
-   ├── Stage 2 ── Code agent, prompted with the evidence bundle + instructions
-   │              ("find the code path, config or recent change that explains this")
-   │
-   └── Stage 3: combine and rank evidence -> CopilotResponse (likely cause, confidence,
-                evidence with sources, not-ruled-out, steps) -> front end
+```mermaid
+flowchart TD
+    User[Text question] --> Router[Classify request]
+    Router -->|Incident or unknown| Logs[Logs agent]
+    Router -->|Incident or unknown| Docs[Docs agent: existing solutions]
+    Logs --> Bundle[Validated evidence bundle]
+    Docs --> Bundle
+    Bundle --> Code[Codebase agent]
+    Router -->|How-to| DocsOnly[Docs agent]
+    Router -->|Code lookup| DocsCode[Docs context then codebase agent]
+    Router -->|Logs lookup| LogsOnly[Logs agent]
+    Code --> Merge[Combine cited evidence and report gaps]
+    DocsOnly --> Merge
+    DocsCode --> Merge
+    LogsOnly --> Merge
+    Merge --> Answer[One CopilotResponse JSON]
 ```
 
-This follows the team's agreement: logs and docs run in parallel, then **their evidence becomes the code
-agent's prompt** (Navya's suggestion). Agent outputs are **JSON** (Lantian's question), so they can be
-appended and passed along.
-
-## Routing table (current keyword version)
-
-| Intent | Example | Stage 1 (parallel) | Stage 2 |
+| Intent | Example | Stage 1 (concurrent) | Stage 2 |
 |---|---|---|---|
-| `incident` | "Ads aren't loading, ad service returning errors" | logs, docs | code |
-| `how_to` | "How do I trigger a failure in the ad service?" | docs | none |
-| `code_lookup` | "Where is the ad failure flag checked in code?" | docs | code |
-| `logs_lookup` | "Show me ad service logs since 14:00" | logs | none |
-| `unknown` | anything else | logs, docs | code |
+| incident | Why is checkout timing out? | logs, docs | code |
+| how_to | How do I restart checkout? | docs | none |
+| how_to | How do I trigger a test failure? | docs | none |
+| code_lookup | Where is the retry function defined? | docs | code |
+| logs_lookup | Show checkout logs since noon | logs | none |
+| unknown | Investigate checkout | logs, docs | code |
 
-Debug any question's route with `GET /api/route?q=...`.
+Incident symptoms take precedence over generic how-to wording, so "How do I fix
+checkout errors?" searches all sources. Explicit instructions for triggering,
+injecting, simulating or reproducing failures use docs unless a code search is
+requested. Code terms take precedence over generic explanatory wording, so
+"Explain the retry function" includes code search. Keyword matching has word
+boundaries; unclear intent uses all three specialists. It remains a heuristic,
+not a semantic classifier. `GET /api/route?q=...` exposes the plan for evaluation.
 
-## Agent JSON contract (`schemas.AgentFinding`)
+## Stages
 
-```json
-{
-  "agent": "logs",
-  "status": "ok | no_evidence | error | no_access",
-  "summary": "About 1 in 10 GetAds calls fail with UNAVAILABLE since 14:02.",
-  "hypotheses": ["Ad service is rejecting a fixed share of requests"],
-  "evidence": [
-    {"source_type": "log | code | doc | incident | metric",
-     "summary": "one human-readable sentence",
-     "ref": "exact pointer: file:L10-L20, log query, doc section",
-     "link": "deep link (GitHub line, Jaeger, doc URL)",
-     "snippet": "raw lines (optional)"}
-  ],
-  "sources_searched": ["ad service logs"],
-  "sources_unavailable": ["frontend-proxy access logs"],
-  "confidence": 0.8,
-  "latency_ms": 640
-}
-```
+1. Create a request ID and a route plan. Pass incident/conversation IDs as metadata.
+2. Run selected first-stage agents concurrently. Each has a configurable total
+   deadline (default 20 seconds), including HTTP and JSON validation.
+3. Merge successful summaries, hypotheses and evidence, plus unavailable-source
+   metadata and status for every first-stage specialist. Send that bundle to code.
+   A failed logs agent does not prevent docs or code from contributing.
+4. Validate specialist identities and findings. `ok` without evidence becomes
+   `no_evidence`. Error/no-access findings cannot contribute response claims.
+5. Deduplicate evidence by source type, reference and link; preserve source
+   attribution; return one response, all findings, and timings. Missing agents and
+   truncated/unreadable sources mark the answer `partial: true`.
 
-Every claim in the final answer must trace back to an `evidence` item (Objective 4: 100% source attribution).
-`sources_unavailable` is what the UI shows as "Copilot couldn't see ..." (interview finding: show what the
-tool could not access, and lower confidence when key sources are missing).
+No source match is treated as proof of an incident cause. The live response quotes
+retrieved evidence and leaves diagnosis confidence unset. In particular, agent
+retrieval confidence is not a probability that a proposed fix will work.
 
-## How each real agent plugs in
+## Adapters
 
-Implement `async run(question, context) -> AgentFinding` and register it in `AGENTS` in `orchestrator.py`.
-`context["evidence_bundle"]` is available to stage-2 agents.
+`agents.Agent` defines `async run(question, context) -> AgentFinding`.
+`LocalSearchAgent` searches configured corpora. `HTTPAgent` serializes an
+`AgentRequest`, POSTs it, and validates `AgentFinding`. `UnavailableAgent` explicitly
+reports missing configuration. The orchestrator's stage logic is shared by all
+adapters. See [COMMUNICATION.md](COMMUNICATION.md) for exact payloads.
 
-| Agent | Owner | Current state | Plug-in plan |
-|---|---|---|---|
-| Logs | Lantian | Foundry model + custom log-search tools over local log files | Wrap as `LogsAgent`; later point at the shared store (SQL tables or Azure AI Search) |
-| Docs | | Retrieval spike (docs + code search, cited) | `DocsAgent` over the OpenTelemetry demo docs and runbooks, indexed in Azure AI Search |
-| Code | Navya | Design doc on Jira | `CodeAgent` takes the evidence bundle as its prompt and searches the repo / git history |
+The local code specialist searches current files/configuration, not git history.
+Local retrieval scans at most 500 supported files, reads at most 1 MB per file,
+returns the four highest-scoring matching files, and has a time deadline. Hidden
+entries, symlinks, build/dependency/test directories and `demo_data.py` are skipped.
+Search limits and unreadable supported files are reported as gaps. This is a small
+working baseline; teammate agents can use their own indexes without changing the
+orchestrator flow.
 
-## Next steps
+## Investigation state and observability
 
-1. Replace `classify()` with an LLM call (Azure AI Foundry) that returns the same `RoutePlan` JSON;
-   keep the keyword router as a fallback and for tests.
-2. Replace hard-coded synthesis with an LLM step that writes the response from the merged findings only.
-3. Confidence = combination of agent confidences, agreement between agents, and missing-source penalties.
-4. Timeouts per agent (e.g. 20 s) so one slow agent doesn't block the answer; return partial results.
-5. Routing test set: 20 prompts with expected agents (Objective 2, KR4: 90% correct routing).
+State is per request: query, route, evidence bundle, findings, IDs and trace. Agent
+status and measured latency are logged with the request ID. Questions and remote
+error bodies are not logged by the question handler. Conversation IDs are forwarded
+but do not restore previous questions or evidence. Durable history, RBAC, audit
+storage and monitoring infrastructure from the overall diagram are outside this
+one-week integration slice.
