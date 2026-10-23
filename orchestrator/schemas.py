@@ -62,8 +62,33 @@ class TraceEvent(BaseModel):
     latency_ms: int = Field(default=0, ge=0)
 
 
+RoutingMode = Literal["keyword", "llm"]
+AnswerMode = Literal["evidence", "llm"]
+QueryIntent = Literal["incident", "how_to", "code_lookup", "logs_lookup", "unknown"]
+
+
+class QueryAnalysis(BaseModel):
+    source: Literal["keyword", "llm", "keyword_fallback"]
+    intent: QueryIntent
+    summary: str
+    reason: str
+    stage1: list[AgentName]
+    stage2: list[AgentName]
+    warning: Optional[str] = None
+
+
+class AnswerSynthesis(BaseModel):
+    source: Literal["evidence", "llm", "evidence_fallback", "demo"]
+    citations: list[str] = Field(default_factory=list)
+    warning: Optional[str] = None
+    context_truncated: bool = False
+    latency_ms: int = Field(default=0, ge=0)
+
+
 class AskRequest(BaseModel):
     question: str
+    routing_mode: Optional[RoutingMode] = None
+    answer_mode: Optional[AnswerMode] = None
     incident_id: Optional[str] = None
     conversation_id: Optional[str] = None
 
@@ -100,6 +125,8 @@ class CopilotResponse(BaseModel):
     findings: list[AgentFinding] = Field(default_factory=list)
     partial: bool = False
     demo: bool = False                             # true only in explicit demo mode
+    analysis: Optional[QueryAnalysis] = None
+    synthesis: Optional[AnswerSynthesis] = None
 
 
 class Incident(BaseModel):

@@ -24,8 +24,8 @@ from fastapi.staticfiles import StaticFiles
 
 from demo_data import INCIDENTS, SUGGESTED_QUESTIONS
 from orchestrator import AGENTS, SETTINGS, investigate
-from router import classify
-from schemas import AskRequest, CopilotResponse, Feedback, Incident
+from query_analysis import analyze_question
+from schemas import AskRequest, CopilotResponse, Feedback, Incident, RoutingMode
 
 log = logging.getLogger("orchestrator")
 app = FastAPI(title="Incident Copilot Orchestrator", version="0.2.0")
@@ -38,7 +38,10 @@ FEEDBACK: list[Feedback] = []  # in-memory for the demo
 @app.get("/api/health")
 def health():
     return {"status": "ok", "mode": SETTINGS.mode,
-            "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()}}
+            "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()},
+            "routing_mode": SETTINGS.routing_mode,
+            "llm_configured": SETTINGS.llm_configured,
+            "answer_mode": SETTINGS.effective_answer_mode}
 
 
 @app.get("/api/incidents", response_model=list[Incident])
@@ -54,9 +57,12 @@ def suggestions():
 
 
 @app.get("/api/route")
-def route(q: str):
-    p = classify(q)
-    return {"intent": p.intent, "stage1_parallel": p.stage1, "stage2": p.stage2, "reason": p.reason}
+async def route(q: str, routing_mode: RoutingMode | None = None):
+    q = q.strip()
+    if not q or len(q) > 2000:
+        raise HTTPException(400, "question must contain 1 to 2000 characters")
+    analysis = await analyze_question(q, SETTINGS, routing_mode)
+    return {**analysis.model_dump(), "stage1_parallel": analysis.stage1}
 
 
 @app.post("/api/ask", response_model=CopilotResponse)
@@ -66,7 +72,9 @@ async def ask(req: AskRequest):
         raise HTTPException(400, "question is empty")
     if len(q) > 2000:
         raise HTTPException(400, "question is too long (max 2000 characters)")
-    return await investigate(q, incident_id=req.incident_id, conversation_id=req.conversation_id)
+    return await investigate(q, incident_id=req.incident_id,
+                             conversation_id=req.conversation_id, routing_mode=req.routing_mode,
+                             answer_mode=req.answer_mode)
 
 
 @app.post("/api/feedback")

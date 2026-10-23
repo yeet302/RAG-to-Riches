@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1320" viewBox="0 0 1440 1320" role="img" aria-labelledby="title description">
+<title id="title">Orchestrator: keyword and Azure analysis paths</title>
+<desc id="description">Both frontend and CLI enter investigate, which calls analyze_question. Keywords uses router classify without a model. Azure interprets intent, which Python validates and maps to a supported route. Failures use keyword fallback. Python runs local searches, assembles evidence, optionally calls Azure for a cited answer, and validates citation IDs.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker>
+  <marker id="fallback-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"/></marker>
+</defs>
+<style>
+  text {font-family: "Segoe UI", Arial, sans-serif; fill: #0f172a;}
+  .heading {font-size: 32px; font-weight: 700;}
+  .subtitle {font-size: 20px; fill: #475569;}
+  .node-title {font-size: 23px; font-weight: 650;}
+  .node-line {font-size: 20px; fill: #334155;}
+  .edge {fill: none; stroke: #475569; stroke-width: 2.5; marker-end: url(#arrow);}
+  .fallback {fill: none; stroke: #b45309; stroke-width: 2.5; stroke-dasharray: 8 6; marker-end: url(#fallback-arrow);}
+  .note {font-size: 18px; fill: #64748b;}
+</style>
+<rect width="1440" height="1320" fill="#f8fafc"/>
+<text x="720" y="46" text-anchor="middle" class="heading">One pipeline, two ways to interpret the question</text>
+<text x="720" y="77" text-anchor="middle" class="subtitle">Input analysis and answer generation are independent; Python controls execution</text>
+
+<rect x="280" y="105" width="880" height="76" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="720.0" y="136.0" text-anchor="middle" class="node-title">Question entry</text>
+<text x="720.0" y="164.0" text-anchor="middle" class="node-line">Frontend → main.py: ask()  |  Terminal → chat.py: chat()</text>
+<path d="M720 181 V208" class="edge"/>
+<rect x="420" y="210" width="600" height="70" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="720.0" y="238.0" text-anchor="middle" class="node-title">orchestrator.py: investigate()</text>
+<text x="720.0" y="266.0" text-anchor="middle" class="node-line">Coordinates the complete investigation</text>
+<path d="M720 280 V308" class="edge"/>
+<rect x="420" y="310" width="600" height="70" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="720.0" y="338.0" text-anchor="middle" class="node-title">query_analysis.py: analyze_question()</text>
+<text x="720.0" y="366.0" text-anchor="middle" class="node-line">Use the selected question-analysis mode</text>
+<path d="M570 380 V413 H340 V438" class="edge"/>
+<path d="M870 380 V413 H1100 V438" class="edge"/>
+<rect x="80" y="440" width="520" height="70" rx="14" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="340.0" y="468.0" text-anchor="middle" class="node-title">KEYWORDS</text>
+<text x="340.0" y="496.0" text-anchor="middle" class="node-line">No model request</text>
+<rect x="840" y="440" width="520" height="70" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="1100.0" y="468.0" text-anchor="middle" class="node-title">AZURE AI</text>
+<text x="1100.0" y="496.0" text-anchor="middle" class="node-line">Call the configured Foundry model</text>
+<path d="M340 510 V538" class="edge"/>
+<rect x="80" y="540" width="520" height="100" rx="14" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+<text x="340.0" y="569.0" text-anchor="middle" class="node-title">router.py: classify()</text>
+<text x="340.0" y="597.0" text-anchor="middle" class="node-line">Match predefined keywords and phrases</text>
+<text x="340.0" y="625.0" text-anchor="middle" class="node-line">Return intent, reason, and stages</text>
+<path d="M1100 510 V538" class="edge"/>
+<rect x="840" y="540" width="520" height="100" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="1100.0" y="569.0" text-anchor="middle" class="node-title">Model interprets the question</text>
+<text x="1100.0" y="597.0" text-anchor="middle" class="node-line">Returns intent, summary, and reason</text>
+<text x="1100.0" y="625.0" text-anchor="middle" class="node-line">Python validates the JSON output</text>
+<path d="M1100 640 V668" class="edge"/>
+<rect x="840" y="670" width="520" height="80" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="1100.0" y="703.0" text-anchor="middle" class="node-title">query_analysis.py: ROUTES</text>
+<text x="1100.0" y="731.0" text-anchor="middle" class="node-line">Map the allowed intent to existing stages</text>
+<path d="M840 590 H602" class="fallback"/>
+<rect x="622" y="526" width="196" height="55" rx="8" fill="#fffbeb"/>
+<text x="720" y="548" text-anchor="middle" font-size="17" fill="#92400e">Missing config, invalid</text>
+<text x="720" y="571" text-anchor="middle" font-size="17" fill="#92400e">output, or call failure</text>
+<text x="720" y="617" text-anchor="middle" font-size="17" fill="#92400e">Keyword fallback</text>
+<text x="720" y="640" text-anchor="middle" font-size="17" fill="#92400e">with visible warning</text>
+<path d="M340 640 V795 H418" class="edge"/>
+<path d="M1100 750 V795 H1022" class="edge"/>
+<rect x="420" y="760" width="600" height="70" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="720.0" y="788.0" text-anchor="middle" class="node-title">QueryAnalysis → orchestrator.py</text>
+<text x="720.0" y="816.0" text-anchor="middle" class="node-line">Build RoutePlan and execute its stages</text>
+<path d="M720 830 V858" class="edge"/>
+<rect x="180" y="860" width="1080" height="105" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="720.0" y="891.5" text-anchor="middle" class="node-title">agents.py + orchestrator.py: call_agent()</text>
+<text x="720.0" y="919.5" text-anchor="middle" class="node-line">Run selected docs/logs searches; validate findings and handle failures</text>
+<text x="720.0" y="947.5" text-anchor="middle" class="node-line">If code is selected: merge_findings() → code search with earlier evidence</text>
+<path d="M720 965 V993" class="edge"/>
+<rect x="300" y="995" width="840" height="80" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="720.0" y="1028.0" text-anchor="middle" class="node-title">synthesize() + answer_synthesis.py: generate_answer()</text>
+<text x="720.0" y="1056.0" text-anchor="middle" class="node-line">Azure explains collected evidence; Python validates citations or uses the formatter</text>
+<path d="M720 1075 V1103" class="edge"/>
+<rect x="300" y="1105" width="840" height="80" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+<text x="720.0" y="1138.0" text-anchor="middle" class="node-title">Return the structured response</text>
+<text x="720.0" y="1166.0" text-anchor="middle" class="node-line">main.py → frontend JSON  |  chat.py → terminal output</text>
+<text x="720" y="1230" text-anchor="middle" class="note">Default local mode: docs/code search files; logs reports unavailable until configured.</text>
+<text x="720" y="1258" text-anchor="middle" class="note">Teammate AI services and databases are not connected. Keyword fallback is precomputed for Azure mode.</text>
+<text x="720" y="1286" text-anchor="middle" class="note">Azure intent is restricted to how_to, logs_lookup, code_lookup, incident, or unknown.</text>
+</svg>

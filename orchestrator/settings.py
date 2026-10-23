@@ -20,12 +20,50 @@ class Settings:
     logs_root: Path | None = None
     agent_urls: dict[str, str] = field(default_factory=dict)
     agent_tokens: dict[str, str] = field(default_factory=dict, repr=False)
+    routing_mode: str = "keyword"
+    llm_endpoint: str = ""
+    llm_model: str = ""
+    llm_api_key: str = field(default="", repr=False)
+    llm_api_style: str = "openai_v1"
+    llm_api_version: str = ""
+    llm_timeout_seconds: float = 10.0
+    answer_mode: str = "auto"
+    synthesis_timeout_seconds: float = 30.0
+
+    @property
+    def effective_answer_mode(self) -> str:
+        if self.mode == "demo":
+            return "evidence"
+        if self.answer_mode == "auto":
+            return "llm" if self.llm_configured else "evidence"
+        return self.answer_mode
+
+    @property
+    def llm_configured(self) -> bool:
+        return bool(self.llm_endpoint and self.llm_model and self.llm_api_key)
 
     def __post_init__(self):
         if self.mode not in {"local", "remote", "demo"}:
             raise ValueError("ORCHESTRATOR_MODE must be local, remote, or demo")
         if not math.isfinite(self.timeout_seconds) or self.timeout_seconds <= 0:
             raise ValueError("AGENT_TIMEOUT_SECONDS must be a positive finite number")
+        if self.routing_mode not in {"keyword", "llm"}:
+            raise ValueError("ROUTING_MODE must be keyword or llm")
+        if self.llm_api_style not in {"openai_v1", "inference"}:
+            raise ValueError("AZURE_AI_API_STYLE must be openai_v1 or inference")
+        if not math.isfinite(self.llm_timeout_seconds) or self.llm_timeout_seconds <= 0:
+            raise ValueError("LLM_TIMEOUT_SECONDS must be a positive finite number")
+        if self.answer_mode not in {"auto", "evidence", "llm"}:
+            raise ValueError("ANSWER_MODE must be auto, evidence, or llm")
+        if not math.isfinite(self.synthesis_timeout_seconds) or self.synthesis_timeout_seconds <= 0:
+            raise ValueError("SYNTHESIS_TIMEOUT_SECONDS must be a positive finite number")
+        if self.llm_endpoint:
+            parsed = urlsplit(self.llm_endpoint)
+            if (parsed.scheme != "https" or not parsed.hostname or parsed.username
+                    or parsed.password or parsed.fragment or parsed.query):
+                raise ValueError("AZURE_AI_ENDPOINT must be an HTTPS URL without credentials, query, or fragment")
+            if "/api/projects" in parsed.path:
+                raise ValueError("Use the Foundry model endpoint, not the project endpoint")
         for name, url in self.agent_urls.items():
             parsed = urlsplit(url)
             if name not in NAMES or parsed.scheme not in {"http", "https"} or not parsed.hostname:
@@ -37,6 +75,15 @@ class Settings:
     def from_env(cls) -> Settings:
         return cls(
             mode=os.getenv("ORCHESTRATOR_MODE", "local").lower(),
+            routing_mode=os.getenv("ROUTING_MODE", "keyword").lower(),
+            answer_mode=os.getenv("ANSWER_MODE", "auto").lower(),
+            synthesis_timeout_seconds=float(os.getenv("SYNTHESIS_TIMEOUT_SECONDS", "30")),
+            llm_endpoint=os.getenv("AZURE_AI_ENDPOINT", "").strip().rstrip("/"),
+            llm_model=os.getenv("AZURE_AI_MODEL", "").strip(),
+            llm_api_key=os.getenv("AZURE_AI_API_KEY", ""),
+            llm_api_style=os.getenv("AZURE_AI_API_STYLE", "openai_v1").lower(),
+            llm_api_version=os.getenv("AZURE_AI_API_VERSION", "").strip(),
+            llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "10")),
             timeout_seconds=float(os.getenv("AGENT_TIMEOUT_SECONDS", "20")),
             docs_root=Path(os.getenv("DOCS_ROOT", str(ROOT))).expanduser(),
             code_root=Path(os.getenv("CODE_ROOT", str(ROOT))).expanduser(),

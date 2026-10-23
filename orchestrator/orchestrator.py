@@ -1,4 +1,4 @@
-"""Selective routing, bounded specialist calls, and evidence-only response assembly."""
+"""Selective routing, bounded specialist calls, and grounded answer generation."""
 from __future__ import annotations
 
 import asyncio
@@ -10,9 +10,11 @@ from typing import Optional
 
 import httpx
 from agents import Agent, build_agents
+from answer_synthesis import generate_answer
 from demo_data import SCENARIOS, SUGGESTED_QUESTIONS
-from router import RoutePlan, classify
-from schemas import AgentFinding, CopilotResponse, Evidence, TraceEvent
+from router import RoutePlan
+from query_analysis import analyze_question
+from schemas import AgentFinding, AnswerMode, CopilotResponse, Evidence, RoutingMode, TraceEvent
 from settings import Settings, NAMES
 
 log = logging.getLogger("orchestrator")
@@ -103,6 +105,7 @@ async def call_agent(name: str, registry: dict[str, Agent], question: str,
 
 def synthesize(question: str, plan: RoutePlan, findings: list[AgentFinding],
                trace: list[TraceEvent], context: dict) -> CopilotResponse:
+    """Collect usable evidence and build the deterministic fallback before generation."""
     evidence: list[Evidence] = []
     seen = set()
     # Preserve first-stage evidence before the codebase follow-up.
@@ -142,19 +145,25 @@ def synthesize(question: str, plan: RoutePlan, findings: list[AgentFinding],
 
 async def investigate(question: str, *, incident_id: str | None = None,
                       conversation_id: str | None = None, agents: dict[str, Agent] | None = None,
-                      settings: Settings | None = None) -> CopilotResponse:
+                      settings: Settings | None = None,
+                      routing_mode: RoutingMode | None = None,
+                      answer_mode: AnswerMode | None = None) -> CopilotResponse:
     question = question.strip()
     if not question or len(question) > 2000:
         raise ValueError("question must contain 1 to 2000 characters")
     settings = settings or SETTINGS
     registry = agents if agents is not None else AGENTS
-    plan = classify(question)
+    analysis = await analyze_question(question, settings, routing_mode)
+    plan = RoutePlan(analysis.intent, analysis.stage1, analysis.stage2, analysis.reason)
     context = {"request_id": str(uuid4()), "intent": plan.intent,
                "incident_id": incident_id, "conversation_id": conversation_id}
     scenario = match_scenario(question, plan) if settings.mode == "demo" else None
     if settings.mode == "demo":
         context["scenario"] = scenario
-    trace = [TraceEvent(stage=0, agent="orchestrator", action=f"Routed as '{plan.intent}': {plan.reason}")]
+    route_action = f"Routed with {analysis.source} as '{plan.intent}': {plan.reason}"
+    if analysis.warning:
+        route_action += f" {analysis.warning}"
+    trace = [TraceEvent(stage=0, agent="orchestrator", action=route_action)]
     started = time.perf_counter()
     findings = []
     for stage, names in ((1, plan.stage1), (2, plan.stage2)):
@@ -173,8 +182,11 @@ async def investigate(question: str, *, incident_id: str | None = None,
         response.request_id = context["request_id"]
         response.conversation_id = conversation_id
         response.findings = findings
-        return response
-    return synthesize(question, plan, findings, trace, context)
+        response.analysis = analysis
+        return await generate_answer(response, settings, answer_mode)
+    response = synthesize(question, plan, findings, trace, context)
+    response.analysis = analysis
+    return await generate_answer(response, settings, answer_mode)
 
 
 def demo_response(question: str, plan: RoutePlan, scenario: dict | None,

@@ -1,14 +1,14 @@
 """
 Routing: decide which agents to call, and in what order, for a question.
 
-Architecture choice: Option 1, selective routing (see ROUTING.md).
+Architecture choice: Option 1, selective routing (see PIPELINE_SUMMARY.md).
   Stage 1: logs + docs agents, run IN PARALLEL (whichever the question needs)
   Stage 2: code agent, prompted with the merged stage-1 evidence
   Stage 3: orchestrator synthesizes a grounded response with sources
 
-This version uses a transparent keyword classifier with a conservative full-path fallback.
-Next iteration: replace classify() with an LLM call (Azure AI Foundry) that
-returns the same RoutePlan JSON, and keep this as the fallback.
+This module provides the default keyword classifier and conservative full-path fallback.
+query_analysis.py optionally uses Azure Foundry to analyze intent, maps it to these
+supported routes, and falls back to classify() if model analysis is unavailable.
 """
 from __future__ import annotations
 

@@ -1,5 +1,10 @@
 # Orchestrator <-> specialist communication (v1)
 
+This is the shared wire-contract reference for all three roles, implemented by
+[schemas.py](schemas.py) and [HTTPAgent](agents.py). The reference host and tests
+exercise the contract; actual teammate services still require integration.
+For docs-specific onboarding, use [DOCS_AGENT_HANDOFF.md](DOCS_AGENT_HANDOFF.md).
+
 The three wire identities are `logs`, `docs`, and `code` (codebase agent). Each
 service exposes an operator-configured, complete POST URL. The URL is configured
 on the server, never supplied by a user's question. All messages use JSON.
@@ -123,3 +128,16 @@ and `partial`. `demo` is false for both local and HTTP agents. Evidence is dedup
 by `(source_type, ref, link)`. The response does not assert a root cause or fabricated
 fix when the specialists only returned search matches. See `/docs` for the generated
 schemas and `agent_service.py` for an executable reference implementation.
+
+The optional analysis field in CopilotResponse describes keyword or Azure intent
+routing, including fallback warnings. It is backend response metadata, not part of
+the specialist's AgentFinding contract. Azure intent analysis currently selects a
+fixed route; HTTPAgent still supplies a fixed role-specific task description.
+See [the pipeline guide](PIPELINE_SUMMARY.md) for execution and
+[Azure analysis](LLM_ROUTING.md) for model configuration.
+
+Final-answer generation also adds synthesis metadata to CopilotResponse (source,
+citations, warning, context_truncated, and latency_ms). This does not change
+AgentRequest or AgentFinding. After gathering validated evidence, the backend can
+send bounded excerpts to Azure for a cited narrative. The evidence list, findings,
+source gaps, and provenance remain in the response.
