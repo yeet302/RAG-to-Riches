@@ -3,4 +3,9 @@ python-dotenv
 ollama
 azure-ai-projects
 azure-identity
+azure-monitor-query
 pydantic>=2
+fastapi
+uvicorn
+httpx
+pytest

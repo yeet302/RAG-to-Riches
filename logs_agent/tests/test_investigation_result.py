@@ -244,6 +244,10 @@ class StatusSufficiencyPromptBehaviorTests(unittest.TestCase):
             "insufficient to answer the requested question",
             STATUS_AND_HYPOTHESIS_RULES,
         )
+        self.assertIn(
+            "answer the user's actual question",
+            STATUS_AND_HYPOTHESIS_RULES,
+        )
         self.assertIn("GetAds", STATUS_AND_HYPOTHESIS_RULES)
         self.assertIn("UNAVAILABLE", STATUS_AND_HYPOTHESIS_RULES)
         self.assertIn(
@@ -254,13 +258,29 @@ class StatusSufficiencyPromptBehaviorTests(unittest.TestCase):
             "Do NOT infer that UNAVAILABLE means an upstream connectivity",
             STATUS_AND_HYPOTHESIS_RULES,
         )
+        self.assertIn(
+            "Do not infer causality solely from events appearing in the same",
+            STATUS_AND_HYPOTHESIS_RULES,
+        )
         collapsed = " ".join(STATUS_AND_HYPOTHESIS_RULES.split())
+        self.assertIn(
+            "even if the root cause of that event is unknown",
+            collapsed,
+        )
+        self.assertIn(
+            "Do not downgrade an existence or listing question to insufficient_evidence merely because root cause is unknown.",
+            collapsed,
+        )
         self.assertIn(
             "What happened for trace",
             collapsed,
         )
         self.assertIn(
-            "Sparse evidence is not automatically insufficient_evidence",
+            "Sparse evidence (even a single event",
+            collapsed,
+        )
+        self.assertIn(
+            "NOT by downgrading status to insufficient_evidence",
             collapsed,
         )
         self.assertIn(
@@ -410,6 +430,8 @@ class SearchStrategyPromptBehaviorTests(unittest.TestCase):
             SEARCH_STRATEGY_RULES,
         )
         collapsed = " ".join(SEARCH_STRATEGY_RULES.split())
+        self.assertIn("search for the relevant failure events first", collapsed)
+        self.assertIn("If matching events contain trace IDs", collapsed)
         self.assertIn("Cap at 3 distinct relevant traces", collapsed)
         self.assertIn("Do not inspect duplicate trace IDs", collapsed)
         self.assertIn("existence / list / count", collapsed)

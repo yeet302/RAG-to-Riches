@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+from typing import Optional
 
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import (
@@ -23,6 +25,10 @@ from openai.types.responses.response_input_param import (
     ResponseInputParam,
 )
 
+from investigation_metrics import (
+    InvestigationMetrics,
+    InvestigationMetricsCollector,
+)
 from investigation_result import (
     InvestigationParseError,
     LogInvestigationResult,
@@ -43,6 +49,10 @@ from log_tools import (
 
 load_dotenv()
 
+# Fixed GPT-4.1-family baseline deployment used for the frozen 14/14 eval.
+# Override with FOUNDRY_MODEL (e.g. logs-model-router) for A/B comparison.
+DEFAULT_FOUNDRY_MODEL = "gpt-4.1-mini"
+
 # Set DEBUG_TOOL_CALLS=0 to hide per-step tool traces in the CLI.
 DEBUG_TOOL_CALLS = os.getenv("DEBUG_TOOL_CALLS", "1").strip().lower() not in {
     "0",
@@ -51,6 +61,20 @@ DEBUG_TOOL_CALLS = os.getenv("DEBUG_TOOL_CALLS", "1").strip().lower() not in {
     "off",
 }
 
+
+def get_foundry_model() -> str:
+    """
+    Deployment name passed to PromptAgentDefinition.model.
+
+    Prefer FOUNDRY_MODEL. Fall back to legacy MODEL_DEPLOYMENT_NAME, then
+    DEFAULT_FOUNDRY_MODEL (the fixed baseline deployment).
+    """
+    for key in ("FOUNDRY_MODEL", "MODEL_DEPLOYMENT_NAME"):
+        value = os.getenv(key)
+        if value is not None and value.strip():
+            return value.strip()
+    return DEFAULT_FOUNDRY_MODEL
+
 # Shared with unit tests so prompt behavior stays pinned to policy.
 STATUS_AND_HYPOTHESIS_RULES = """
 Status selection (choose exactly one). Status describes whether you
@@ -58,13 +82,22 @@ satisfied the investigation requested by the caller — not merely
 whether some related logs were found:
 
 - evidence_found: sufficient log evidence exists to answer the
-  requested investigation.
+  requested investigation — the available logs contain enough
+  evidence to answer the user's actual question.
 - insufficient_evidence: relevant evidence exists, but it is
   insufficient to answer the requested question or establish the
-  requested conclusion.
+  requested conclusion. Use this when evidence is present but is
+  not enough to answer the actual question being asked.
 - no_evidence_found: no relevant log evidence was found.
 - error: the investigation could not be completed because of a
   system, parsing, or tool failure.
+
+Existence / listing questions:
+- If the caller asks whether an event, failure, or log exists (or to
+  list matching events) and matching evidence is found, status MUST
+  be evidence_found even if the root cause of that event is unknown.
+- Do not downgrade an existence or listing question to
+  insufficient_evidence merely because root cause is unknown.
 
 Trace investigation ("What happened for trace <id>?"):
 - This is a retrieval question: the caller asked what the logs show for
@@ -98,6 +131,8 @@ Hypothesis rules:
 - Do NOT infer that UNAVAILABLE means an upstream connectivity or
   dependency problem unless the retrieved logs provide evidence for
   that conclusion.
+- Do not infer causality solely from events appearing in the same
+  trace.
 - Prefer an empty hypotheses list / no hypothesis over an unsupported
   hypothesis.
 - Do not claim that a code change, deployment, configuration change,
@@ -149,12 +184,13 @@ Investigation / search strategy:
    - For questions about one specific trace, inspect only that trace
      (get_trace_logs).
    - For root-cause, pattern, correlation, or "why is this happening?"
-     investigations: if multiple relevant distinct trace IDs are found,
-     inspect a small representative set BEFORE concluding. Cap at 3
-     distinct relevant traces. Prefer search-order relevance. Do not
-     inspect duplicate trace IDs. Prefer one get_logs_for_traces call
-     with those IDs (or multiple get_trace_logs) so all selected traces
-     are accounted for in evidence and related_trace_ids.
+     investigations: search for the relevant failure events first. If
+     matching events contain trace IDs, inspect a small representative
+     set BEFORE concluding. Cap at 3 distinct relevant traces. Prefer
+     search-order relevance. Do not inspect duplicate trace IDs. Prefer
+     one get_logs_for_traces call with those IDs (or multiple
+     get_trace_logs) so all selected traces are accounted for in
+     evidence and related_trace_ids.
    - If all inspected traces provide the same limited evidence (e.g.
      failure symptom without cause), return insufficient_evidence.
 8. Return no_evidence_found ONLY after sensible broader searches also
@@ -487,6 +523,40 @@ def collect_tool_outputs(response, step: int) -> ResponseInputParam:
     return input_list
 
 
+def _tool_names_from_response(response) -> list[str]:
+    names: list[str] = []
+    for item in getattr(response, "output", None) or []:
+        if getattr(item, "type", None) == "function_call":
+            names.append(item.name)
+    return names
+
+
+def _create_response(
+    openai_client,
+    *,
+    metrics: InvestigationMetricsCollector,
+    **kwargs,
+):
+    """Create a Responses API call and record serving model + usage."""
+    started = time.perf_counter()
+    response = openai_client.responses.create(**kwargs)
+    latency = time.perf_counter() - started
+    tool_calls = _tool_names_from_response(response)
+    recorded = metrics.record_response(
+        response=response,
+        latency_seconds=latency,
+        tool_calls=tool_calls,
+    )
+    _debug(
+        f"[Metrics] step={recorded.step} "
+        f"deployment={recorded.configured_deployment} "
+        f"serving_model={recorded.serving_model} "
+        f"latency={recorded.latency_seconds:.2f}s "
+        f"tools={recorded.tool_calls}"
+    )
+    return response
+
+
 def _log_structured_parse_failure(response, error: Exception) -> None:
     """Temporary debug aid: show raw output_text and output item types."""
     aggregated = getattr(response, "output_text", None) or ""
@@ -511,6 +581,7 @@ def _finalize_from_response(
     response,
     conversation_id: str,
     agent_ref: dict,
+    metrics: InvestigationMetricsCollector,
 ) -> LogInvestigationResult:
     """
     Parse final model output; retry once on validation failure.
@@ -523,7 +594,9 @@ def _finalize_from_response(
     except InvestigationParseError as first_error:
         _log_structured_parse_failure(response, first_error)
         _debug("[Agent] Retrying structured result once...")
-        retry = openai_client.responses.create(
+        retry = _create_response(
+            openai_client,
+            metrics=metrics,
             input=STRUCTURED_RETRY_PROMPT.format(errors=str(first_error)),
             conversation=conversation_id,
             tool_choice="none",
@@ -543,14 +616,18 @@ def _finalize_from_response(
             )
 
 
-def investigate_logs(request: str) -> LogInvestigationResult:
+def investigate_logs_with_metrics(
+    request: str,
+) -> tuple[LogInvestigationResult, InvestigationMetrics]:
     """
-    Orchestrator entry point: investigate a log question and return a
-    validated LogInvestigationResult.
+    Same investigation as investigate_logs, plus separate benchmarking
+    metrics (deployment, serving models, tokens, latency, tool counts).
     """
     endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-    model = os.environ["MODEL_DEPLOYMENT_NAME"]
+    model = get_foundry_model()
     agent_name = os.environ["FOUNDRY_AGENT_NAME"]
+    metrics = InvestigationMetricsCollector(configured_deployment=model)
+    wall_start = time.perf_counter()
 
     if "/openai/" in endpoint:
         raise ValueError(
@@ -583,22 +660,27 @@ def investigate_logs(request: str) -> LogInvestigationResult:
         }
     }
 
-    response = openai_client.responses.create(
+    response = _create_response(
+        openai_client,
+        metrics=metrics,
         input=request,
         conversation=conversation.id,
         extra_body=agent_ref,
     )
 
+    result: Optional[LogInvestigationResult] = None
     for step in range(1, MAX_TOOL_STEPS + 1):
         input_list = collect_tool_outputs(response, step)
 
         if not input_list:
-            return _finalize_from_response(
+            result = _finalize_from_response(
                 openai_client,
                 response,
                 conversation.id,
                 agent_ref,
+                metrics,
             )
+            break
 
         is_last_step = step == MAX_TOOL_STEPS
         if is_last_step:
@@ -607,7 +689,9 @@ def investigate_logs(request: str) -> LogInvestigationResult:
                 "requesting final structured result..."
             )
 
-        response = openai_client.responses.create(
+        response = _create_response(
+            openai_client,
+            metrics=metrics,
             input=input_list,
             conversation=conversation.id,
             tool_choice="none" if is_last_step else "auto",
@@ -615,19 +699,34 @@ def investigate_logs(request: str) -> LogInvestigationResult:
         )
 
         if is_last_step:
-            return _finalize_from_response(
+            result = _finalize_from_response(
                 openai_client,
                 response,
                 conversation.id,
                 agent_ref,
+                metrics,
             )
+            break
 
-    return _finalize_from_response(
-        openai_client,
-        response,
-        conversation.id,
-        agent_ref,
-    )
+    if result is None:
+        result = _finalize_from_response(
+            openai_client,
+            response,
+            conversation.id,
+            agent_ref,
+            metrics,
+        )
+
+    return result, metrics.finalize(time.perf_counter() - wall_start)
+
+
+def investigate_logs(request: str) -> LogInvestigationResult:
+    """
+    Orchestrator entry point: investigate a log question and return a
+    validated LogInvestigationResult.
+    """
+    result, _metrics = investigate_logs_with_metrics(request)
+    return result
 
 
 # Backwards-compatible alias used by older call sites / docs.
@@ -641,8 +740,8 @@ def print_investigation_result(result: LogInvestigationResult) -> None:
 
 
 if __name__ == "__main__":
-    model = os.getenv("MODEL_DEPLOYMENT_NAME", "unknown-model")
-    print(f"Foundry Logs Agent ({model})")
+    model = get_foundry_model()
+    print(f"Foundry deployment: {model}")
     print("Returns structured LogInvestigationResult JSON.")
     print("DEBUG_TOOL_CALLS=" + ("on" if DEBUG_TOOL_CALLS else "off"))
     print("Type 'quit' to exit.\n")
@@ -657,7 +756,14 @@ if __name__ == "__main__":
             continue
 
         try:
-            result = investigate_logs(question)
+            result, metrics = investigate_logs_with_metrics(question)
             print_investigation_result(result)
+            print(
+                f"[Metrics] serving={metrics.underlying_models_used} "
+                f"calls={metrics.model_call_count} "
+                f"tools={metrics.tool_call_count} "
+                f"tokens={metrics.total_tokens} "
+                f"elapsed={metrics.elapsed_seconds:.2f}s\n"
+            )
         except Exception as e:
             print(f"\nError: {e}\n")
