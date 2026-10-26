@@ -1,0 +1,10 @@
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+pydantic>=2.5,<3
+httpx>=0.27,<1
+beautifulsoup4>=4.12,<5
+
+# Testing dependencies
+pytest>=8,<9
+# Reference orchestrator uses Python 3.10 annotation syntax.
+eval-type-backport>=0.2,<1; python_version < "3.10"
