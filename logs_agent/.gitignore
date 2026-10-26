@@ -1,0 +1,30 @@
+# Secrets and local env (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+venv/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Test / tool caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Generated evaluation output
+evaluation_results/
+
+# Temporary dumps
+*.tmp
+*.out
+*.bak
+.DS_Store
