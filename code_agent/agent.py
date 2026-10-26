@@ -83,8 +83,11 @@ class CodeAgent:
     def _investigate(self, question, context):
         ref = self._agent_reference()
         bundle = context.get('evidence_bundle') or {}
+        pinned_sha = self.retriever.resolve_commit()
         prompt = json.dumps({'question': question, 'repository': self.settings.repo,
-                             'revision_policy': 'current default branch unless a relevant branch/tag is explicitly requested', 'upstream_evidence': bundle}, default=str)
+                             'revision_policy': 'Use only the pinned immutable commit for this investigation', 'commit': pinned_sha, 'upstream_evidence': bundle,
+                              'original_question': context.get('original_question', question),
+                              'task': context.get('task', ''), 'incident_id': context.get('incident_id')}, default=str)
         conversation = self.client.conversations.create()
         response = self.client.responses.create(input=prompt, conversation=conversation.id, extra_body=ref)
         verified = {}
@@ -97,6 +100,9 @@ class CodeAgent:
             for call in calls:
                 try:
                     args = json.loads(call.arguments or '{}')
+                    if call.name in ('list_repository_files', 'search_code', 'read_source'):
+                        # An incident must not mix GitHub revisions even if the LLM requests one.
+                        args['ref'] = pinned_sha
                     if call.name == 'list_repository_files':
                         result = self.retriever.list_repository_files(**args)
                         searched.append('GitHub repository tree')
@@ -122,7 +128,7 @@ class CodeAgent:
 
     async def run(self, question: str, context: dict):
         # Import inside run to keep this module compatible with teammates' Python layout.
-        from orchestrator.schemas import AgentFinding, Evidence
+        from .contracts import AgentFinding, Evidence
         start = time.perf_counter()
         try:
             raw, verified, searched, bundle = await asyncio.to_thread(self._investigate, question, context)
@@ -156,6 +162,6 @@ class CodeAgent:
                                 sources_unavailable=limits, confidence=min(float(result.get('confidence', 0)), 0.95) if evidence else 0.0,
                                 latency_ms=int((time.perf_counter()-start)*1000))
         except Exception as exc:
-            return AgentFinding(agent='code', status='error', summary=f'Code agent could not complete investigation: {exc}',
-                                sources_unavailable=['Azure Foundry, Azure AI Search or GitHub'],
+            return AgentFinding(agent='code', status='error', summary='Code agent could not complete investigation.',
+                                sources_unavailable=['Azure Foundry, Azure AI Search or GitHub unavailable; consult server logs'],
                                 latency_ms=int((time.perf_counter()-start)*1000))

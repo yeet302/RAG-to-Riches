@@ -25,6 +25,7 @@ def index_repo():
     session.headers['User-Agent'] = 'rag-to-riches-indexer'
     if s.github_token:
         session.headers['Authorization'] = f'Bearer {s.github_token}'
+        
     def get(url, **kwargs):
         r = session.get(url, timeout=40, **kwargs)
         r.raise_for_status()
