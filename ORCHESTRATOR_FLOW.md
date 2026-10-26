@@ -2,8 +2,8 @@
 
 [Open the standalone diagram](ORCHESTRATOR_FLOW.svg).
 
-This shows the current implementation. The analysis mode changes how intent is
-selected; Python executes the route, then answer generation is chosen independently.
+This shows the current implementation. Azure can generate question-specific JSON
+assignments; Python validates and executes them. Answer generation is independent.
 
 ```mermaid
 flowchart TD
@@ -18,9 +18,9 @@ flowchart TD
     KeywordPlan --> Result["QueryAnalysis returned to orchestrator.py"]
 
     Mode -->|Azure AI| Config{"Configured and outside canned demo mode?"}
-    Config -->|Yes| Azure["Azure Foundry model<br/>Interpret question; return intent, summary, reason"]
-    Azure --> Validate{"JSON and intent valid?"}
-    Validate -->|Yes| Map["query_analysis.py: ROUTES<br/>Map allowed intent to predefined stages"]
+    Config -->|Yes| Azure["Azure Foundry model<br/>Return intent, summary, reason, and JSON assignments"]
+    Azure --> Validate{"JSON plan valid and bounded?"}
+    Validate -->|Yes| Map["query_analysis.py: ModelAnalysis<br/>Validate roles, questions, tasks, and stages"]
     Map --> Result
     Config -->|No| Fallback["Use keyword result<br/>source: keyword_fallback + warning"]
     Validate -->|No| Fallback
@@ -28,10 +28,10 @@ flowchart TD
     Fallback --> Result
 
     Result --> Plan["orchestrator.py: build RoutePlan"]
-    Plan --> First["call_agent() + agents.py<br/>Run selected first-stage roles concurrently<br/>Validate findings and handle failures"]
-    First --> NeedCode{"Code stage selected?"}
+    Plan --> First["call_agent() + agents.py<br/>Send JSON questions/tasks to first-stage roles concurrently<br/>Validate returned findings and handle failures"]
+    First --> NeedCode{"Second stage selected?"}
     NeedCode -->|Yes| Bundle["merge_findings()<br/>Combine first-stage evidence and statuses"]
-    Bundle --> Code["call_agent() + agents.py<br/>Code search uses question and earlier evidence"]
+    Bundle --> Code["call_agent() + agents.py<br/>Send JSON assignments with earlier evidence"]
     Code --> Combine["synthesize()<br/>Deduplicate evidence and prepare formatter fallback"]
     NeedCode -->|No| Combine
     Combine --> AnswerMode{"Answer generation"}
@@ -42,7 +42,7 @@ flowchart TD
     Formatter --> Return
 ```
 
-## Supported routes
+## Keyword routes and fallback
 
 | Intent | First stage | Second stage |
 |---|---|---|
@@ -53,7 +53,7 @@ flowchart TD
 
 - Keyword mode calls router.py through query_analysis.py and makes no Azure request for intent.
   Final answer generation can still use Azure; choose Evidence list to avoid that call.
-- Azure mode validates the model output before mapping it to one of these routes.
+- Azure mode validates generated assignments and executes their selected stages, which may differ from these keyword routes.
 - The implementation precomputes the keyword result even in Azure mode, so it is
   ready as a fallback. Canned demo mode also bypasses Azure.
 - In the default local configuration, docs/code search files and logs is unavailable.

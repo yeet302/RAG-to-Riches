@@ -46,12 +46,12 @@
 <path d="M1100 510 V538" class="edge"/>
 <rect x="840" y="540" width="520" height="100" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
 <text x="1100.0" y="569.0" text-anchor="middle" class="node-title">Model interprets the question</text>
-<text x="1100.0" y="597.0" text-anchor="middle" class="node-line">Returns intent, summary, and reason</text>
+<text x="1100.0" y="597.0" text-anchor="middle" class="node-line">Returns intent and JSON assignments</text>
 <text x="1100.0" y="625.0" text-anchor="middle" class="node-line">Python validates the JSON output</text>
 <path d="M1100 640 V668" class="edge"/>
 <rect x="840" y="670" width="520" height="80" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-<text x="1100.0" y="703.0" text-anchor="middle" class="node-title">query_analysis.py: ROUTES</text>
-<text x="1100.0" y="731.0" text-anchor="middle" class="node-line">Map the allowed intent to existing stages</text>
+<text x="1100.0" y="703.0" text-anchor="middle" class="node-title">query_analysis.py: ModelAnalysis</text>
+<text x="1100.0" y="731.0" text-anchor="middle" class="node-line">Validate roles, questions, tasks, and stages</text>
 <path d="M840 590 H602" class="fallback"/>
 <rect x="622" y="526" width="196" height="55" rx="8" fill="#fffbeb"/>
 <text x="720" y="548" text-anchor="middle" font-size="17" fill="#92400e">Missing config, invalid</text>
@@ -66,8 +66,8 @@
 <path d="M720 830 V858" class="edge"/>
 <rect x="180" y="860" width="1080" height="105" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
 <text x="720.0" y="891.5" text-anchor="middle" class="node-title">agents.py + orchestrator.py: call_agent()</text>
-<text x="720.0" y="919.5" text-anchor="middle" class="node-line">Run selected docs/logs searches; validate findings and handle failures</text>
-<text x="720.0" y="947.5" text-anchor="middle" class="node-line">If code is selected: merge_findings() → code search with earlier evidence</text>
+<text x="720.0" y="919.5" text-anchor="middle" class="node-line">Send JSON assignments; validate findings and handle failures</text>
+<text x="720.0" y="947.5" text-anchor="middle" class="node-line">Stage 2: JSON assignments with earlier evidence and status gaps</text>
 <path d="M720 965 V993" class="edge"/>
 <rect x="300" y="995" width="840" height="80" rx="14" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
 <text x="720.0" y="1028.0" text-anchor="middle" class="node-title">synthesize() + answer_synthesis.py: generate_answer()</text>

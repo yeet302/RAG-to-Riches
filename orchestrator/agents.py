@@ -44,7 +44,9 @@ class HTTPAgent:
 
     async def run(self, question: str, context: dict) -> AgentFinding:
         request = AgentRequest(
-            request_id=context["request_id"], question=question, task=TASKS[self.name],
+            request_id=context["request_id"], question=question,
+            original_question=context.get("original_question", question),
+            task=context.get("task", TASKS[self.name]),
             intent=context["intent"], incident_id=context.get("incident_id"),
             conversation_id=context.get("conversation_id"),
             evidence_bundle=context.get("evidence_bundle", {}),

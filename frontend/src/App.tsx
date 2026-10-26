@@ -105,7 +105,7 @@ export default function App() {
             <option value="llm" disabled={!llmConfigured}>Azure AI{!llmConfigured ? ' (not configured)' : ''}</option>
           </select>
           <span className="muted small">
-            {routingMode === 'llm' ? 'AI selects the route.' : 'Rules select the route.'}
+            {routingMode === 'llm' ? 'AI plans specialist questions and tasks.' : 'Rules select the route.'}
           </span>
         </div>
         <div className="analysis-controls">

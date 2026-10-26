@@ -12,6 +12,13 @@ export interface AnswerSynthesis {
   latency_ms: number;
 }
 
+export interface AgentAssignment {
+  agent: AgentName;
+  stage: 1 | 2;
+  question: string;
+  task: string;
+}
+
 export interface QueryAnalysis {
   source: 'keyword' | 'llm' | 'keyword_fallback';
   intent: 'incident' | 'how_to' | 'code_lookup' | 'logs_lookup' | 'unknown';
@@ -19,6 +26,7 @@ export interface QueryAnalysis {
   reason: string;
   stage1: AgentName[];
   stage2: AgentName[];
+  assignments: AgentAssignment[];
   warning?: string | null;
 }
 export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';

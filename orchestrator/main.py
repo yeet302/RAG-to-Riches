@@ -39,7 +39,7 @@ FEEDBACK: list[Feedback] = []  # in-memory for the demo
 def health():
     return {"status": "ok", "mode": SETTINGS.mode,
             "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()},
-            "routing_mode": SETTINGS.routing_mode,
+            "routing_mode": SETTINGS.effective_routing_mode,
             "llm_configured": SETTINGS.llm_configured,
             "answer_mode": SETTINGS.effective_answer_mode}
 

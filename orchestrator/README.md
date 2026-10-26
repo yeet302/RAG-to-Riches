@@ -1,10 +1,10 @@
 # Incident Copilot orchestrator
 
 Accept a question, select docs/logs/code roles, collect evidence, and return one
-response with citations and an execution trace. Keyword routing is the default;
-optional Azure Foundry analysis interprets intent and selects an existing route.
-When Azure is configured, it also generates a cited answer from collected evidence
-by default. Input analysis and answer generation can be selected independently.
+response with citations and an execution trace. When Azure is configured, it plans
+question-specific JSON assignments for the selected specialist roles and generates
+a cited answer from their returned evidence. Without Azure, keyword routing and an
+evidence list are used. Planning and answer generation are independent controls.
 
 ## Documentation
 
@@ -75,10 +75,11 @@ is separate; inspect analysis.source and synthesis.source in a real response.
 
 ## Scope
 
-Azure can analyze intent and generate a final explanation from collected evidence.
-Python executes supported routes, validates results and citation IDs, and retains
-an evidence-list fallback. Full AI planning, generated specialist assignments, and
-teammate-service integration remain planned work. Current local searches do not
+Azure generates a bounded plan (at most one assignment per role across two stages)
+and a final explanation from collected evidence. Python validates the plan, sends
+JSON requests to configured specialist services, validates findings and citation
+IDs, and retains keyword/evidence fallbacks. Actual teammate model endpoints still
+need to be configured and verified. Current local searches do not
 inspect git history or persist investigations. Citation validation checks source
 identity; it does not prove that every generated claim is supported.
 

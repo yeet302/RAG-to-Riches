@@ -7,8 +7,8 @@ Architecture choice: Option 1, selective routing (see PIPELINE_SUMMARY.md).
   Stage 3: orchestrator synthesizes a grounded response with sources
 
 This module provides the default keyword classifier and conservative full-path fallback.
-query_analysis.py optionally uses Azure Foundry to analyze intent, maps it to these
-supported routes, and falls back to classify() if model analysis is unavailable.
+query_analysis.py can use Azure Foundry to generate question-specific JSON
+assignments, and falls back to classify() if model planning is unavailable.
 """
 from __future__ import annotations
 

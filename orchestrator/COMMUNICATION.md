@@ -32,8 +32,9 @@ HTTP redirects are not followed and ambient proxy settings are not used.
 {
   "schema_version": "1.0",
   "request_id": "4fdd20b9-example",
-  "question": "Why is checkout returning timeout errors?",
-  "task": "Search documentation, runbooks, and past incidents for existing solutions. Cite exact sources.",
+  "question": "Which checkout runbooks explain upstream timeouts?",
+  "original_question": "Why is checkout returning timeout errors?",
+  "task": "Find checkout upstream-timeout guidance and cite its exact source references.",
   "intent": "incident",
   "incident_id": "INC-42",
   "conversation_id": "conversation-7",
@@ -41,8 +42,13 @@ HTTP redirects are not followed and ambient proxy settings are not used.
 }
 ```
 
-`task` describes the selected specialist's job. Logs/docs receive an empty bundle.
-Code receives:
+In Azure mode, `question` and `task` come from the validated question-specific
+assignment. `original_question` preserves the user's input and is an optional,
+additive v1 field; older callers may omit it. Keyword mode supplies the original
+question and a default role-specific task.
+
+Stage-1 specialists receive an empty `evidence_bundle`. Every stage-2 specialist
+receives validated stage-1 findings and status gaps, for example:
 
 ```json
 {
@@ -130,9 +136,12 @@ fix when the specialists only returned search matches. See `/docs` for the gener
 schemas and `agent_service.py` for an executable reference implementation.
 
 The optional analysis field in CopilotResponse describes keyword or Azure intent
-routing, including fallback warnings. It is backend response metadata, not part of
-the specialist's AgentFinding contract. Azure intent analysis currently selects a
-fixed route; HTTPAgent still supplies a fixed role-specific task description.
+planning, including fallback warnings and an `assignments` list with each role's
+stage, question, and task. It is backend response metadata, not part of the
+specialist's AgentFinding contract. Azure chooses up to three unique roles across
+two stages; Python rejects unknown roles, duplicate assignments, empty/oversized
+tasks, extra fields, or a plan with no first stage. Invalid plans use keyword
+routing with a visible warning.
 See [the pipeline guide](PIPELINE_SUMMARY.md) for execution and
 [Azure analysis](LLM_ROUTING.md) for model configuration.
 
@@ -141,3 +150,26 @@ citations, warning, context_truncated, and latency_ms). This does not change
 AgentRequest or AgentFinding. After gathering validated evidence, the backend can
 send bounded excerpts to Azure for a cited narrative. The evidence list, findings,
 source gaps, and provenance remain in the response.
+
+## Connecting a model-backed specialist
+
+1. Implement an HTTP POST endpoint accepting `AgentRequest` JSON. Each service can
+   use its own model/provider, credentials, tools, and database connections.
+2. Give that model its own trusted specialist policy. Supply `question`, `task`,
+   `original_question`, and `evidence_bundle` as request data. Generated assignments
+   and retrieved text never override the service's access or tool policy.
+3. Parse the model result into `AgentFinding`, validate it, and return the finding
+   itself as JSON. Include actual source references; report `no_evidence` or
+   `no_access` when appropriate. The orchestrator cannot synthesize a grounded
+   answer from an uncited free-text reply or an arbitrary JSON envelope.
+4. Configure the orchestrator with `ORCHESTRATOR_MODE=remote` and the complete
+   `DOCS_AGENT_URL`, `LOGS_AGENT_URL`, and `CODE_AGENT_URL` POST URLs. Add each
+   `<ROLE>_AGENT_TOKEN` when required by that service. Restart the orchestrator.
+
+`agent_service.py` is an executable reference host for the JSON contract, backed
+by local retrieval rather than a teammate's model. The orchestrator's API key is
+used for planning and synthesis; specialist services manage their own model keys.
+
+The model transport requests JSON-object mode and the application validates the
+result with Pydantic, since JSON mode alone does not enforce a schema. See
+[OpenAI's structured output guidance](https://developers.openai.com/api/docs/guides/structured-outputs).

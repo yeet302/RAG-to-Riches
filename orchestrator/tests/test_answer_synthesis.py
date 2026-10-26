@@ -205,7 +205,7 @@ def test_api_defaults_to_ai_answer_and_allows_evidence_override(monkeypatch):
         name = "docs"
         async def run(self, question, context):
             return result().findings[0]
-    settings = configured()
+    settings = configured(routing_mode="keyword")
     monkeypatch.setattr(main, "SETTINGS", settings)
     monkeypatch.setattr(orchestrator, "SETTINGS", settings)
     monkeypatch.setattr(orchestrator, "AGENTS", {"docs": Docs()})
@@ -237,7 +237,7 @@ def test_failed_findings_never_reach_synthesis(monkeypatch):
                                 evidence=[Evidence(source_type="doc", summary="Untrusted claim", ref="bad:L1")])
     monkeypatch.setattr(answer_synthesis, "complete_json", forbidden)
     response = asyncio.run(orchestrator.investigate(
-        "How do I restart checkout?", agents={"docs": FailedDocs()}, settings=configured()))
+        "How do I restart checkout?", agents={"docs": FailedDocs()}, settings=configured(routing_mode="keyword")))
     assert not response.evidence and response.partial
     assert response.synthesis.source == "evidence"
     assert "Untrusted claim" not in response.answer

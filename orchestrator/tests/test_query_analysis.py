@@ -27,12 +27,19 @@ def configured(**kwargs):
     return Settings(**values)
 
 
+def assignments(stage1=("docs",), stage2=("code",)):
+    return [{"agent": name, "stage": stage, "question": f"Find retry evidence in {name}",
+             "task": f"Inspect {name} for retry behavior and cite exact sources."}
+            for stage, names in ((1, stage1), (2, stage2)) for name in names]
+
+
 def completion(content=None, finish_reason="stop", **message):
     if content is None:
         content = json.dumps({
             "intent": "code_lookup",
             "summary": "Find the implementation responsible for retry behavior.",
             "reason": "Implementation inspection needs documentation context and code.",
+            "assignments": assignments(),
         })
     return {"choices": [{"finish_reason": finish_reason, "message": {"content": content, **message}}]}
 
@@ -75,8 +82,9 @@ def test_foundry_request_and_semantic_route():
     ("incident", ["logs", "docs"], ["code"]),
     ("unknown", ["logs", "docs"], ["code"]),
 ])
-def test_model_can_only_select_supported_routes(intent, stage1, stage2):
-    response = completion(json.dumps({"intent": intent, "summary": "Question summary", "reason": "Route reason"}))
+def test_model_plan_stages_are_derived_from_assignments(intent, stage1, stage2):
+    response = completion(json.dumps({"intent": intent, "summary": "Question summary", "reason": "Route reason",
+                                      "assignments": assignments(stage1, stage2)}))
     result = asyncio.run(analyze_question(
         "A question", configured(),
         transport=httpx.MockTransport(lambda request: httpx.Response(200, json=response))))
@@ -189,7 +197,8 @@ def test_api_mode_selection_route_and_ask_use_the_same_analysis(monkeypatch):
     calls = []
     async def fake_model(question, settings, transport):
         calls.append(question)
-        return ModelAnalysis(intent="code_lookup", summary="Locate retry handling", reason="Inspect implementation")
+        return ModelAnalysis(intent="code_lookup", summary="Locate retry handling", reason="Inspect implementation",
+                             assignments=assignments())
     class Specialist:
         def __init__(self, name):
             self.name = name

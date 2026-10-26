@@ -155,7 +155,9 @@ async def investigate(question: str, *, incident_id: str | None = None,
     registry = agents if agents is not None else AGENTS
     analysis = await analyze_question(question, settings, routing_mode)
     plan = RoutePlan(analysis.intent, analysis.stage1, analysis.stage2, analysis.reason)
+    assignments = {assignment.agent: assignment for assignment in analysis.assignments}
     context = {"request_id": str(uuid4()), "intent": plan.intent,
+               "original_question": question,
                "incident_id": incident_id, "conversation_id": conversation_id}
     scenario = match_scenario(question, plan) if settings.mode == "demo" else None
     if settings.mode == "demo":
@@ -169,8 +171,11 @@ async def investigate(question: str, *, incident_id: str | None = None,
     for stage, names in ((1, plan.stage1), (2, plan.stage2)):
         if stage == 2:
             context["evidence_bundle"] = merge_findings(findings)
-        results = await asyncio.gather(*(call_agent(name, registry, question, context,
-                                                  settings.timeout_seconds) for name in names))
+        # Give each concurrent specialist its own context and its generated assignment.
+        results = await asyncio.gather(*(call_agent(
+            name, registry, assignments[name].question,
+            {**context, "task": assignments[name].task}, settings.timeout_seconds,
+        ) for name in names))
         findings.extend(results)
         trace.extend(TraceEvent(stage=stage, agent=f.agent, action=f.summary,
                                 parallel=len(names) > 1, latency_ms=f.latency_ms) for f in results)

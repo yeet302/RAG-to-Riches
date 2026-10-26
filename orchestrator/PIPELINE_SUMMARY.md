@@ -18,25 +18,26 @@ Target: question -> AI plan -> JSON assignments -> specialist models/data source
         -> validated findings -> AI synthesis -> detailed answer
 ```
 
-The current implementation supports a frontend-to-backend pipeline, local
-retrieval, optional Azure intent analysis, and evidence-grounded Azure answer
-generation. Real teammate-service integration and full AI planning remain pending.
+The current implementation supports Azure-generated JSON delegation plans,
+question-specific specialist requests, validated JSON findings, local retrieval,
+and evidence-grounded Azure answer generation. Actual teammate model services
+still need their endpoints configured and verified.
 
 ```text
 Current: frontend or terminal question
-         -> keyword rules OR Azure intent analysis
-         -> Python selects and runs an existing route
-         -> local searches (or individually configured HTTP adapters)
+         -> keyword rules OR Azure JSON assignments (role, stage, question, task)
+         -> Python validates the plan and runs its stages
+         -> local searches or JSON requests to configured specialist services
          -> validated evidence and partial-result handling
          -> Azure writes a cited explanation, or Python returns the evidence list
          -> frontend or terminal
 ```
 
-The input-analysis model interprets intent and selects from predefined routes.
-A separate model call can explain collected evidence and cite its source IDs.
-Python executes searches, validates data/citations, and retains the evidence-list
-fallback. Model-based answers are enabled by default when Azure is configured.
-The model does not run code, search files itself, or write delegation tasks.
+The planner generates focused questions and tasks for up to three unique roles
+across two stages. A separate model call explains returned evidence and cites its
+source IDs. Python controls execution, validates data/citations, and retains
+keyword/evidence fallbacks. Planning and answering default to Azure when configured.
+The planner does not run code or access specialist tools itself.
 See [Azure setup](LLM_ROUTING.md) for the two independent controls and verification.
 
 ## 2. What the current implementation demonstrates
@@ -45,7 +46,7 @@ See [Azure setup](LLM_ROUTING.md) for the two independent controls and verificat
 |---|---|
 | Frontend request/response flow | Submit a question and display the backend's answer and sources. |
 | Input validation | Reject empty questions and text over 2,000 characters. |
-| Keyword or Azure analysis | Select an intent and expose the actual routing source. |
+| Keyword or Azure planning | Generate role-specific assignments and expose the plan and its source. |
 | Local retrieval | Search supported files and return excerpts with file/line references. |
 | Staged execution | Run independent first-stage work together, then code with earlier evidence. |
 | Evidence handling | Validate findings, preserve attribution, and remove duplicate evidence. |
@@ -59,9 +60,6 @@ In the default local configuration, docs and code search the orchestrator direct
 Logs is unavailable until configured. These implementations are local searches,
 not the AI pipelines developed by teammates. The incident list is empty outside
 explicit canned demo mode.
-
-The frontend import, Azure analysis, and this guide are local development work
-beyond the last pushed orchestrator commit. They remain uncommitted at this review.
 
 ## 3. Which code does what
 
@@ -91,7 +89,7 @@ changing configuration. main.py and chat.py share the investigation function.
 
 ## 4. Routing and execution
 
-### Supported routes
+### Keyword routes (also used as fallback)
 
 | Intent | Example in keyword mode | First stage | Second stage |
 |---|---|---|---|
@@ -103,8 +101,10 @@ changing configuration. main.py and chat.py share the investigation function.
 
 Selective routing chooses roles; asyncio.gather() runs independent calls
 concurrently within each stage. The existing stages are shared by local and HTTP
-implementations. Azure also chooses from these same routes; it does not invent a
-new dependency graph.
+implementations. Azure can choose different role combinations and stages, with
+at most one assignment per role, two stages, and at least one first-stage task.
+Every second-stage assignment receives the successful first-stage evidence and
+all status gaps. Generated tasks cannot choose service endpoints or credentials.
 
 ### Keyword rule priority
 
@@ -192,7 +192,7 @@ Planned next work:
 
 1. Agree on the shared request/finding contract with specialist developers.
 2. Connect their services and validate real requests, findings, and source references.
-3. Extend intent analysis into capability-based planning and specific assignments.
+3. Evaluate the generated plans and assignments against real specialist capabilities.
 4. Verify dependent tasks use returned evidence and identify contradictions/gaps.
 5. Evaluate and improve the grounded answer synthesizer against real specialist findings.
 6. Test the full frontend -> orchestrator -> specialist services -> frontend flow.
@@ -247,18 +247,20 @@ the ignored backend .env. This feature is local work beyond the last push.
 
 **Say:** "Azure can interpret intent and write an explanation from collected evidence.
 Python controls execution, validates results and citations, and handles fallback.
-Full AI planning and teammate-service integration are the next stage."
+Azure now generates JSON specialist assignments; actual teammate endpoints still
+need to be connected and evaluated."
 
 ### Optional checks
 
 - At http://127.0.0.1:8000/docs, use POST /api/ask -> Try it out with
   {"question": "   "}. Expect HTTP 400. The frontend blocks empty input first.
   Validation predates the last push; show it as a pipeline check.
-- From orchestrator/, run .venv/bin/python -m pytest -q. The current suite has
-  115 cases: 51 from the pushed backend, 37 for Azure analysis, and 27 for synthesis.
-  Reference HTTP tests use local services; Azure tests are mocked.
+- From orchestrator/, run .venv/bin/python -m pytest -q. Tests cover local retrieval,
+  reference HTTP communication, invalid plans, parallel generated assignments,
+  JSON specialist handoff, final synthesis, and configuration compatibility.
+  Automated Azure calls use mock transports; live validation is separate.
 
 **Closing statement:** "We moved from prepared findings to working local retrieval,
 structured results, and failure handling. Azure can now analyze intent and construct
 a cited explanation from the evidence. Next we will connect the actual specialist
-services and extend intent routing into task planning."
+services and evaluate the generated task plans against their real capabilities."

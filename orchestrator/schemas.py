@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 AgentName = Literal["logs", "docs", "code"]
 SourceType = Literal["log", "code", "doc", "incident", "metric"]
@@ -67,6 +67,15 @@ AnswerMode = Literal["evidence", "llm"]
 QueryIntent = Literal["incident", "how_to", "code_lookup", "logs_lookup", "unknown"]
 
 
+class AgentAssignment(BaseModel):
+    """A bounded, question-specific assignment; never an endpoint or tool command."""
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    agent: AgentName
+    stage: Literal[1, 2]
+    question: str = Field(min_length=1, max_length=2000)
+    task: str = Field(min_length=1, max_length=2000)
+
+
 class QueryAnalysis(BaseModel):
     source: Literal["keyword", "llm", "keyword_fallback"]
     intent: QueryIntent
@@ -74,6 +83,7 @@ class QueryAnalysis(BaseModel):
     reason: str
     stage1: list[AgentName]
     stage2: list[AgentName]
+    assignments: list[AgentAssignment] = Field(default_factory=list)
     warning: Optional[str] = None
 
 
@@ -98,7 +108,8 @@ class AgentRequest(BaseModel):
     schema_version: Literal["1.0"] = "1.0"
     request_id: str
     question: str = Field(min_length=1, max_length=2000)
-    task: str
+    original_question: Optional[str] = Field(default=None, min_length=1, max_length=2000)
+    task: str = Field(min_length=1, max_length=2000)
     intent: str
     incident_id: Optional[str] = None
     conversation_id: Optional[str] = None

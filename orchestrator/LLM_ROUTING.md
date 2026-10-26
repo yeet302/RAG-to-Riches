@@ -4,7 +4,7 @@ There are two independent model features:
 
 | Feature | Purpose | Default |
 |---|---|---|
-| Question analysis | Interpret intent and select an existing execution route. | Keywords; Azure is optional. |
+| Question analysis | Generate specialist questions, tasks, and execution stages as JSON. | Azure when configured; otherwise keywords. |
 | Answer generation | Explain collected evidence in a readable, cited answer. | AI when Azure is configured; otherwise an evidence list. |
 
 The same configured deployment, endpoint, and backend key are used for both.
@@ -14,29 +14,32 @@ AI answer generation; choose Evidence list as well for a run with no model calls
 ## Pipeline
 
 ```text
-Question -> keyword rules OR Azure intent analysis
-         -> Python executes an existing route
+Question -> keyword rules OR Azure JSON delegation plan
+         -> Python validates the plan and sends question-specific JSON assignments
          -> collect and validate evidence
          -> Azure writes a cited explanation (default when configured)
          -> Python validates citation IDs and returns the response
 ```
 
 The model does not execute code or contact specialist services itself. Python
-controls execution, validation, timeouts, and response structure. Full planning
-and query-specific assignments remain future work, as does real integration with
-the teammates' specialist models and data sources.
+controls execution, validation, timeouts, and response structure. Plans select
+only docs/logs/code, assign each at most once, and use at most two stages. Calls in
+each stage run concurrently; stage 2 receives earlier evidence and status gaps.
+Actual teammate models and data sources are connected through configured agent
+URLs; the bundled reference service uses local retrieval.
 
 ## Configuration
 
-Use the ignored orchestrator/.env for credentials. This checkout uses the provided
-Foundry endpoint and exact deployment gpt-5.6-terra; there is no model substitution.
-For new setup, populate AZURE_AI_ENDPOINT, AZURE_AI_MODEL, and AZURE_AI_API_KEY.
+Use the ignored orchestrator/.env for credentials. Populate AZURE_AI_ENDPOINT,
+AZURE_AI_MODEL (the exact deployment name), and AZURE_AI_API_KEY. Existing
+AZURE_AI_DEPLOYMENT is supported as a fallback alias when AZURE_AI_MODEL is empty.
+The configured model is preserved; no deployment is substituted.
 
 | Variable | Meaning |
 |---|---|
-| ROUTING_MODE | keyword (default) or llm for requests with no routing override. |
+| ROUTING_MODE | auto (default) uses llm when Azure is configured, otherwise keyword. Explicit keyword and llm are also supported. |
 | ANSWER_MODE | auto (default), llm, or evidence. Auto uses AI when credentials are configured. |
-| AZURE_AI_ENDPOINT | Resource URL, /openai/v1 base, or full /chat/completions URL. |
+| AZURE_AI_ENDPOINT | Resource URL, /openai/v1 base, or full /chat/completions or /responses URL. |
 | AZURE_AI_MODEL | Exact deployment name. |
 | AZURE_AI_API_KEY | Backend key, never a frontend VITE_ variable. |
 | AZURE_AI_API_STYLE | openai_v1 (default), or inference for an existing /models endpoint. |
@@ -83,6 +86,29 @@ API overrides use two independent fields:
 Omit answer_mode to use the backend default. GET /api/route only previews intent
 analysis and does not collect evidence or generate an answer.
 
+## Example planner output
+
+```json
+{
+  "intent": "incident",
+  "summary": "Investigate checkout timeouts",
+  "reason": "Compare logs with documented timeout behavior and code",
+  "assignments": [
+    {"agent": "logs", "stage": 1, "question": "What timeout events affect checkout?",
+     "task": "Find relevant events, timing patterns, and exact log references."},
+    {"agent": "docs", "stage": 1, "question": "What checkout timeout guidance exists?",
+     "task": "Find the applicable runbook and cite its source references."},
+    {"agent": "code", "stage": 2, "question": "Where is checkout timeout behavior configured?",
+     "task": "Use the earlier evidence to inspect the implementation and cite exact lines."}
+  ]
+}
+```
+
+Python turns each assignment into the [AgentRequest JSON contract](COMMUNICATION.md),
+retaining the original user question. Services reply with AgentFinding JSON. Only
+successful, attributed evidence is used for the final answer. GET /api/route previews
+this plan; the frontend's Question analysis panel also shows the assignments.
+
 ## Evidence and citation handling
 
 The final-answer request contains the original question, retrieved evidence
@@ -117,7 +143,7 @@ omits it. With no supporting evidence, no model answer is generated.
 
 | Response field | Interpretation |
 |---|---|
-| analysis.source = llm | Azure successfully performed input analysis. |
+| analysis.source = llm | Azure generated a validated delegation plan; inspect analysis.assignments. |
 | analysis.source = keyword / keyword_fallback | Rules were used for routing. |
 | synthesis.source = llm | Azure generated the final answer and citation checks passed. |
 | synthesis.source = evidence | Evidence-list mode, or no supporting evidence. |
@@ -133,8 +159,8 @@ call. Check the response fields above.
 
 | File | Role |
 |---|---|
-| azure_client.py | Shared JSON Chat Completions transport for the configured deployment. |
-| query_analysis.py | Input prompt, intent validation, route mapping, and keyword fallback. |
+| azure_client.py | Shared JSON Chat Completions/Responses transport for the configured deployment. |
+| query_analysis.py | Planning prompt, bounded assignment validation, stage selection, and keyword fallback. |
 | answer_synthesis.py | Bounded evidence context, grounded prompt, citation validation, and output fallback. |
 | settings.py / schemas.py | Configuration, independent modes, and analysis/synthesis metadata. |
 | orchestrator.py | Execute searches, assemble evidence, then generate the final answer. |
@@ -142,9 +168,10 @@ call. Check the response fields above.
 | frontend/src/App.tsx / api.ts / components/Thread.tsx | Controls, request fields, and output provenance. |
 | tests/test_query_analysis.py / tests/test_answer_synthesis.py | Mocked contracts, failure modes, citations, and pipeline integration. |
 
-The current suite contains 115 cases. Automated model tests use mock transports;
-live model checks are separate. Input analysis was verified on 2026-10-20.
-To prove final synthesis, send a request and inspect synthesis.source=llm.
+Automated model tests use mock transports, including a full API -> Azure plan ->
+JSON specialist requests/replies -> Azure synthesis test in tests/test_delegation.py.
+Live model checks are separate. Inspect analysis.source=llm and
+synthesis.source=llm to prove the two real model stages succeeded.
 
 See the [demo checklist](PIPELINE_SUMMARY.md#8-demo-checklist).
 
@@ -155,3 +182,7 @@ See the [demo checklist](PIPELINE_SUMMARY.md#8-demo-checklist).
 
 The adapter requests JSON-object mode and performs application-side validation.
 The configured deployment must support that API format.
+
+A full `/openai/v1/responses` endpoint uses the Responses API with `input`,
+`text.format`, and completed assistant output parsing. Base endpoints keep using
+Chat Completions. The client never appends a second API path to a full endpoint.

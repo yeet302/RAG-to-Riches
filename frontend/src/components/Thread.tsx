@@ -70,6 +70,15 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
                 <p>{r.analysis.summary}</p>
                 <p className="muted small">{r.analysis.reason}</p>
                 {r.analysis.warning && <p role="status">{r.analysis.warning}</p>}
+                <ol>
+                  {r.analysis.assignments?.slice().sort((a, b) => a.stage - b.stage).map((assignment) => (
+                    <li key={assignment.agent}>
+                      <strong>{assignment.agent}: Stage {assignment.stage}</strong>
+                      <p>{assignment.question}</p>
+                      <p className="muted small">{assignment.task}</p>
+                    </li>
+                  ))}
+                </ol>
               </details>
             )}
             <Trace trace={r.trace} agents={r.agents_used} />

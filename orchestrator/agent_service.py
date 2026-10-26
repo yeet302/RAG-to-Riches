@@ -30,6 +30,7 @@ async def run_agent(name: AgentName, request: AgentRequest,
         raise HTTPException(401, "Invalid agent credential")
     return await AGENTS[name].run(request.question, {
         "request_id": request.request_id, "intent": request.intent,
+        "task": request.task, "original_question": request.original_question or request.question,
         "incident_id": request.incident_id, "conversation_id": request.conversation_id,
         "evidence_bundle": request.evidence_bundle,
     })
