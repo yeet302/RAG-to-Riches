@@ -2,6 +2,9 @@
 import math
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+from dotenv import load_dotenv
 from urllib.parse import urlsplit
 
 
@@ -63,10 +66,11 @@ class Settings:
 
     @classmethod
     def from_env(cls):
+        load_dotenv(Path(__file__).with_name('.env'), override=False)
         return cls(
-            endpoint=os.getenv('AZURE_AI_ENDPOINT', '').strip(),
-            model=os.getenv('AZURE_AI_MODEL', '').strip(),
-            api_key=os.getenv('AZURE_AI_API_KEY', ''),
+            endpoint=(os.getenv('AZURE_AI_ENDPOINT') or os.getenv('AZURE_OPENAI_ENDPOINT', '')).strip(),
+            model=(os.getenv('AZURE_AI_MODEL') or os.getenv('AZURE_OPENAI_DEPLOYMENT', '')).strip(),
+            api_key=(os.getenv('AZURE_AI_API_KEY') or os.getenv('AZURE_OPENAI_API_KEY', '')).strip(),
             api_style=os.getenv('AZURE_AI_API_STYLE', 'openai_v1'),
             api_version=os.getenv('AZURE_AI_API_VERSION', ''),
             token=os.getenv('DOCS_AGENT_TOKEN', ''),
