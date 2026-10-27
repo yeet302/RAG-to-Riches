@@ -171,7 +171,8 @@ def test_default_modes_follow_azure_configuration():
     assert Settings().effective_routing_mode == "keyword"
     assert configured().effective_routing_mode == "llm"
     assert configured().effective_answer_mode == "llm"
-    assert configured(mode="demo").effective_routing_mode == "keyword"
+    with pytest.raises(ValueError, match="prepared demo answers are disabled"):
+        configured(mode="demo")
     assert configured(routing_mode="keyword").effective_routing_mode == "keyword"
 
 

@@ -1,9 +1,28 @@
 """Shared JSON transport for Azure Chat Completions and explicit Responses endpoints."""
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 
 from settings import Settings
+
+
+async def model_headers(auth_mode: str, api_key: str) -> dict[str, str]:
+    if auth_mode == "api_key":
+        return {"api-key": api_key}
+
+    def acquire_token():
+        from azure.core.exceptions import AzureError
+        from azure.identity import DefaultAzureCredential
+
+        try:
+            with DefaultAzureCredential() as credential:
+                return credential.get_token("https://cognitiveservices.azure.com/.default").token
+        except AzureError as exc:
+            raise ValueError("Azure identity authentication failed; check Azure sign-in and access.") from exc
+
+    return {"Authorization": "Bearer " + await asyncio.to_thread(acquire_token)}
 
 
 def completion_url(settings: Settings) -> str:
@@ -43,10 +62,11 @@ async def complete_json(settings: Settings, system_prompt: str, user_content: st
             "messages": messages,
             "response_format": {"type": "json_object"},
         }
+    headers = await model_headers(settings.llm_auth_mode, settings.llm_api_key)
     async with httpx.AsyncClient(timeout=timeout_seconds, follow_redirects=False,
                                  trust_env=False, transport=transport) as client:
         response = await client.post(
-            url, params=params, headers={"api-key": settings.llm_api_key}, json=payload,
+            url, params=params, headers=headers, json=payload,
         )
         response.raise_for_status()
         body = response.json()

@@ -1,43 +1,24 @@
-"""Docs subset of orchestrator v1 wire models (reference: 3fbce0499cf5)."""
-from typing import Literal, Optional
+"""Shared v1 contract with docs-specific identity defaults for existing callers."""
+from typing import Literal
+from pydantic import Field
 
-from pydantic import BaseModel, Field, field_validator
+# Support the documented launch command from this service directory.
+from pathlib import Path
+import sys
 
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
-class AgentRequest(BaseModel):
-    schema_version: Literal['1.0'] = '1.0'
-    request_id: str = Field(min_length=1)
-    question: str = Field(min_length=1, max_length=2000)
-    task: str
-    intent: str
-    incident_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    evidence_bundle: dict = Field(default_factory=dict)
-
-    @field_validator('question', 'request_id')
-    @classmethod
-    def nonblank(cls, value):
-        if not value.strip():
-            raise ValueError('Must not be blank')
-        return value
+from agent_contracts import AgentRequest
+from agent_contracts import AgentFinding as SharedAgentFinding, Evidence as SharedEvidence
 
 
-class Evidence(BaseModel):
+class Evidence(SharedEvidence):
     source_type: Literal['doc'] = 'doc'
     agent: Literal['docs'] = 'docs'
-    summary: str
-    ref: str
-    link: Optional[str] = None
-    snippet: Optional[str] = None
 
 
-class AgentFinding(BaseModel):
+class AgentFinding(SharedAgentFinding):
     agent: Literal['docs'] = 'docs'
-    status: Literal['ok', 'no_evidence', 'error', 'no_access'] = 'ok'
-    summary: str
-    hypotheses: list[str] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
-    sources_searched: list[str] = Field(default_factory=list)
-    sources_unavailable: list[str] = Field(default_factory=list)
-    confidence: float = Field(default=0, ge=0, le=1)
-    latency_ms: int = Field(default=0, ge=0)

@@ -9,4 +9,7 @@ pytest>=8,<9
 # Reference orchestrator uses Python 3.10 annotation syntax.
 eval-type-backport>=0.2,<1; python_version < "3.10"
 
+# Keyless Azure model authentication (AZURE_AI_AUTH_MODE=entra).
+azure-identity>=1.17,<2
+
 python-dotenv>=1.0,<2

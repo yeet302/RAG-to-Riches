@@ -9,38 +9,17 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-AgentName = Literal["logs", "docs", "code"]
-SourceType = Literal["log", "code", "doc", "incident", "metric"]
+# Support the documented launch command from this service directory.
+from pathlib import Path
+import sys
 
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
-class Evidence(BaseModel):
-    """One piece of evidence an agent found. `ref` is the exact pointer (file:line, log query, doc section)."""
-    source_type: SourceType
-    summary: str = Field(min_length=1)
-    ref: str = Field(min_length=1)    # e.g. "src/ad/.../AdService.java:L238-L239"
-    link: Optional[str] = None        # deep link (GitHub line, Jaeger, doc URL)
-    snippet: Optional[str] = None     # raw log lines / code excerpt
-    agent: Optional[AgentName] = None
-
-    @field_validator("summary", "ref", mode="before")
-    @classmethod
-    def strip_required_text(cls, value):
-        return value.strip() if isinstance(value, str) else value
-
-
-class AgentFinding(BaseModel):
-    """JSON contract every specialist agent returns to the orchestrator."""
-    agent: AgentName
-    status: Literal["ok", "no_evidence", "error", "no_access"] = "ok"
-    summary: str                                  # 1-2 sentence takeaway
-    hypotheses: list[str] = Field(default_factory=list)
-    evidence: list[Evidence] = Field(default_factory=list)
-    sources_searched: list[str] = Field(default_factory=list)
-    sources_unavailable: list[str] = Field(default_factory=list)
-    confidence: float = Field(default=0.0, ge=0, le=1)  # retrieval relevance, not cause probability
-    latency_ms: int = Field(default=0, ge=0)
+from agent_contracts import AgentName, SourceType, Evidence, AgentFinding, AgentRequest, PipelineError
 
 
 class Step(BaseModel):
@@ -88,7 +67,7 @@ class QueryAnalysis(BaseModel):
 
 
 class AnswerSynthesis(BaseModel):
-    source: Literal["evidence", "llm", "evidence_fallback", "demo"]
+    source: Literal["evidence", "llm", "evidence_fallback"]
     citations: list[str] = Field(default_factory=list)
     warning: Optional[str] = None
     context_truncated: bool = False
@@ -103,17 +82,6 @@ class AskRequest(BaseModel):
     conversation_id: Optional[str] = None
 
 
-class AgentRequest(BaseModel):
-    """Versioned HTTP request sent to a specialist's configured endpoint."""
-    schema_version: Literal["1.0"] = "1.0"
-    request_id: str
-    question: str = Field(min_length=1, max_length=2000)
-    original_question: Optional[str] = Field(default=None, min_length=1, max_length=2000)
-    task: str = Field(min_length=1, max_length=2000)
-    intent: str
-    incident_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    evidence_bundle: dict = Field(default_factory=dict)
 
 
 class CopilotResponse(BaseModel):
@@ -135,7 +103,9 @@ class CopilotResponse(BaseModel):
     conversation_id: Optional[str] = None
     findings: list[AgentFinding] = Field(default_factory=list)
     partial: bool = False
-    demo: bool = False                             # true only in explicit demo mode
+    pipeline_status: Literal["ok", "partial", "failed", "no_evidence"] = "ok"
+    errors: list[PipelineError] = Field(default_factory=list)
+    demo: Literal[False] = False                   # retained for response compatibility; prepared answers are disabled
     analysis: Optional[QueryAnalysis] = None
     synthesis: Optional[AnswerSynthesis] = None
 

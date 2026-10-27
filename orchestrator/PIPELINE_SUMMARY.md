@@ -56,10 +56,10 @@ See [Azure setup](LLM_ROUTING.md) for the two independent controls and verificat
 | Terminal interface | Run the same investigation from chat.py. |
 | Integration scaffolding | Shared JSON models, HTTP adapters, and a local reference service. |
 
-In the default local configuration, docs and code search the orchestrator directory.
-Logs is unavailable until configured. These implementations are local searches,
-not the AI pipelines developed by teammates. The incident list is empty outside
-explicit canned demo mode.
+The default configuration calls remote specialist endpoints. Unconfigured roles
+report unavailable without falling back to local retrieval. Explicit local mode
+remains available for offline corpus searches. Prepared answers are disabled, and
+the incident list stays empty until a real incident source is connected.
 
 ## 3. Which code does what
 
@@ -139,8 +139,8 @@ GET /api/route previews the selected analysis without running searches.
 
 The common interface is async run(question, context) -> AgentFinding.
 LocalSearchAgent retrieves files, HTTPAgent calls a configured specialist, and
-UnavailableAgent reports missing configuration. DemoAgent returns prepared findings
-only in explicit demo mode. The reference HTTP host in
+UnavailableAgent reports missing configuration. Prepared findings and demo mode
+are disabled. The reference HTTP host in
 [agent_service.py](agent_service.py) always hosts local searches and does not proxy
 remote URLs. Exact wire formats belong in [COMMUNICATION.md](COMMUNICATION.md).
 

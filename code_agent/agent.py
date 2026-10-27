@@ -5,14 +5,20 @@ Code retrieval is never a predetermined response: Foundry selects the tools dyna
 """
 import asyncio
 import json
+import logging
 import re
 import time
 from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import FunctionTool, PromptAgentDefinition
 from azure.identity import DefaultAzureCredential
 from openai.types.responses.response_input_param import FunctionCallOutput
+from urllib.parse import urlsplit
+from azure.core.exceptions import ClientAuthenticationError
 from .config import Settings
 from .retrieval import CodeRetriever
+from agent_contracts import PipelineError
+
+log = logging.getLogger('code_agent')
 
 INSTRUCTIONS = """You are a general-purpose software Code Agent. Investigate ANY service, error,
 module, or behavior found in the configured GitHub repository, not a predetermined
@@ -130,8 +136,10 @@ class CodeAgent:
         # Import inside run to keep this module compatible with teammates' Python layout.
         from .contracts import AgentFinding, Evidence
         start = time.perf_counter()
+        phase = 'source'
         try:
             raw, verified, searched, bundle = await asyncio.to_thread(self._investigate, question, context)
+            phase = 'model_output'
             # Accept JSON even if the model wraps it in a fenced block.
             raw = re.sub(r'^```(?:json)?\s*|\s*```$', '', raw.strip(), flags=re.I)
             result = json.loads(raw)
@@ -162,6 +170,40 @@ class CodeAgent:
                                 sources_unavailable=limits, confidence=min(float(result.get('confidence', 0)), 0.95) if evidence else 0.0,
                                 latency_ms=int((time.perf_counter()-start)*1000))
         except Exception as exc:
-            return AgentFinding(agent='code', status='error', summary='Code agent could not complete investigation.',
-                                sources_unavailable=['Azure Foundry, Azure AI Search or GitHub unavailable; consult server logs'],
+            response = getattr(exc, 'response', None)
+            status = getattr(exc, 'status_code', None) or getattr(response, 'status_code', None)
+            url = str(getattr(getattr(response, 'request', None), 'url', ''))
+            host = urlsplit(url).hostname
+            source = 'Code model output' if phase == 'model_output' else 'Code agent source'
+            if isinstance(exc, ClientAuthenticationError):
+                source = 'Azure identity'
+            elif host and host == urlsplit(self.settings.project_endpoint).hostname:
+                source = 'Azure Foundry'
+            elif host and host == urlsplit(self.settings.search_endpoint).hostname:
+                source = 'Azure AI Search'
+            elif host in {'api.github.com', 'raw.githubusercontent.com'}:
+                source = 'GitHub'
+            denied = isinstance(exc, ClientAuthenticationError) or status in (401, 403)
+            reason = f'{source} access denied' if denied else f'{source} failed'
+            if status:
+                reason += f' (HTTP {status})'
+            log.warning('request_id=%s phase=%s source=%s http_status=%s failure_type=%s',
+                        context.get('request_id', '-'), phase, source, status, type(exc).__name__)
+            prefix = {'Azure Foundry': 'CODE_FOUNDRY', 'Azure AI Search': 'CODE_SEARCH',
+                      'GitHub': 'CODE_GITHUB', 'Azure identity': 'AZURE_AUTHENTICATION',
+                      'Code model output': 'CODE_MODEL_RESPONSE'}.get(source, 'CODE_SOURCE')
+            resolution = {
+                'Azure Foundry': 'Ask the Foundry project owner to grant your signed-in account Foundry User access.',
+                'Azure AI Search': 'Ask the Search resource owner to grant access to query the configured index.',
+                'GitHub': 'Check repository access, API rate limits, and the configured GitHub credential.',
+                'Azure identity': 'Run az login in WSL with the account that has access to the code resources.',
+                'Code model output': 'Inspect model JSON and citation validation using the request ID.',
+            }.get(source, 'Check code-agent source configuration and service logs using the request ID.')
+            return AgentFinding(agent='code', status='no_access' if denied else 'error',
+                                summary=reason + '.', sources_unavailable=[reason],
+                                error=PipelineError(code=prefix + ('_ACCESS_DENIED' if denied else '_FAILED'),
+                                    agent='code', stage='validation' if phase == 'model_output' else
+                                        ('model' if source in {'Azure Foundry', 'Azure identity'} else 'retrieval'),
+                                    http_status=status, message=reason + '.', resolution=resolution,
+                                    retryable=status == 429 or (status is not None and status >= 500)),
                                 latency_ms=int((time.perf_counter()-start)*1000))

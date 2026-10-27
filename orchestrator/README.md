@@ -11,6 +11,7 @@ evidence list are used. Planning and answer generation are independent controls.
 | Guide | Use it for |
 |---|---|
 | [Pipeline summary](PIPELINE_SUMMARY.md) | Architecture, code responsibilities, routing, current scope, next sprint, and demos. |
+| [Three-agent integration](INTEGRATION.md) | Endpoint setup, credentials, launch commands, and verification. |
 | [Agent communication](COMMUNICATION.md) | Shared JSON/HTTP request and finding contract. |
 | [Azure analysis](LLM_ROUTING.md) | Model configuration, mode selection, fallback, and verification. |
 | [Docs-agent handoff](DOCS_AGENT_HANDOFF.md) | Docs-specific onboarding and acceptance checks. |
@@ -50,9 +51,8 @@ Specialist mode, question analysis, and answer generation are independent.
 
 | ORCHESTRATOR_MODE | Specialist behavior |
 |---|---|
-| local (default) | Search local files; a configured agent URL overrides that role. |
-| remote | Call configured services; unconfigured roles report unavailable. |
-| demo | Use prepared scenarios and keyword routing; responses have demo=true. |
+| local | Explicit offline retrieval: search local files; a configured agent URL overrides that role. |
+| remote (default) | Call configured specialist services; unconfigured roles report unavailable. |
 
 Local docs and code search this directory unless DOCS_ROOT and CODE_ROOT are set.
 Logs requires LOGS_ROOT or LOGS_AGENT_URL. Actual teammate services still need
@@ -85,3 +85,43 @@ identity; it does not prove that every generated claim is supported.
 
 Retrieved content is data and is never executed. Retrieval confidence does not
 establish a root cause. The API is intended for local development.
+
+
+## Keyless model authentication
+
+Set `AZURE_AI_AUTH_MODE=entra` in this service's `.env`, along with
+`AZURE_AI_ENDPOINT` and `AZURE_AI_MODEL`. No `AZURE_AI_API_KEY` is needed in this
+mode. Install this service's requirements, run `az login` in the same environment
+as the service, and grant your account access to the model resource. Azure Identity
+obtains access tokens for requests. Restart the service after changing `.env`.
+API-key authentication remains the default (`AZURE_AI_AUTH_MODE=api_key`).
+
+
+## Evidence-only integration
+
+Prepared diagnoses, incident examples, and demo mode are removed from the runtime.
+The integration defaults to `ORCHESTRATOR_MODE=remote`: all factual inputs to the
+final answer come from successful subagent findings with source evidence. Missing
+or failed agents report unavailable; they never fall back to prepared answers or
+local corpora. Without supporting evidence, the response states that evidence is
+missing and skips final model generation. Citation validation checks source IDs;
+it does not prove that every generated claim is supported by its cited text.
+`/api/incidents` and `/api/suggestions` remain empty until real sources are connected.
+
+
+## Actionable pipeline errors
+
+Processed investigations retain HTTP 200 so callers can inspect partial evidence,
+findings, and the execution trace. Inspect `pipeline_status` (`ok`, `partial`,
+`failed`, or `no_evidence`) and the `errors` list rather than treating HTTP 200 as
+proof of successful source access. HTTP 400/422 still report invalid API requests.
+Each error provides a stable `code`, `agent`, `stage`, safe `message`, `resolution`,
+`retryable` flag, and the dependency's `http_status` when available. Specialist
+handoffs carry the same object in `finding.error`; stage-2 evidence bundles include
+those errors alongside source gaps. Failed findings never become factual evidence.
+The browser displays the error codes and required actions.
+
+Common codes include `DOCS_MODEL_ACCESS_DENIED`, `CODE_FOUNDRY_ACCESS_DENIED`,
+`CODE_SEARCH_ACCESS_DENIED`, `AGENT_TIMEOUT`, `AGENT_UNREACHABLE`,
+`AGENT_NOT_CONFIGURED`, `AGENT_INVALID_RESPONSE`, `PLANNING_FALLBACK`, and
+`SYNTHESIS_FAILED`. An empty successful search is `no_evidence`, not an access error.

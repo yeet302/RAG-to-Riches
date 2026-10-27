@@ -22,18 +22,17 @@ Ask **How does the orchestrator route requests?** to test docs search. Ask
 inspect **How Copilot investigated** below the response.
 
 Local mode searches the configured files; it does not provide canned diagnoses.
-The incident list is empty outside demo mode. Logs are unavailable until
+The incident list is empty until a real incident source is connected. Logs are unavailable until
 LOGS_ROOT or LOGS_AGENT_URL is configured. Use the question box even when the
 incident list is empty.
 
-Use **Question analysis** to select Keywords or Azure AI. Azure AI becomes available
-after the backend is configured with its endpoint, deployment, and key.
-**Answer generation** defaults to AI explanation when configured; choose Evidence
-list to use the formatter. The controls are independent. See
-[optional Azure setup](../orchestrator/LLM_ROUTING.md). The credential stays on the backend.
-
-The header reads the actual mode from /api/health, and incident responses show
-the returned answer even when no root cause has been established.
+In remote integration mode, the browser lets the orchestrator choose the planning
+and answer modes. Configure `ROUTING_MODE=llm` and `ANSWER_MODE=llm` in
+`orchestrator/.env` for model delegation and final compilation. The local-search
+mode retains the Question analysis and Answer generation controls for debugging.
+The header reads the actual mode from `/api/health`. Each response shows the model's
+assignments, specialist execution trace, evidence, and any planning or answer fallback.
+Azure credentials stay on the backend. See [Azure setup](../orchestrator/LLM_ROUTING.md).
 
 To build the frontend, run npm run build in this directory. After restarting,
 the orchestrator can serve that build directly at http://127.0.0.1:8000.

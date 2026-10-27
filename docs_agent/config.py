@@ -13,6 +13,7 @@ class Settings:
     endpoint: str = ''
     model: str = ''
     api_key: str = field(default='', repr=False)
+    auth_mode: str = 'api_key'
     api_style: str = 'openai_v1'
     api_version: str = ''
     token: str = field(default='', repr=False)
@@ -33,6 +34,8 @@ class Settings:
         for value in (self.timeout, self.fetch_timeout, self.llm_timeout, self.discovery_timeout):
             if not math.isfinite(value) or value <= 0:
                 raise ValueError('Timeouts must be positive and finite')
+        if self.auth_mode not in {'api_key', 'entra'}:
+            raise ValueError('AZURE_AI_AUTH_MODE must be api_key or entra')
         if self.api_style not in {'openai_v1', 'inference'}:
             raise ValueError('AZURE_AI_API_STYLE must be openai_v1 or inference')
         if self.endpoint:
@@ -52,7 +55,8 @@ class Settings:
 
     @property
     def configured(self):
-        return bool(self.endpoint and self.model and self.api_key)
+        return bool(self.endpoint and self.model
+                    and (self.auth_mode == 'entra' or self.api_key))
 
     @property
     def completion_url(self):
@@ -71,6 +75,7 @@ class Settings:
             endpoint=(os.getenv('AZURE_AI_ENDPOINT') or os.getenv('AZURE_OPENAI_ENDPOINT', '')).strip(),
             model=(os.getenv('AZURE_AI_MODEL') or os.getenv('AZURE_OPENAI_DEPLOYMENT', '')).strip(),
             api_key=(os.getenv('AZURE_AI_API_KEY') or os.getenv('AZURE_OPENAI_API_KEY', '')).strip(),
+            auth_mode=os.getenv('AZURE_AI_AUTH_MODE', 'api_key').lower(),
             api_style=os.getenv('AZURE_AI_API_STYLE', 'openai_v1'),
             api_version=os.getenv('AZURE_AI_API_VERSION', ''),
             token=os.getenv('DOCS_AGENT_TOKEN', ''),

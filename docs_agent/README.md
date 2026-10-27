@@ -161,3 +161,21 @@ The first result included the official `adFailure` description concerning `GetAd
 - **Live LLM answers have not been validated.** Azure is not configured, so real answer quality, whether citations support the claims, and model response time have not been tested.
 - **Retrieval ranking is basic.** English keyword matching may miss synonymous expressions or return directory listings, general descriptions, and duplicate excerpts.
 - **Document coverage is incomplete.** By default, retrieval is limited to 16 website pages and 20 GitHub documents, with an additional time limit. Coverage gaps are reported when limits are reached.
+
+
+## Keyless model authentication
+
+Set `AZURE_AI_AUTH_MODE=entra` in this service's `.env`, along with
+`AZURE_AI_ENDPOINT` and `AZURE_AI_MODEL`. No `AZURE_AI_API_KEY` is needed in this
+mode. Install this service's requirements, run `az login` in the same environment
+as the service, and grant your account access to the model resource. Azure Identity
+obtains access tokens for requests. Restart the service after changing `.env`.
+API-key authentication remains the default (`AZURE_AI_AUTH_MODE=api_key`).
+Start with `python -m uvicorn docs_agent.service:app --env-file docs_agent/.env --host 127.0.0.1 --port 8102` from the repository root to load these settings.
+
+
+Model claim text may include a literal URL only when that URL occurs in one of the
+claim's cited excerpts. Source IDs still control all evidence references; invented
+URLs, URLs found only in uncited excerpts, out-of-range citation IDs, and inline
+citation markup are rejected. This permits documented UI addresses without trusting
+model-generated links. Validation failures include a sanitized reason code.

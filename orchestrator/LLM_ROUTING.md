@@ -57,7 +57,7 @@ Restart after editing .env and refresh the frontend. The app reads environment
 variables; --env-file loads the file explicitly. Existing exported variables can
 override it. Terminal chat uses exported variables.
 
-Explicit canned demo mode keeps prepared answers and makes no model requests.
+Prepared demo answers are disabled. With no supporting subagent evidence, final model generation is skipped.
 
 ## Frontend and API controls
 

@@ -1,7 +1,7 @@
 # Orchestrator <-> specialist communication (v1)
 
 This is the shared wire-contract reference for all three roles, implemented by
-[schemas.py](schemas.py) and [HTTPAgent](agents.py). The reference host and tests
+[../agent_contracts.py](../agent_contracts.py) and [HTTPAgent](agents.py). The reference host and tests
 exercise the contract; actual teammate services still require integration.
 For docs-specific onboarding, use [DOCS_AGENT_HANDOFF.md](DOCS_AGENT_HANDOFF.md).
 
@@ -173,3 +173,24 @@ used for planning and synthesis; specialist services manage their own model keys
 The model transport requests JSON-object mode and the application validates the
 result with Pydantic, since JSON mode alone does not enforce a schema. See
 [OpenAI's structured output guidance](https://developers.openai.com/api/docs/guides/structured-outputs).
+
+## Shared implementation
+
+`agent_contracts.py` at the repository root is the canonical implementation of
+`AgentRequest`, `AgentFinding`, and `Evidence`. The existing import paths in
+`orchestrator/schemas.py`, `docs_agent/contracts.py`, and
+`logs_agent/orchestrator_contract.py`, and `code_agent/contracts.py` remain supported. Deploy each service with
+this shared root module; copying only its service subdirectory is insufficient.
+The documented commands from the repository root or service directories work.
+
+Requests now preserve optional `original_question` in both specialist hosts.
+Existing v1 callers may omit it, correlation IDs, and `evidence_bundle` as before.
+Docs-specific response subclasses preserve the `docs`/`doc` defaults and identity
+validation while inheriting all common fields and validation. Unknown additive
+fields continue to be ignored. Blank request IDs, questions, tasks, and supplied
+original questions are rejected consistently; question/task limits are 2000
+characters. Endpoints, bearer authentication, status values, and response envelopes
+are unchanged. All three services receive the delegated question, original question, task, and
+upstream context. Docs and logs pass this context to their models as untrusted
+data; it does not grant execution authority or count as retrieved evidence.
+Code correlates upstream evidence with verified source reads.

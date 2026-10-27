@@ -11,7 +11,7 @@ export default function IncidentList({ incidents, error, onOpen }: Props) {
     <section aria-labelledby="incidents-heading">
       <h2 id="incidents-heading" className="section-title">Your team's incidents</h2>
       {error && <p className="error-text">Couldn't load incidents: {error}. Is the orchestrator running on port 8000?</p>}
-      {!error && incidents.length === 0 && <p className="muted">Loading incidents…</p>}
+      {!error && incidents.length === 0 && <p className="muted">No incidents available. Ask a question above to investigate.</p>}
       <div className="incident-list">
         {incidents.map((inc, i) => (
           <article key={inc.id} className={`card incident${i === 0 ? ' focus' : ''}`}>

@@ -305,3 +305,54 @@ def test_retrieval_prefers_guidance_over_question_echo(tmp_path):
     assert len(response.evidence) == 1
     assert response.evidence[0].ref.startswith("guide.md:L2")
     assert "selectively" in response.answer
+
+
+
+def test_prepared_demo_configuration_is_rejected():
+    with pytest.raises(ValueError, match="prepared demo answers are disabled"):
+        Settings(mode="demo")
+
+
+def test_remote_subagents_are_the_default(monkeypatch, tmp_path):
+    monkeypatch.delenv("ORCHESTRATOR_MODE", raising=False)
+    assert Settings.from_env().mode == "remote"
+    # An operator's configured local corpus must not be used implicitly.
+    (tmp_path / "runbook.md").write_text("adFailure is on; use this prepared fix")
+    registry = build_agents(Settings(docs_root=tmp_path, code_root=tmp_path, logs_root=tmp_path))
+    assert all(isinstance(agent, UnavailableAgent) for agent in registry.values())
+
+
+@pytest.mark.parametrize("question", [
+    "Ads aren't loading on product pages and the ad service is returning errors. What's wrong?",
+    "The ad service is slow and CPU is spiking. Why?",
+    "How do I trigger a failure in the ad service for testing?",
+])
+def test_previous_demo_questions_require_subagent_evidence(monkeypatch, tmp_path, question):
+    import answer_synthesis
+
+    async def forbidden(*args, **kwargs):
+        pytest.fail("A final model answer must not be generated without subagent evidence")
+
+    monkeypatch.setattr(answer_synthesis, "complete_json", forbidden)
+    (tmp_path / "prepared.md").write_text("The adFailure feature flag is on. Turn it off.")
+    config = Settings(mode="remote", routing_mode="keyword", answer_mode="llm",
+                      llm_endpoint="https://example.invalid", llm_model="deployment", llm_api_key="test-key",
+                      docs_root=tmp_path, code_root=tmp_path, logs_root=tmp_path,
+                      agent_urls={name: f"https://example.invalid/{name}" for name in ("docs", "logs", "code")})
+    registry = build_agents(config)
+    for agent in registry.values():
+        agent.transport = httpx.MockTransport(lambda req: httpx.Response(403))
+    response = asyncio.run(orchestrator.investigate(question, agents=registry, settings=config))
+    assert response.partial and not response.evidence
+    assert response.demo is False
+    assert all(f.status == "no_access" for f in response.findings)
+    assert response.likely_cause is None and response.confidence is None and response.steps == []
+    assert "could not find supporting evidence" in response.answer
+    assert "adFailure" not in response.answer
+    assert response.synthesis.source == "evidence"
+
+
+def test_home_endpoints_never_return_synthetic_incidents_or_suggestions():
+    with TestClient(app) as client:
+        assert client.get("/api/incidents").json() == []
+        assert client.get("/api/suggestions").json() == []

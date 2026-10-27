@@ -15,23 +15,18 @@ The agent dynamically calls `search_code`, `read_source`, and optionally `get_is
 
 ### Integration with your team's orchestrator
 
-Copy `code_agent/` into the **root** of the locally integrated RAG-to-Riches checkout. Add its requirements to your backend environment. Modify **only the orchestrator branch in your local integration branch**:
+Copy `code_agent/` into the **root** of the locally integrated RAG-to-Riches checkout. Add its requirements to your backend environment. Configure the orchestrator's ignored `.env` with the actual specialist service endpoints:
 
-```python
-# orchestrator/orchestrator.py (the app starts in orchestrator/ working directory)
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from code_agent import CodeAgent
-
-AGENTS = {
-    'logs': DemoAgent('logs'),
-    'docs': DemoAgent('docs'),
-    'code': CodeAgent(),
-}
+```dotenv
+ORCHESTRATOR_MODE=remote
+CODE_AGENT_URL=http://127.0.0.1:8103/agents/code/run
+DOCS_AGENT_URL=http://127.0.0.1:8102/agents/docs/run
+LOGS_AGENT_URL=http://127.0.0.1:8101/agents/logs/run
 ```
 
-`context['evidence_bundle']` is supplied by the existing orchestrator. For complete end-to-end live responses, the teammates must also replace hard-coded orchestrator synthesis and demo Logs/Docs agents. Its UI currently shows a fixed 'Demo responses' badge.
+Start each service and the orchestrator as described in `orchestrator/INTEGRATION.md`.
+The orchestrator passes validated upstream evidence to code and synthesizes the
+answer only from successful specialist evidence. Unavailable sources remain explicit.
 
 **Important:** the branch `logs_agent` currently works over **OpenStack** sample logs, not the OpenTelemetry Ad Service. Fix the shared dataset before claiming real log-to-code conclusions. Current orchestrator's chosen Git revision is `e5552ee25bcede2900d89188f076c464cd73c074`; keep all 3 agents aligned on it. The agent distinguishes a potentially executable failure code path from evidence that the flag actually is enabled.
 

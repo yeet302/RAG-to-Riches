@@ -134,15 +134,13 @@ def test_timeout_falls_back():
     assert result.source == "keyword_fallback" and result.intent == "incident"
 
 
-def test_missing_config_and_demo_do_not_call_azure():
+def test_missing_config_does_not_call_azure():
     def forbidden(request):
         pytest.fail("No model request should be sent")
     transport = httpx.MockTransport(forbidden)
     missing = asyncio.run(analyze_question("Checkout is down", Settings(), "llm", transport=transport))
-    demo = asyncio.run(analyze_question("Checkout is down", configured(mode="demo"), transport=transport))
-    assert missing.source == demo.source == "keyword_fallback"
+    assert missing.source == "keyword_fallback"
     assert "not configured" in missing.warning
-    assert "Demo mode" in demo.warning
 
 
 def test_inference_compatibility_request():

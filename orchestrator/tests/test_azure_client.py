@@ -75,3 +75,51 @@ def test_responses_endpoint_supports_planning_and_cited_synthesis():
             "answer": "Use the guidance. [E1]", "evidence_ids": ["E1"]}))))))
     assert synthesized.synthesis.source == "llm"
     assert synthesized.answer == "Use the guidance. [synthetic:1]"
+
+
+@pytest.mark.parametrize("endpoint", ["https://example.invalid/openai/v1/responses",
+                                      "https://example.invalid/openai/v1/chat/completions"])
+def test_entra_uses_bearer_token_without_api_key(monkeypatch, endpoint):
+    from unittest.mock import MagicMock
+    credential = MagicMock()
+    credential.__enter__.return_value.get_token.return_value.token = "identity-token"
+    monkeypatch.setattr("azure.identity.DefaultAzureCredential", lambda: credential)
+    config = Settings(llm_endpoint=endpoint, llm_model="deployment", llm_auth_mode="entra",
+                      llm_api_key="unused-key")
+    assert config.llm_configured
+    assert config.effective_routing_mode == config.effective_answer_mode == "llm"
+
+    def respond(request):
+        assert request.headers["Authorization"] == "Bearer identity-token"
+        assert "api-key" not in request.headers
+        body = response_body() if endpoint.endswith("/responses") else {
+            "choices": [{"finish_reason": "stop", "message": {"content": '{"ok":true}'}}]}
+        return httpx.Response(200, json=body)
+
+    asyncio.run(complete_json(config, "Return JSON", "Question", timeout_seconds=1,
+                              transport=httpx.MockTransport(respond)))
+    credential.__enter__.return_value.get_token.assert_called_once_with(
+        "https://cognitiveservices.azure.com/.default")
+    credential.__exit__.assert_called_once()
+
+
+def test_entra_authentication_failure_preserves_planning_fallback(monkeypatch):
+    from azure.core.exceptions import ClientAuthenticationError
+    from unittest.mock import MagicMock
+    credential = MagicMock()
+    credential.__enter__.return_value.get_token.side_effect = ClientAuthenticationError("private details")
+    monkeypatch.setattr("azure.identity.DefaultAzureCredential", lambda: credential)
+    config = Settings(llm_endpoint="https://example.invalid", llm_model="deployment", llm_auth_mode="entra")
+    result = asyncio.run(analyze_question("How do I build the service?", config))
+    assert result.source == "keyword_fallback"
+    assert "private details" not in result.model_dump_json()
+
+
+def test_entra_settings_from_environment(monkeypatch):
+    monkeypatch.setenv("AZURE_AI_AUTH_MODE", "entra")
+    monkeypatch.setenv("AZURE_AI_ENDPOINT", "https://example.invalid")
+    monkeypatch.setenv("AZURE_AI_MODEL", "deployment")
+    monkeypatch.delenv("AZURE_AI_API_KEY", raising=False)
+    assert Settings.from_env().llm_configured
+    with pytest.raises(ValueError, match="AZURE_AI_AUTH_MODE"):
+        Settings(llm_auth_mode="invalid")

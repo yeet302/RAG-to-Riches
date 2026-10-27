@@ -8,6 +8,7 @@ This module is the only place that speaks AgentRequest / AgentFinding.
 from __future__ import annotations
 
 import logging
+import json
 import os
 import time
 from collections.abc import Callable
@@ -213,8 +214,9 @@ def handle_agent_request(
     """
     Run one orchestrator request through the Logs Agent.
 
-    Uses request.question only. task, evidence_bundle, and user text are
-    data — they do not change tool policy. Correlation IDs are logged,
+    Delegation fields are supplied as JSON data to the production investigator.
+    Injected legacy investigators still receive only the question. Context does
+    not change tool policy or establish log evidence. Correlation IDs are logged,
     not used as credentials.
     """
     started = time.perf_counter()
@@ -230,13 +232,21 @@ def handle_agent_request(
         blocked.latency_ms = max(0, round((time.perf_counter() - started) * 1000))
         return blocked
 
-    if investigate is None:
+    production = investigate is None
+    if production:
         from foundry_agent import investigate_logs
-
         investigate = investigate_logs
 
     try:
-        result = investigate(request.question)
+        prompt = request.question
+        if production:
+            prompt = json.dumps({
+                'question': request.question,
+                'original_question': request.original_question or request.question,
+                'task': request.task,
+                'upstream_context': request.evidence_bundle,
+            })
+        result = investigate(prompt)
         finding = to_agent_finding(result)
     except Exception as exc:
         logger.warning(

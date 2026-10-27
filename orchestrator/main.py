@@ -22,7 +22,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from demo_data import INCIDENTS, SUGGESTED_QUESTIONS
 from orchestrator import AGENTS, SETTINGS, investigate
 from query_analysis import analyze_question
 from schemas import AskRequest, CopilotResponse, Feedback, Incident, RoutingMode
@@ -32,7 +31,7 @@ app = FastAPI(title="Incident Copilot Orchestrator", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 
-FEEDBACK: list[Feedback] = []  # in-memory for the demo
+FEEDBACK: list[Feedback] = []  # in-memory local feedback
 
 
 @app.get("/api/health")
@@ -41,19 +40,19 @@ def health():
             "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()},
             "routing_mode": SETTINGS.effective_routing_mode,
             "llm_configured": SETTINGS.llm_configured,
-            "answer_mode": SETTINGS.effective_answer_mode}
+            "answer_mode": SETTINGS.effective_answer_mode,
+            "agent_timeouts_seconds": {name: SETTINGS.timeout_for(name) for name in AGENTS}}
 
 
 @app.get("/api/incidents", response_model=list[Incident])
 def incidents():
-    return INCIDENTS if SETTINGS.mode == "demo" else []
+    # No incident feed is connected; do not populate synthetic incidents.
+    return []
 
 
 @app.get("/api/suggestions")
 def suggestions():
-    return SUGGESTED_QUESTIONS if SETTINGS.mode == "demo" else [
-        "How does the orchestrator route requests?", "Where is classify defined in the code?",
-    ]
+    return []
 
 
 @app.get("/api/route")

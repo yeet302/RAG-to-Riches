@@ -24,8 +24,8 @@ export default function App() {
     api.health().then((health) => {
       setMode(health.mode);
       setLlmConfigured(health.llm_configured);
-      setAnswerMode(health.mode === 'demo' ? 'evidence' : health.answer_mode ?? (health.llm_configured ? 'llm' : 'evidence'));
-      setRoutingMode(health.mode === 'demo' || !health.llm_configured ? 'keyword' : health.routing_mode ?? 'keyword');
+      setAnswerMode(health.answer_mode ?? (health.llm_configured ? 'llm' : 'evidence'));
+      setRoutingMode(!health.llm_configured ? 'keyword' : health.routing_mode ?? 'keyword');
     }).catch(() => setMode(null));
   }, []);
 
@@ -45,7 +45,9 @@ export default function App() {
         { id: pendingId, role: 'assistant', status: 'loading', question: q },
       ]);
       try {
-        const response = await api.ask(q, incident?.id, conversationId.current, routingMode, answerMode);
+        const response = await api.ask(q, incident?.id, conversationId.current,
+          mode === 'local' ? routingMode : undefined,
+          mode === 'local' ? answerMode : undefined);
         setMessages((m) => m.map((x) => (x.id === pendingId ? { id: pendingId, role: 'assistant', status: 'done', response } : x)));
       } catch (e) {
         const error = e instanceof Error ? e.message : String(e);
@@ -54,7 +56,7 @@ export default function App() {
         setBusy(false);
       }
     },
-    [busy, routingMode, answerMode],
+    [busy, mode, routingMode, answerMode],
   );
 
   const goHome = () => {
@@ -83,8 +85,8 @@ export default function App() {
           )}
           <span className="spacer" />
           {mode && (
-            <span className={`pill${mode === 'demo' ? ' demo' : ''}`}>
-              {mode === 'demo' ? 'Demo responses' : mode === 'remote' ? 'Remote agents' : 'Local search'}
+            <span className="pill">
+              {mode === 'remote' ? 'Remote agents' : 'Local search'}
             </span>
           )}
           <span className="pill oncall">You're on call</span>
@@ -93,13 +95,14 @@ export default function App() {
 
       <main className="page">
         {!inChat && <h1 className="hero">What's going on?</h1>}
+        {mode === 'local' && <>
         <div className="analysis-controls">
           <label htmlFor="routing-mode">Question analysis</label>
           <select
             id="routing-mode"
             value={routingMode}
             onChange={(event) => setRoutingMode(event.target.value as RoutingMode)}
-            disabled={busy || mode === 'demo'}
+            disabled={busy}
           >
             <option value="keyword">Keywords</option>
             <option value="llm" disabled={!llmConfigured}>Azure AI{!llmConfigured ? ' (not configured)' : ''}</option>
@@ -114,7 +117,7 @@ export default function App() {
             id="answer-mode"
             value={answerMode}
             onChange={(event) => setAnswerMode(event.target.value as AnswerMode)}
-            disabled={busy || mode === 'demo'}
+            disabled={busy}
           >
             <option value="llm" disabled={!llmConfigured}>AI explanation{!llmConfigured ? ' (not configured)' : ''}</option>
             <option value="evidence">Evidence list</option>
@@ -123,6 +126,7 @@ export default function App() {
             {answerMode === 'llm' ? 'Azure explains the collected evidence with citations.' : 'Show matching excerpts without AI answer generation.'}
           </span>
         </div>
+        </>}
         <Composer onSubmit={(q) => ask(q)} busy={busy} compact={inChat} />
 
         {inChat ? (

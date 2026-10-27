@@ -3,59 +3,23 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 import time
 from uuid import uuid4
-from typing import Optional
 
 import httpx
 from agents import Agent, build_agents
 from answer_synthesis import generate_answer
-from demo_data import SCENARIOS, SUGGESTED_QUESTIONS
+from failures import annotate_errors, normalize_failure
 from router import RoutePlan
 from query_analysis import analyze_question
-from schemas import AgentFinding, AnswerMode, CopilotResponse, Evidence, RoutingMode, TraceEvent
-from settings import Settings, NAMES
+from schemas import AgentFinding, AnswerMode, CopilotResponse, Evidence, RoutingMode, TraceEvent, PipelineError
+from settings import Settings
 
 log = logging.getLogger("orchestrator")
 SETTINGS = Settings.from_env()
 
 
-class DemoAgent:
-    """Stand-in for a real agent: returns the canned finding for the matched scenario."""
-
-    def __init__(self, name: str):
-        self.name = name
-
-    async def run(self, question: str, context: dict) -> AgentFinding:
-        scenario = context.get("scenario")
-        finding = scenario["findings"].get(self.name) if scenario else None
-        await asyncio.sleep(0.25)  # small delay so the UI shows the investigating state
-        if finding is None:
-            return AgentFinding(agent=self.name, status="no_evidence",
-                                summary=f"{self.name} agent: no demo data for this question.")
-        return finding.model_copy(deep=True)
-
-AGENTS: dict[str, Agent] = ({name: DemoAgent(name) for name in NAMES}
-                          if SETTINGS.mode == "demo" else build_agents(SETTINGS))
-
-
-def match_scenario(question: str, plan: RoutePlan) -> Optional[dict]:
-    """Pick the demo scenario whose keywords best match the question."""
-    q = question.lower()
-    if plan.intent == "how_to":
-        return next(s for s in SCENARIOS if s["id"] == "how-to-trigger")
-    mentions_ads = bool(re.search(r"\bads?\b|advert|ad service|adservice|getads", q))
-    if not mentions_ads:
-        return None
-    best, best_score = None, 0
-    for s in SCENARIOS:
-        if s["id"] == "how-to-trigger":
-            continue
-        score = sum(1 for k in s["keywords"] if re.search(rf"\b{re.escape(k)}\b", q))
-        if score > best_score:
-            best, best_score = s, score
-    return best
+AGENTS: dict[str, Agent] = build_agents(SETTINGS)
 
 
 def merge_findings(findings: list[AgentFinding]) -> dict:
@@ -67,6 +31,7 @@ def merge_findings(findings: list[AgentFinding]) -> dict:
         "evidence": [e.model_dump() for f in usable for e in f.evidence],
         "sources_unavailable": list(dict.fromkeys(s for f in findings for s in f.sources_unavailable)),
         "agent_statuses": {f.agent: f.status for f in findings},
+        "errors": [f.error.model_dump() for f in findings if f.error is not None],
     }
 
 
@@ -78,23 +43,46 @@ async def call_agent(name: str, registry: dict[str, Agent], question: str,
         finding = AgentFinding.model_validate(result.model_dump() if isinstance(result, AgentFinding) else result)
         if finding.agent != name or any(e.agent not in (None, name) for e in finding.evidence):
             raise ValueError("Specialist identity mismatch")
+        if finding.error is not None:
+            if finding.error.agent not in (None, name):
+                raise ValueError("Specialist error identity mismatch")
+            finding.error.agent = name
         for evidence in finding.evidence:
             evidence.agent = name
         if finding.status == "ok" and not finding.evidence:
             finding = finding.model_copy(update={"status": "no_evidence", "confidence": 0.0})
-    except asyncio.TimeoutError:
+    except (asyncio.TimeoutError, httpx.TimeoutException):
         finding = AgentFinding(agent=name, status="error", summary=f"{name} agent timed out.",
-                               sources_unavailable=[f"{name} agent timed out"])
+                               sources_unavailable=[f"{name} agent timed out"], error=PipelineError(
+                                   code="AGENT_TIMEOUT", agent=name, stage="dispatch",
+                                   message=f"The {name} agent exceeded its response deadline ({timeout:g} seconds).",
+                                   resolution="Retry a narrower query or check the agent and its source latency.", retryable=True))
     except httpx.HTTPStatusError as exc:
         denied = exc.response.status_code in (401, 403)
         finding = AgentFinding(agent=name, status="no_access" if denied else "error",
                                summary=f"{name} agent returned HTTP {exc.response.status_code}.",
-                               sources_unavailable=[f"{name} agent HTTP {exc.response.status_code}"])
+                               sources_unavailable=[f"{name} agent HTTP {exc.response.status_code}"], error=PipelineError(
+                                   code="AGENT_ACCESS_DENIED" if denied else "AGENT_HTTP_ERROR",
+                                   agent=name, stage="dispatch", http_status=exc.response.status_code,
+                                   message=f"The {name} endpoint returned HTTP {exc.response.status_code}.",
+                                   resolution="Check the service token and endpoint access." if denied
+                                       else "Check the endpoint URL and agent service logs, then retry.",
+                                   retryable=exc.response.status_code == 429 or exc.response.status_code >= 500))
+    except httpx.RequestError:
+        finding = AgentFinding(agent=name, status="error", summary=f"{name} agent could not be reached.",
+                               sources_unavailable=[f"{name} agent connection failed"], error=PipelineError(
+                                   code="AGENT_UNREACHABLE", agent=name, stage="dispatch",
+                                   message=f"The {name} endpoint could not be reached.",
+                                   resolution="Start the service and check its configured URL and network access.", retryable=True))
     except Exception as exc:
         # Never include an endpoint, credential, remote body, or raw exception in a user response.
         log.warning("request_id=%s agent=%s failure_type=%s", context["request_id"], name, type(exc).__name__)
         finding = AgentFinding(agent=name, status="error", summary=f"{name} agent failed or returned invalid JSON.",
-                               sources_unavailable=[f"{name} agent failed or returned invalid JSON"])
+                               sources_unavailable=[f"{name} agent failed or returned invalid JSON"], error=PipelineError(
+                                   code="AGENT_INVALID_RESPONSE", agent=name, stage="validation",
+                                   message=f"The {name} agent failed or returned an invalid handoff.",
+                                   resolution="Check the agent logs and its shared request/response schema using the request ID."))
+    finding = normalize_failure(finding)
     if finding.status in {"error", "no_access"} and not finding.sources_unavailable:
         finding.sources_unavailable = [f"{name} agent reported {finding.status}"]
     finding.latency_ms = max(0, round((time.perf_counter() - started) * 1000))
@@ -152,16 +140,13 @@ async def investigate(question: str, *, incident_id: str | None = None,
     if not question or len(question) > 2000:
         raise ValueError("question must contain 1 to 2000 characters")
     settings = settings or SETTINGS
-    registry = agents if agents is not None else AGENTS
+    registry = agents if agents is not None else (AGENTS if settings is SETTINGS else build_agents(settings))
     analysis = await analyze_question(question, settings, routing_mode)
     plan = RoutePlan(analysis.intent, analysis.stage1, analysis.stage2, analysis.reason)
     assignments = {assignment.agent: assignment for assignment in analysis.assignments}
     context = {"request_id": str(uuid4()), "intent": plan.intent,
                "original_question": question,
                "incident_id": incident_id, "conversation_id": conversation_id}
-    scenario = match_scenario(question, plan) if settings.mode == "demo" else None
-    if settings.mode == "demo":
-        context["scenario"] = scenario
     route_action = f"Routed with {analysis.source} as '{plan.intent}': {plan.reason}"
     if analysis.warning:
         route_action += f" {analysis.warning}"
@@ -174,49 +159,13 @@ async def investigate(question: str, *, incident_id: str | None = None,
         # Give each concurrent specialist its own context and its generated assignment.
         results = await asyncio.gather(*(call_agent(
             name, registry, assignments[name].question,
-            {**context, "task": assignments[name].task}, settings.timeout_seconds,
+            {**context, "task": assignments[name].task}, settings.timeout_for(name),
         ) for name in names))
         findings.extend(results)
         trace.extend(TraceEvent(stage=stage, agent=f.agent, action=f.summary,
                                 parallel=len(names) > 1, latency_ms=f.latency_ms) for f in results)
     trace.append(TraceEvent(stage=3, agent="orchestrator", action="Combined validated evidence with source references",
                             latency_ms=round((time.perf_counter() - started) * 1000)))
-    if settings.mode == "demo":
-        response = demo_response(question, plan, scenario, findings, trace)
-        response.demo = True
-        response.request_id = context["request_id"]
-        response.conversation_id = conversation_id
-        response.findings = findings
-        response.analysis = analysis
-        return await generate_answer(response, settings, answer_mode)
     response = synthesize(question, plan, findings, trace, context)
     response.analysis = analysis
-    return await generate_answer(response, settings, answer_mode)
-
-
-def demo_response(question: str, plan: RoutePlan, scenario: dict | None,
-                  findings: list[AgentFinding], trace: list[TraceEvent]) -> CopilotResponse:
-    agents_used = [f.agent for f in findings]
-    findings = [f for f in findings if f.status == "ok"]
-    if scenario is None:
-        return CopilotResponse(
-            kind="answer", question=question, agents_used=agents_used, trace=trace,
-            answer=("Demo mode: the orchestrator routed this question, but the agents only have demo data for the "
-                    "ad service scenarios so far. Try one of the questions below."),
-            suggestions=SUGGESTED_QUESTIONS,
-        )
-
-    syn = scenario["synthesis"]
-    # evidence order: code first (most specific), then logs/metrics, then docs/incidents
-    order = {"code": 0, "log": 1, "metric": 2, "incident": 3, "doc": 4}
-    evidence = sorted((e for f in findings for e in f.evidence), key=lambda e: order[e.source_type])
-    if plan.intent == "how_to":
-        return CopilotResponse(kind="answer", question=question, answer=syn["answer"], evidence=evidence,
-                               agents_used=agents_used, trace=trace, steps=syn.get("steps", []))
-    return CopilotResponse(
-        kind="diagnosis", question=question, answer=syn["answer"], likely_cause=syn["likely_cause"],
-        confidence=syn["confidence"], confidence_reasons=syn["confidence_reasons"], evidence=evidence,
-        not_ruled_out=syn["not_ruled_out"], not_ruled_out_pct=syn["not_ruled_out_pct"],
-        sources_unavailable=syn["sources_unavailable"], steps=syn["steps"],
-        agents_used=agents_used, trace=trace,
-    )
+    return annotate_errors(await generate_answer(response, settings, answer_mode))

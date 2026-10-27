@@ -137,16 +137,14 @@ def test_synthesis_timeout_preserves_evidence():
     assert response.evidence and response.answer == "Original evidence-list fallback"
 
 
-def test_evidence_selection_demo_and_no_evidence_make_no_model_request():
+def test_evidence_selection_and_no_evidence_make_no_model_request():
     def forbidden(request):
         pytest.fail("This mode must not send a synthesis request")
     transport = httpx.MockTransport(forbidden)
     explicit = asyncio.run(generate_answer(result(), configured(), "evidence", transport=transport))
-    demo = asyncio.run(generate_answer(result(demo=True), configured(mode="demo"), "llm", transport=transport))
     empty = asyncio.run(generate_answer(result(evidence=[]), configured(), "llm", transport=transport))
     missing = asyncio.run(generate_answer(result(), Settings(), "llm", transport=transport))
     assert explicit.synthesis.source == "evidence"
-    assert demo.synthesis.source == "demo"
     assert empty.synthesis.source == "evidence" and empty.synthesis.warning
     assert missing.synthesis.source == "evidence_fallback"
 
@@ -155,7 +153,6 @@ def test_default_answer_mode_is_independent_of_routing():
     assert configured(routing_mode="keyword").effective_answer_mode == "llm"
     assert configured(routing_mode="llm", answer_mode="evidence").effective_answer_mode == "evidence"
     assert Settings().effective_answer_mode == "evidence"
-    assert configured(mode="demo").effective_answer_mode == "evidence"
 
 
 @pytest.mark.parametrize("values", [
@@ -241,3 +238,60 @@ def test_failed_findings_never_reach_synthesis(monkeypatch):
     assert not response.evidence and response.partial
     assert response.synthesis.source == "evidence"
     assert "Untrusted claim" not in response.answer
+
+
+
+def test_final_context_includes_only_findings_with_successful_selected_evidence():
+    original = result()
+    original.findings[0].hypotheses = ["An upstream response may exceed the timeout."]
+    original.findings.extend([
+        AgentFinding(agent="logs", status="error", summary="Unsupported failure claim",
+                     evidence=[Evidence(source_type="log", summary="Failed evidence", ref="bad:L1")]),
+        AgentFinding(agent="code", summary="Unselected source claim",
+                     evidence=[Evidence(source_type="code", summary="Outside context", ref="missing:L1")]),
+    ])
+    payload, references, truncated = evidence_context(original)
+    assert not truncated
+    assert payload["findings"] == [{
+        "agent": "docs", "summary": "Timeout guidance",
+        "hypotheses": ["An upstream response may exceed the timeout."], "evidence_ids": ["E1"]}]
+    assert references == {"E1": "runbooks/checkout.md:L12-L15"}
+    assert "Unsupported failure claim" not in json.dumps(payload)
+    assert "Unselected source claim" not in json.dumps(payload)
+
+
+def test_specialist_analysis_respects_the_final_context_budget():
+    original = result()
+    original.findings[0].summary = "s" * 100_000
+    original.findings[0].hypotheses = ["h" * 100_000] * 20
+    payload, references, truncated = evidence_context(original)
+    assert truncated and payload["context_truncated"]
+    assert len(json.dumps(payload, ensure_ascii=False)) <= 32_000
+    assert len(payload["findings"][0]["summary"]) == 1200
+    assert len(payload["findings"][0]["hypotheses"]) == 3
+    assert all(len(value) == 600 for value in payload["findings"][0]["hypotheses"])
+    assert references and original.findings[0].summary == "s" * 100_000
+
+
+
+def test_log_volume_does_not_exclude_docs_and_code_from_final_model():
+    from schemas import AgentFinding
+    logs=[Evidence(agent='logs',source_type='log',summary='GetAds failure observed',ref=f'events:{i}') for i in range(13)]
+    docs=Evidence(agent='docs',source_type='doc',summary='Documented feature flag behavior',ref='flags:1')
+    code=Evidence(agent='code',source_type='code',summary='Verified flag-gated implementation',ref='AdService.java:1')
+    original=result(evidence=logs+[docs,code],findings=[
+        AgentFinding(agent='logs',summary='Repeated errors',evidence=logs),
+        AgentFinding(agent='docs',summary='Flag documentation',evidence=[docs]),
+        AgentFinding(agent='code',summary='Implementation verified',evidence=[code])])
+    def respond(request):
+        payload=json.loads(json.loads(request.content)['messages'][1]['content'])
+        assert {item['agent'] for item in payload['evidence']}=={'logs','docs','code'}
+        assert {item['agent'] for item in payload['findings']}=={'logs','docs','code'}
+        assert len(payload['evidence'])==12 and payload['context_truncated']
+        ids=[next(item['id'] for item in payload['evidence'] if item['agent']==name) for name in ['logs','docs','code']]
+        return httpx.Response(200,json=completion(json.dumps({
+            'answer':'Combined findings. '+' '.join(f'[{identifier}]' for identifier in ids),'evidence_ids':ids})))
+    response=asyncio.run(generate_answer(original,configured(),transport=httpx.MockTransport(respond)))
+    assert response.synthesis.source=='llm'
+    assert response.synthesis.citations==['events:0','flags:1','AdService.java:1']
+    assert len(response.evidence)==15 and response.evidence==original.evidence

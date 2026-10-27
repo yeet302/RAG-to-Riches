@@ -10,7 +10,7 @@ from typing import Protocol
 
 import httpx
 
-from schemas import AgentFinding, AgentRequest, Evidence
+from schemas import AgentFinding, AgentRequest, Evidence, PipelineError
 from settings import NAMES, Settings
 
 TASKS = {
@@ -32,7 +32,10 @@ class UnavailableAgent:
 
     async def run(self, question: str, context: dict) -> AgentFinding:
         return AgentFinding(agent=self.name, status="no_access", summary=self.reason,
-                            sources_unavailable=[self.reason])
+                            sources_unavailable=[self.reason], error=PipelineError(
+                                code="AGENT_NOT_CONFIGURED", agent=self.name, stage="dispatch",
+                                message=f"The {self.name} agent is not configured.",
+                                resolution=f"Set {self.name.upper()}_AGENT_URL to the running service endpoint."))
 
 
 class HTTPAgent:
@@ -54,7 +57,10 @@ class HTTPAgent:
         headers = {"X-Request-ID": request.request_id}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
-        async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport,
+        # Slow source investigations can need a long read budget, while a dead
+        # service should still fail promptly during connection establishment.
+        timeout = httpx.Timeout(self.timeout, connect=min(10.0, self.timeout), pool=min(10.0, self.timeout))
+        async with httpx.AsyncClient(timeout=timeout, transport=self.transport,
                                      follow_redirects=False, trust_env=False) as client:
             response = await client.post(self.url, json=request.model_dump(), headers=headers)
             response.raise_for_status()
@@ -185,10 +191,10 @@ def build_agents(settings: Settings) -> dict[str, Agent]:
     roots = {"docs": settings.docs_root, "code": settings.code_root, "logs": settings.logs_root}
     for name in NAMES:
         if name in settings.agent_urls:
-            registry[name] = HTTPAgent(name, settings.agent_urls[name], settings.timeout_seconds,
+            registry[name] = HTTPAgent(name, settings.agent_urls[name], settings.timeout_for(name),
                                        settings.agent_tokens.get(name))
         elif settings.mode == "remote" or roots[name] is None:
             registry[name] = UnavailableAgent(name, f"{name} agent has no configured endpoint or corpus")
         else:
-            registry[name] = LocalSearchAgent(name, roots[name], settings.timeout_seconds)
+            registry[name] = LocalSearchAgent(name, roots[name], settings.timeout_for(name))
     return registry

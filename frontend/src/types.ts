@@ -5,7 +5,7 @@ export type RoutingMode = 'keyword' | 'llm';
 export type AnswerMode = 'evidence' | 'llm';
 
 export interface AnswerSynthesis {
-  source: 'evidence' | 'llm' | 'evidence_fallback' | 'demo';
+  source: 'evidence' | 'llm' | 'evidence_fallback';
   citations: string[];
   warning?: string | null;
   context_truncated: boolean;
@@ -33,8 +33,9 @@ export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';
 
 export interface HealthResponse {
   status: string;
-  mode: 'local' | 'remote' | 'demo';
+  mode: 'local' | 'remote';
   agents: Record<AgentName, string>;
+  agent_timeouts_seconds?: Record<AgentName, number>;
   routing_mode: RoutingMode;
   llm_configured: boolean;
   answer_mode: AnswerMode;
@@ -67,6 +68,16 @@ export interface TraceEvent {
   latency_ms: number;
 }
 
+export interface PipelineError {
+  code: string;
+  agent?: AgentName | null;
+  stage: 'planning' | 'dispatch' | 'retrieval' | 'model' | 'validation' | 'synthesis';
+  message: string;
+  resolution: string;
+  retryable: boolean;
+  http_status?: number | null;
+}
+
 export interface CopilotResponse {
   kind: 'diagnosis' | 'answer';
   question: string;
@@ -82,7 +93,9 @@ export interface CopilotResponse {
   agents_used: AgentName[];
   trace: TraceEvent[];
   suggestions: string[];
-  demo: boolean;
+  pipeline_status: 'ok' | 'partial' | 'failed' | 'no_evidence';
+  errors: PipelineError[];
+  demo: false;
   analysis?: QueryAnalysis | null;
   synthesis?: AnswerSynthesis | null;
 }

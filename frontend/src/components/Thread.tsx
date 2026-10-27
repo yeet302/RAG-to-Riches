@@ -52,10 +52,23 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
             {r.synthesis && (
               <div className="answer-provenance">
                 <span className="pill">
-                  {r.synthesis.source === 'llm' ? 'AI answer' : r.synthesis.source === 'evidence_fallback' ? 'Evidence fallback' : r.synthesis.source === 'demo' ? 'Demo answer' : 'Evidence list'}
+                  {r.synthesis.source === 'llm' ? 'AI answer' : r.synthesis.source === 'evidence_fallback' ? 'Evidence fallback' : 'Evidence list'}
                 </span>
                 {r.synthesis.warning && <p className="muted small" role="status">{r.synthesis.warning}</p>}
               </div>
+            )}
+            {r.errors?.length > 0 && (
+              <section className="card error-card" aria-label="Investigation issues">
+                <p className="strong">{r.pipeline_status === 'failed' ? 'The investigation could not finish.' : 'Some parts of the investigation need attention.'}</p>
+                <ul>
+                  {r.errors.map((error, index) => (
+                    <li key={`${error.code}-${error.agent ?? 'orchestrator'}-${index}`}>
+                      <p><code>{error.code}</code>{error.http_status ? ` (HTTP ${error.http_status})` : ''}: {error.message}</p>
+                      <p className="muted small">{error.resolution}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
             {r.kind === 'diagnosis' ? (
               <DiagnosisCard response={r} conversationId={conversationId} />

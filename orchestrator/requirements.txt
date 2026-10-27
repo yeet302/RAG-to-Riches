@@ -2,3 +2,6 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2.5
 httpx>=0.27,<1
+
+# Keyless Azure model authentication (AZURE_AI_AUTH_MODE=entra).
+azure-identity>=1.17,<2
