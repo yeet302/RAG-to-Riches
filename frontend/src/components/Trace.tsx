@@ -5,6 +5,7 @@ const STAGE: Record<number, string> = {
   1: 'Stage 1',
   2: 'Stage 2',
   3: 'Combine',
+  4: 'Answer',
 };
 
 export default function Trace({ trace, agents }: { trace: TraceEvent[]; agents: AgentName[] }) {

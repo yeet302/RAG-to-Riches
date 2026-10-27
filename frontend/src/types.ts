@@ -1,7 +1,44 @@
 // Mirrors orchestrator/schemas.py. Keep the two in sync.
 
 export type AgentName = 'logs' | 'docs' | 'code';
+export type RoutingMode = 'keyword' | 'llm';
+export type AnswerMode = 'evidence' | 'llm';
+
+export interface AnswerSynthesis {
+  source: 'evidence' | 'llm' | 'evidence_fallback';
+  citations: string[];
+  warning?: string | null;
+  context_truncated: boolean;
+  latency_ms: number;
+}
+
+export interface AgentAssignment {
+  agent: AgentName;
+  stage: 1 | 2;
+  question: string;
+  task: string;
+}
+
+export interface QueryAnalysis {
+  source: 'keyword' | 'llm' | 'keyword_fallback';
+  intent: 'incident' | 'how_to' | 'code_lookup' | 'logs_lookup' | 'unknown';
+  summary: string;
+  reason: string;
+  stage1: AgentName[];
+  stage2: AgentName[];
+  assignments: AgentAssignment[];
+  warning?: string | null;
+}
 export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';
+
+export interface HealthResponse {
+  status: string;
+  mode: 'local' | 'remote';
+  agents: Record<AgentName, string>;
+  routing_mode: RoutingMode;
+  llm_configured: boolean;
+  answer_mode: AnswerMode;
+}
 
 export interface Evidence {
   source_type: SourceType;
@@ -45,7 +82,9 @@ export interface CopilotResponse {
   agents_used: AgentName[];
   trace: TraceEvent[];
   suggestions: string[];
-  demo: boolean;
+  demo: false;
+  analysis?: QueryAnalysis | null;
+  synthesis?: AnswerSynthesis | null;
 }
 
 export interface Incident {

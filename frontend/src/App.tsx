@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import type { Incident, Message } from './types';
+import type { AnswerMode, HealthResponse, Incident, Message, RoutingMode } from './types';
 import Composer from './components/Composer';
 import IncidentList from './components/IncidentList';
 import Thread from './components/Thread';
@@ -12,11 +12,21 @@ export default function App() {
   const [incidentsError, setIncidentsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<HealthResponse['mode'] | null>(null);
+  const [routingMode, setRoutingMode] = useState<RoutingMode>('keyword');
+  const [llmConfigured, setLlmConfigured] = useState(false);
+  const [answerMode, setAnswerMode] = useState<AnswerMode>('evidence');
   const conversationId = useRef(uid());
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.incidents().then(setIncidents).catch((e) => setIncidentsError(String(e.message ?? e)));
+    api.health().then((health) => {
+      setMode(health.mode);
+      setLlmConfigured(health.llm_configured);
+      setAnswerMode(health.answer_mode ?? (health.llm_configured ? 'llm' : 'evidence'));
+      setRoutingMode(!health.llm_configured ? 'keyword' : health.routing_mode ?? 'keyword');
+    }).catch(() => setMode(null));
   }, []);
 
   useEffect(() => {
@@ -35,7 +45,9 @@ export default function App() {
         { id: pendingId, role: 'assistant', status: 'loading', question: q },
       ]);
       try {
-        const response = await api.ask(q, incident?.id, conversationId.current);
+        const response = await api.ask(q, incident?.id, conversationId.current,
+          mode === 'local' ? routingMode : undefined,
+          mode === 'local' ? answerMode : undefined);
         setMessages((m) => m.map((x) => (x.id === pendingId ? { id: pendingId, role: 'assistant', status: 'done', response } : x)));
       } catch (e) {
         const error = e instanceof Error ? e.message : String(e);
@@ -44,7 +56,7 @@ export default function App() {
         setBusy(false);
       }
     },
-    [busy],
+    [busy, mode, routingMode, answerMode],
   );
 
   const goHome = () => {
@@ -72,13 +84,49 @@ export default function App() {
             <span className="team">Ads team</span>
           )}
           <span className="spacer" />
-          <span className="pill demo" title="Answers are hard-coded demo responses until the agents are connected">Demo responses</span>
+          {mode && (
+            <span className="pill">
+              {mode === 'remote' ? 'Remote agents' : 'Local search'}
+            </span>
+          )}
           <span className="pill oncall">You're on call</span>
         </div>
       </header>
 
       <main className="page">
         {!inChat && <h1 className="hero">What's going on?</h1>}
+        {mode === 'local' && <>
+        <div className="analysis-controls">
+          <label htmlFor="routing-mode">Question analysis</label>
+          <select
+            id="routing-mode"
+            value={routingMode}
+            onChange={(event) => setRoutingMode(event.target.value as RoutingMode)}
+            disabled={busy}
+          >
+            <option value="keyword">Keywords</option>
+            <option value="llm" disabled={!llmConfigured}>Azure AI{!llmConfigured ? ' (not configured)' : ''}</option>
+          </select>
+          <span className="muted small">
+            {routingMode === 'llm' ? 'AI plans specialist questions and tasks.' : 'Rules select the route.'}
+          </span>
+        </div>
+        <div className="analysis-controls">
+          <label htmlFor="answer-mode">Answer generation</label>
+          <select
+            id="answer-mode"
+            value={answerMode}
+            onChange={(event) => setAnswerMode(event.target.value as AnswerMode)}
+            disabled={busy}
+          >
+            <option value="llm" disabled={!llmConfigured}>AI explanation{!llmConfigured ? ' (not configured)' : ''}</option>
+            <option value="evidence">Evidence list</option>
+          </select>
+          <span className="muted small">
+            {answerMode === 'llm' ? 'Azure explains the collected evidence with citations.' : 'Show matching excerpts without AI answer generation.'}
+          </span>
+        </div>
+        </>}
         <Composer onSubmit={(q) => ask(q)} busy={busy} compact={inChat} />
 
         {inChat ? (

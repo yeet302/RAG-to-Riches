@@ -198,3 +198,24 @@ h1, h2, h3 { margin: 0; }
   .msg.user { max-width: 100%; }
 }
 .more { margin-top: 10px; }
+
+/* Optional question-analysis selector. */
+.analysis-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+.analysis-controls select {
+  font: inherit;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.4rem;
+}
+
+.answer-provenance {
+  margin-bottom: 0.65rem;
+}
+.answer-provenance p {
+  margin-top: 0.4rem;
+}

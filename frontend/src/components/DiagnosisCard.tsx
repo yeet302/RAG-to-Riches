@@ -15,8 +15,8 @@ export default function DiagnosisCard({ response: r, conversationId }: Props) {
       <section className="card diagnosis">
         <div className="diag-head">
           <div>
-            <p className="eyebrow">Likely cause</p>
-            <h2 className="cause">{r.likely_cause}</h2>
+            <p className="eyebrow">{r.likely_cause ? 'Likely cause' : 'Investigation results'}</p>
+            <h2 className="cause">{r.likely_cause ?? 'Relevant evidence'}</h2>
           </div>
           {r.confidence != null && (
             <div className="confidence">
@@ -29,13 +29,15 @@ export default function DiagnosisCard({ response: r, conversationId }: Props) {
           )}
         </div>
 
+        <p className="answer-text">{r.answer}</p>
+
         {showWhy && r.confidence_reasons.length > 0 && (
           <ul className="reasons">
             {r.confidence_reasons.map((x) => <li key={x}>{x}</li>)}
           </ul>
         )}
 
-        <h3 className="sub">Why Copilot thinks so</h3>
+        <h3 className="sub">{r.likely_cause ? 'Why Copilot thinks so' : 'Sources'}</h3>
         <EvidenceList evidence={r.evidence} />
 
         {r.not_ruled_out && (
