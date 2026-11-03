@@ -158,7 +158,7 @@ def test_docs_permission_denial_reaches_code_as_gap_without_failed_evidence(monk
     monkeypatch.setattr(orchestrator, 'AGENTS', registry)
     with TestClient(main.app) as client:
         response = client.post('/api/ask', json={
-            'question':'Where is the Ad Service build function defined?',
+            'question':'Explain the Ad Service build function using documentation and code',
             'conversation_id':'denied-docs-handoff'})
     assert response.status_code == 200
     result = response.json()

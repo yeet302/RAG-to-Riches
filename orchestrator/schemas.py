@@ -85,6 +85,19 @@ class AskRequest(BaseModel):
 
 
 
+class StepTiming(BaseModel):
+    name: str
+    latency_ms: float = Field(ge=0)
+    parallel: bool = False
+
+
+class PerformanceSummary(BaseModel):
+    total_ms: float = Field(ge=0)
+    steps: list[StepTiming]
+    slowest_step: str
+    recommendations: list[str]
+
+
 class CopilotResponse(BaseModel):
     kind: Literal["diagnosis", "answer"]
     question: str
@@ -110,6 +123,8 @@ class CopilotResponse(BaseModel):
     pipeline_status: Literal["ok", "partial", "failed", "no_evidence"] = "ok"
     errors: list[PipelineError] = Field(default_factory=list)
     demo: Literal[False] = False                   # retained for response compatibility; prepared answers are disabled
+    accuracy_recorded: bool = False
+    performance: Optional[PerformanceSummary] = None
     analysis: Optional[QueryAnalysis] = None
     synthesis: Optional[AnswerSynthesis] = None
 
