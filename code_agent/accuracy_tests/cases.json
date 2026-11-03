@@ -1,0 +1,29 @@
+[
+  {
+    "id": "BUG-01",
+    "fixture": "bug_01",
+    "question": "Users are receiving a 50% failure rate on requests, but the configured rollout should cause about 10% failures. Diagnose the implementation and propose a specific correction.",
+    "expected_cause": "The simulated failure threshold uses 0.50 instead of 0.10.",
+    "expected_file": "service.py",
+    "expected_line": 10,
+    "reference_fix": "return random.random() < 0.10"
+  },
+  {
+    "id": "BUG-02",
+    "fixture": "bug_02",
+    "question": "The API is charging every order for expedited shipping even when express shipping is turned off. Find the cause and recommend a correction.",
+    "expected_cause": "Shipping fee uses the express fee unconditionally rather than checking express_enabled.",
+    "expected_file": "checkout.py",
+    "expected_line": 9,
+    "reference_fix": "shipping = 15 if express_enabled else 5"
+  },
+  {
+    "id": "BUG-03",
+    "fixture": "bug_03",
+    "question": "A paginated API repeats the last item from the previous page at the start of the next page. Find the indexing error and explain the fix.",
+    "expected_cause": "Start offset subtracts one from the correct page boundary.",
+    "expected_file": "pagination.py",
+    "expected_line": 9,
+    "reference_fix": "start = page * page_size"
+  }
+]
