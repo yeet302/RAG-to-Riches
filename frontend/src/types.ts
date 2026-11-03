@@ -57,6 +57,7 @@ export interface Step {
   risk: 'low' | 'medium' | 'high' | 'other_team';
   kind: 'mitigation' | 'fix' | 'verify' | 'escalate';
   link?: string | null;
+  evidence_refs: string[];          // sources this step is grounded in
 }
 
 export interface TraceEvent {
@@ -72,8 +73,10 @@ export interface CopilotResponse {
   question: string;
   answer: string;
   likely_cause?: string | null;
-  confidence?: number | null;
+  confidence?: number | null;                               // evidence-support score, 0-95
+  confidence_band?: 'high' | 'medium' | 'low' | null;
   confidence_reasons: string[];
+  confidence_components?: Record<string, number>;
   evidence: Evidence[];
   not_ruled_out?: string | null;
   not_ruled_out_pct?: number | null;
