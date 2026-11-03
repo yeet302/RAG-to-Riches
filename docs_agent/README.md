@@ -2,7 +2,7 @@
 
 The Docs Agent retrieves OpenTelemetry Demo documentation and returns source references for debugging questions. It provides an HTTP interface for integration with the orchestrator.
 
-**Current status:** Live retrieval and the HTTP interface are implemented. Azure LLM integration code is included, but configuration and live answer validation are pending.
+**Current status:** Live retrieval and the HTTP interface are implemented. Azure LLM integration supports local .env configuration and a strict local launcher.
 
 ## 1. Overview
 
@@ -158,6 +158,28 @@ The first result included the official `adFailure` description concerning `GetAd
 
 ## 6. Current Limitations
 
-- **Live LLM answers have not been validated.** Azure is not configured, so real answer quality, whether citations support the claims, and model response time have not been tested.
+- **Live Azure smoke test passed** for the local Ad Service build question, with cited JDK 21 and gradle instructions (about 4.8 seconds). This verifies connectivity and one answer; broader answer quality remains unevaluated.
 - **Retrieval ranking is basic.** English keyword matching may miss synonymous expressions or return directory listings, general descriptions, and duplicate excerpts.
 - **Document coverage is incomplete.** By default, retrieval is limited to 16 website pages and 20 GitHub documents, with an additional time limit. Coverage gaps are reported when limits are reached.
+
+## Local Azure run
+
+Configuration is loaded from `docs_agent/.env` regardless of the working directory.
+Shell variables take precedence over matching .env variables. Both `AZURE_AI_*`
+and `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_KEY`
+are supported; nonempty `AZURE_AI_*` values take precedence over their aliases.
+Use a resource endpoint such as the one in `.env.example`, not a Foundry Responses URL.
+
+```bash
+./run_docs_agent.sh
+./run_docs_agent.sh --question "What does the Ad Service return without context keys?"
+```
+
+The launcher requires configured Azure credentials and exits unsuccessfully on agent errors.
+A successful `no_evidence` result means the model abstained because the sources could not
+answer the question. The existing stdin CLI and HTTP contract remain available.
+Never commit `.env` or share API keys in chat.
+
+## Initial test
+
+See [accuracy tests](accuracy_tests/README.md) for the initial evaluation and results.

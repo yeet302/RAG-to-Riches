@@ -1,0 +1,122 @@
+{
+  "bug": "D02",
+  "question": "The Ad Service has unexpectedly high CPU load. Which documented feature flag could explain this behavior?",
+  "expected_cause": "Controlled scenario: adHighCpu is enabled.",
+  "expected_docs": [
+    {
+      "source": "https://opentelemetry.io/docs/demo/feature-flags/",
+      "terms": [
+        "adHighCpu",
+        "cpu"
+      ]
+    }
+  ],
+  "review_rule": "Identify adHighCpu and cite its description; do not confuse it with failure or garbage-collection flags.",
+  "agent_answer": "The feature flag 'adHighCpu' triggers high CPU load in the Ad Service. [1] [2]",
+  "correct?": "Yes",
+  "fix_worked?": "Not tested",
+  "time_taken_seconds": 3.295,
+  "agent_status": "ok",
+  "retrieval_hit_at_5": true,
+  "final_evidence_hit": true,
+  "reviewer_notes": "Identified adHighCpu; the returned official feature-flag excerpts explicitly describe high CPU load in Ad Service.",
+  "retrieved_evidence": [
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+      "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a ",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+      "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Feature Flag Scenarios\nHow can you solve problems with OpenTelemetry? These\nfeature flag enabled scenarios\nwalk you through some\npre-configured problems and show you how to interpret OpenTelemetry data to\nsolve them.",
+      "ref": "https://opentelemetry.io/docs/demo/#feature-flag-scenarios (text lines 84-89)",
+      "link": "https://opentelemetry.io/docs/demo/#feature-flag-scenarios",
+      "snippet": "Feature Flag Scenarios\nHow can you solve problems with OpenTelemetry? These\nfeature flag enabled scenarios\nwalk you through some\npre-configured problems and show you how to interpret OpenTelemetry data to\nsolve them."
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator",
+      "ref": "https://opentelemetry.io/docs/demo/#service-documentation (text lines 64-75)",
+      "link": "https://opentelemetry.io/docs/demo/#service-documentation",
+      "snippet": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(",
+      "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 1-12)",
+      "link": "https://opentelemetry.io/docs/demo/architecture/",
+      "snippet": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python"
+    }
+  ],
+  "finding": {
+    "agent": "docs",
+    "status": "ok",
+    "summary": "The feature flag 'adHighCpu' triggers high CPU load in the Ad Service. [1] [2]",
+    "hypotheses": [],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a ",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent"
+      }
+    ],
+    "sources_searched": [
+      "README.md",
+      "https://opentelemetry.io/docs/demo/",
+      "https://opentelemetry.io/docs/demo/architecture/",
+      "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+      "https://opentelemetry.io/docs/demo/development/",
+      "https://opentelemetry.io/docs/demo/docker-deployment/",
+      "https://opentelemetry.io/docs/demo/feature-flags/",
+      "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+      "https://opentelemetry.io/docs/demo/forking/",
+      "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+      "https://opentelemetry.io/docs/demo/requirements/",
+      "https://opentelemetry.io/docs/demo/requirements/application/",
+      "https://opentelemetry.io/docs/demo/requirements/architecture/",
+      "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+      "https://opentelemetry.io/docs/demo/requirements/system/",
+      "https://opentelemetry.io/docs/demo/services/ad/",
+      "https://opentelemetry.io/docs/demo/services/load-generator/",
+      "src/ad/README.md"
+    ],
+    "sources_unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "confidence": 0.5,
+    "latency_ms": 3295
+  },
+  "mode": "live_azure",
+  "corpus": "live",
+  "review": {
+    "reviewer": "Codex",
+    "method": "Evidence review against predefined review_rule and saved online excerpts; not an independent human sign-off.",
+    "verdict": "Yes",
+    "reason": "Identified adHighCpu; the returned official feature-flag excerpts explicitly describe high CPU load in Ad Service."
+  }
+}

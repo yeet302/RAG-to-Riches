@@ -1,0 +1,97 @@
+{
+  "bug": "D05",
+  "question": "How do I configure PostgreSQL replication for the Ad Service to fix its failures?",
+  "expected_cause": "Unsupported premise: the controlled documentation contains no Ad Service PostgreSQL replication instructions.",
+  "expected_docs": [],
+  "review_rule": "Abstain or explicitly state that available documentation does not support the request. Do not invent PostgreSQL configuration or commands.",
+  "agent_answer": "The retrieved documentation does not answer this question.",
+  "correct?": "Yes",
+  "fix_worked?": "N/A",
+  "time_taken_seconds": 3.261,
+  "agent_status": "no_evidence",
+  "retrieval_hit_at_5": null,
+  "final_evidence_hit": null,
+  "reviewer_notes": "Returned no_evidence without inventing PostgreSQL replication configuration or commands.",
+  "retrieved_evidence": [
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "react-native-app(React Native App):::typescript\npostgresql[(astronomy-db<br/>PostgreSQL)]\nchatbot -->|HTTP| agent\nagent -.->|HTTP| frontend\nagent -.->|HTTP| mcp\nad --->|gRPC| flagd\ncheckout --->|gRPC| flagd\nproduct-catalog --->|gRPC| flagd\nemail --->|gRPC| flagd\nshipping --->|gRPC| flagd\nagent --->|",
+      "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 33-44)",
+      "link": "https://opentelemetry.io/docs/demo/architecture/",
+      "snippet": "react-native-app(React Native App):::typescript\npostgresql[(astronomy-db<br/>PostgreSQL)]\nchatbot -->|HTTP| agent\nagent -.->|HTTP| frontend\nagent -.->|HTTP| mcp\nad --->|gRPC| flagd\ncheckout --->|gRPC| flagd\nproduct-catalog --->|gRPC| flagd\nemail --->|gRPC| flagd\nshipping --->|gRPC| flagd\nagent --->|gRPC| flagd\nload-generator -->|HTTP| flagd"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Configure ingress resources\nNote\nKubernetes clusters might not have the proper infrastructure components to\nenable LoadBalancer service types or ingress resources. Verify your cluster\nhas the proper support before using these configuration options.\nEach demo component (ie: frontend-proxy) offers a w",
+      "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-ingress-resources (text lines 75-86)",
+      "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-ingress-resources",
+      "snippet": "Configure ingress resources\nNote\nKubernetes clusters might not have the proper infrastructure components to\nenable LoadBalancer service types or ingress resources. Verify your cluster\nhas the proper support before using these configuration options.\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will not be created, but you can\nenable and configure them through the\ningress\nproperty of each component.\nTo configure the frontend-proxy component to use an ingress resource you would\nspecify the following in your values file:"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Configure service types\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will be\nClusterIP\nbut you can\nchange each one using the\nservice.type\nproperty of each component.\nTo configure the frontend-proxy component to use a LoadBala",
+      "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-service-types (text lines 119-130)",
+      "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-service-types",
+      "snippet": "Configure service types\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will be\nClusterIP\nbut you can\nchange each one using the\nservice.type\nproperty of each component.\nTo configure the frontend-proxy component to use a LoadBalancer service type you\nwould specify the following in your values file:\ncomponents\n:"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+      "ref": "README.md:L25-L36",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+      "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our",
+      "ref": "README.md:L33-L44",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L33-L44",
+      "snippet": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our\n[fork guidance](https://opentelemetry.io/docs/demo/forking/).\n\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for"
+    }
+  ],
+  "finding": {
+    "agent": "docs",
+    "status": "no_evidence",
+    "summary": "The retrieved documentation does not answer this question.",
+    "hypotheses": [],
+    "evidence": [],
+    "sources_searched": [
+      "README.md",
+      "https://opentelemetry.io/docs/demo/",
+      "https://opentelemetry.io/docs/demo/architecture/",
+      "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+      "https://opentelemetry.io/docs/demo/development/",
+      "https://opentelemetry.io/docs/demo/docker-deployment/",
+      "https://opentelemetry.io/docs/demo/feature-flags/",
+      "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+      "https://opentelemetry.io/docs/demo/forking/",
+      "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+      "https://opentelemetry.io/docs/demo/requirements/",
+      "https://opentelemetry.io/docs/demo/requirements/application/",
+      "https://opentelemetry.io/docs/demo/requirements/architecture/",
+      "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+      "https://opentelemetry.io/docs/demo/requirements/system/",
+      "https://opentelemetry.io/docs/demo/sample-configurations/",
+      "https://opentelemetry.io/docs/demo/services/ad/",
+      "src/ad/README.md"
+    ],
+    "sources_unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "confidence": 0.0,
+    "latency_ms": 3261
+  },
+  "mode": "live_azure",
+  "corpus": "live",
+  "review": {
+    "reviewer": "Codex",
+    "method": "Evidence review against predefined review_rule and saved online excerpts; not an independent human sign-off.",
+    "verdict": "Yes",
+    "reason": "Returned no_evidence without inventing PostgreSQL replication configuration or commands."
+  }
+}
