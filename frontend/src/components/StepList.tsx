@@ -36,7 +36,9 @@ export default function StepList({ steps, question, conversationId }: Props) {
   return (
     <section className="card steps-card">
       <h2 className="steps-title">What to try</h2>
-      <p className="muted">One step at a time. Tell Copilot if it worked and it moves to the next step.</p>
+      <p className="muted">
+        Suggested from the sources above, one step at a time. Tell Copilot if it worked and it moves to the next step.
+      </p>
       <ol className="steps">
         {steps.map((s, i) => {
           const isActive = i === active && !resolved;
@@ -52,6 +54,11 @@ export default function StepList({ steps, question, conversationId }: Props) {
               {isActive && (
                 <div className="step-body">
                   <p className="why"><b>Why:</b> {s.why}</p>
+                  {s.evidence_refs?.length > 0 && (
+                    <p className="based-on muted small">
+                      Based on: {s.evidence_refs.map((ref) => <code key={ref}>{ref}</code>)}
+                    </p>
+                  )}
                   {s.command && <pre className="command">{s.command}</pre>}
                   {s.expect && <p><b>Expect:</b> {s.expect}</p>}
                   <div className="did-it-work">

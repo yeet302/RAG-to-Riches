@@ -73,7 +73,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
             {r.kind === 'diagnosis' ? (
               <DiagnosisCard response={r} conversationId={conversationId} />
             ) : (
-              <AnswerCard response={r} onAsk={onAsk} />
+              <AnswerCard response={r} onAsk={onAsk} conversationId={conversationId} />
             )}
             {r.analysis && (
               <details className="trace">
