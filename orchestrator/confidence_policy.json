@@ -1,0 +1,11 @@
+{
+  "weights": {
+    "coverage": 0.3,
+    "corroboration": 0.3,
+    "relevance": 0.2,
+    "grounding": 0.2
+  },
+  "max_score": 95,
+  "high_threshold": 75,
+  "medium_threshold": 50
+}

@@ -85,7 +85,11 @@ def test_actual_files_through_api(corpus, monkeypatch):
     assert {e["source_type"] for e in body["evidence"]} == {"log", "doc", "code"}
     assert "upstream timeout setting" in body["answer"]
     assert "checkout.md:L2" in body["answer"]
-    assert body["likely_cause"] is None and body["confidence"] is None
+    # Evidence-list mode: no AI cause, but every answer now carries a computed confidence.
+    assert body["likely_cause"] is None
+    assert 0 < body["confidence"] <= 95 and body["confidence_band"] in {"high", "medium", "low"}
+    assert body["confidence_reasons"] and set(body["confidence_components"]) == {
+        "coverage", "corroboration", "relevance", "grounding"}
 
 
 def test_docs_only_actual_repo_api():
@@ -346,7 +350,8 @@ def test_previous_demo_questions_require_subagent_evidence(monkeypatch, tmp_path
     assert response.partial and not response.evidence
     assert response.demo is False
     assert all(f.status == "no_access" for f in response.findings)
-    assert response.likely_cause is None and response.confidence is None and response.steps == []
+    assert response.likely_cause is None and response.steps == []
+    assert response.confidence == 0 and response.confidence_band == "low"
     assert "could not find supporting evidence" in response.answer
     assert "adFailure" not in response.answer
     assert response.synthesis.source == "evidence"

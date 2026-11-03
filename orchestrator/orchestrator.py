@@ -9,6 +9,7 @@ from uuid import uuid4
 import httpx
 from agents import Agent, build_agents
 from answer_synthesis import generate_answer
+from confidence import apply_confidence
 from failures import annotate_errors, normalize_failure
 from router import RoutePlan
 from query_analysis import analyze_question
@@ -121,8 +122,8 @@ def synthesize(question: str, plan: RoutePlan, findings: list[AgentFinding],
     no_evidence = [f.agent for f in findings if f.status == "no_evidence"]
     if no_evidence:
         answer += "\n\nNo matching evidence returned by: " + ", ".join(no_evidence) + "."
-    # Scores indicate retrieval relevance supplied by specialists, never root-cause probability.
-    # Keep diagnosis confidence unset until a validated diagnosis/synthesis policy exists.
+    # Specialist scores are retrieval relevance, never root-cause probability. The answer's
+    # confidence is computed after synthesis by confidence.py from observable, measured signals.
     return CopilotResponse(
         kind="diagnosis" if plan.intent == "incident" else "answer", question=question,
         answer=answer, evidence=evidence, sources_unavailable=unavailable,
@@ -168,4 +169,5 @@ async def investigate(question: str, *, incident_id: str | None = None,
                             latency_ms=round((time.perf_counter() - started) * 1000)))
     response = synthesize(question, plan, findings, trace, context)
     response.analysis = analysis
-    return annotate_errors(await generate_answer(response, settings, answer_mode))
+    response = annotate_errors(await generate_answer(response, settings, answer_mode))
+    return apply_confidence(response)

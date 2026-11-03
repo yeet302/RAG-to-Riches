@@ -86,7 +86,7 @@ def test_grounded_answer_request_citations_and_metadata():
     {"answer": "Repeated ID [E1]", "evidence_ids": ["E1", "E1"]},
     {"answer": "A finding [E1] [E2]", "evidence_ids": ["E1"]},
     {"answer": " ", "evidence_ids": ["E1"]},
-    {"answer": "A finding [E1]", "evidence_ids": ["E1"], "likely_cause": "unsupported"},
+    {"answer": "A finding [E1]", "evidence_ids": ["E1"], "invented_field": "unsupported"},
 ])
 def test_invalid_or_fabricated_citations_preserve_fallback(generated):
     original = result()
