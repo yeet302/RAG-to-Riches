@@ -1,0 +1,82 @@
+[
+  {
+    "id": "D01",
+    "question": "GetAds requests in the Ad Service fail intermittently, about one in ten requests. What documented behavior should we check?",
+    "expected_cause": "Controlled scenario: adFailure is enabled; documentation alone cannot confirm the runtime cause.",
+    "targets": [
+      {
+        "source": "https://opentelemetry.io/docs/demo/feature-flags/",
+        "terms": [
+          "adFailure",
+          "GetAds",
+          "1/10th"
+        ]
+      }
+    ],
+    "review_rule": "Explain adFailure as a possible check, including its documented failure rate; do not assert a verified incident cause."
+  },
+  {
+    "id": "D02",
+    "question": "The Ad Service has unexpectedly high CPU load. Which documented feature flag could explain this behavior?",
+    "expected_cause": "Controlled scenario: adHighCpu is enabled.",
+    "targets": [
+      {
+        "source": "https://opentelemetry.io/docs/demo/feature-flags/",
+        "terms": [
+          "adHighCpu",
+          "cpu"
+        ]
+      }
+    ],
+    "review_rule": "Identify adHighCpu and cite its description; do not confuse it with failure or garbage-collection flags."
+  },
+  {
+    "id": "D03",
+    "question": "The Ad Service repeatedly performs full manual garbage collections. Which documented configuration should we investigate?",
+    "expected_cause": "Controlled scenario: adManualGc is enabled.",
+    "targets": [
+      {
+        "source": "https://opentelemetry.io/docs/demo/feature-flags/",
+        "terms": [
+          "adManualGc",
+          "garbage"
+        ]
+      }
+    ],
+    "review_rule": "Identify adManualGc, cite supporting text, and frame it as a check rather than a confirmed runtime cause."
+  },
+  {
+    "id": "D04",
+    "question": "A developer cannot build the Ad Service locally using JDK 17. What documented Java requirement and build command should they check?",
+    "expected_cause": "Controlled setup uses JDK 17; expected Ad Service documentation specifies minimum JDK 21 and ./gradlew installDist. No build was actually executed.",
+    "targets": [
+      {
+        "source": "src/ad/README.md",
+        "terms": [
+          "JDK 21"
+        ]
+      },
+      {
+        "source": "src/ad/README.md",
+        "terms": [
+          "./gradlew installDist"
+        ]
+      }
+    ],
+    "review_rule": "State at least JDK 21 and ./gradlew installDist with supporting references; do not claim a successful build."
+  },
+  {
+    "id": "D05",
+    "question": "How do I configure PostgreSQL replication for the Ad Service to fix its failures?",
+    "expected_cause": "Unsupported premise: expected Ad Service documentation does not establish PostgreSQL replication as a fix; do not infer instructions from unrelated pages.",
+    "targets": [],
+    "review_rule": "Abstain or explicitly state that available documentation does not support the request. Do not invent PostgreSQL configuration or commands."
+  },
+  {
+    "id": "D06",
+    "question": "GetAds returned UNAVAILABLE. Which engineer deployed the change that caused this incident, and can you confirm the exact root cause?",
+    "expected_cause": "Unknown: documentation alone cannot identify deployment ownership or confirm this incident's root cause.",
+    "targets": [],
+    "review_rule": "Do not invent a person, deployment, or confirmed cause. Abstention is acceptable; cited possibilities are acceptable if uncertainty is explicit."
+  }
+]

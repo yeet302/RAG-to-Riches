@@ -1,0 +1,114 @@
+{
+  "bug": "D03",
+  "question": "The Ad Service repeatedly performs full manual garbage collections. Which documented configuration should we investigate?",
+  "expected_cause": "Controlled scenario: adManualGc is enabled.",
+  "expected_docs": [
+    {
+      "source": "https://opentelemetry.io/docs/demo/feature-flags/",
+      "terms": [
+        "adManualGc",
+        "garbage"
+      ]
+    }
+  ],
+  "review_rule": "Identify adManualGc, cite supporting text, and frame it as a check rather than a confirmed runtime cause.",
+  "agent_answer": "The Ad Service's repeated full manual garbage collections can be triggered by the configuration flag named adManualGc. [1] Investigating the 'adManualGc' feature flag is appropriate when troubleshooting full manual garbage collections in the Ad Service. [1]",
+  "correct?": "Yes",
+  "fix_worked?": "Not tested",
+  "time_taken_seconds": 3.801,
+  "agent_status": "ok",
+  "retrieval_hit_at_5": true,
+  "final_evidence_hit": true,
+  "reviewer_notes": "Identified adManualGc with the official description of full manual garbage collections; framed investigation as a check, not a confirmed incident cause.",
+  "retrieved_evidence": [
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a ",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+      "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+      "ref": "README.md:L25-L36",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+      "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our",
+      "ref": "README.md:L33-L44",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L33-L44",
+      "snippet": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our\n[fork guidance](https://opentelemetry.io/docs/demo/forking/).\n\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "several files, each merged on top of the previous one. Which files are loaded\ndepends on how you start the demo:\notelcol-config.yml\n\u2014 the base configuration, always loaded\notelcol-config-full.yml\n\u2014 adds the receivers for services that only run in\nthe full demo, such as Kafka\notelcol-config-observabi",
+      "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 251-262)",
+      "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+      "snippet": "several files, each merged on top of the previous one. Which files are loaded\ndepends on how you start the demo:\notelcol-config.yml\n\u2014 the base configuration, always loaded\notelcol-config-full.yml\n\u2014 adds the receivers for services that only run in\nthe full demo, such as Kafka\notelcol-config-observability.yml\n\u2014 wires up the bundled backends (Jaeger,\nPrometheus, and OpenSearch)\notelcol-config-extras.yml\n\u2014 your own additions, always loaded last"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, ",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 54-65)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+      "snippet": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform"
+    }
+  ],
+  "finding": {
+    "agent": "docs",
+    "status": "ok",
+    "summary": "The Ad Service's repeated full manual garbage collections can be triggered by the configuration flag named adManualGc. [1] Investigating the 'adManualGc' feature flag is appropriate when troubleshooting full manual garbage collections in the Ad Service. [1]",
+    "hypotheses": [],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a ",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent"
+      }
+    ],
+    "sources_searched": [
+      "README.md",
+      "https://opentelemetry.io/docs/demo/",
+      "https://opentelemetry.io/docs/demo/architecture/",
+      "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+      "https://opentelemetry.io/docs/demo/development/",
+      "https://opentelemetry.io/docs/demo/docker-deployment/",
+      "https://opentelemetry.io/docs/demo/feature-flags/",
+      "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+      "https://opentelemetry.io/docs/demo/forking/",
+      "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+      "https://opentelemetry.io/docs/demo/requirements/",
+      "https://opentelemetry.io/docs/demo/requirements/application/",
+      "https://opentelemetry.io/docs/demo/requirements/architecture/",
+      "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+      "https://opentelemetry.io/docs/demo/requirements/system/",
+      "https://opentelemetry.io/docs/demo/services/ad/",
+      "https://opentelemetry.io/docs/demo/telemetry-features/manual-span-attributes/",
+      "src/ad/README.md"
+    ],
+    "sources_unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "confidence": 0.5,
+    "latency_ms": 3801
+  },
+  "mode": "live_azure",
+  "corpus": "live",
+  "review": {
+    "reviewer": "Codex",
+    "method": "Evidence review against predefined review_rule and saved online excerpts; not an independent human sign-off.",
+    "verdict": "Yes",
+    "reason": "Identified adManualGc with the official description of full manual garbage collections; framed investigation as a check, not a confirmed incident cause."
+  }
+}
