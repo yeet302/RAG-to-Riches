@@ -41,20 +41,12 @@ def _has(text: str, words: set[str]) -> bool:
 
 def classify(question: str) -> RoutePlan:
     q = question.lower()
-    # Explicit source lookups do not require unrelated specialist context.
-    direct_code = re.search(r"\b(where|locate|find|search)\b", q) and _has(q, CODE_WORDS)
-    direct_logs = re.search(r"^\s*(show|list|fetch|search|find|retrieve)\b", q) and _has(q, {"logs", "log", "traces", "trace"})
-    diagnosis = re.search(r"\b(why|cause|caused|diagnose|fix|investigate|explain)\b", q)
-    if direct_code and not _has(q, INCIDENT_WORDS) and not _has(q, {"documentation", "docs", "runbook"}):
-        return RoutePlan("code_lookup", ["code"], [], "Direct implementation lookup: search code only.")
-    if direct_logs and not diagnosis and not _has(q, {"code", "documentation", "docs", "runbook"}):
-        return RoutePlan("logs_lookup", ["logs"], [], "Explicit log retrieval: search logs only.")
     controlled_test = bool(re.search(r"\b(trigger|inject|simulate|reproduce)\b", q))
     if _has(q, HOWTO_WORDS) and controlled_test and not _has(q, CODE_WORDS):
         return RoutePlan("how_to", ["docs"], [], "Controlled test question: search documentation and runbooks.")
     if _has(q, INCIDENT_WORDS):
         return RoutePlan("incident", ["logs", "docs"], ["code"],
-                         "Incident symptoms: check logs and documentation in parallel, "
+                         "Incident symptoms: check logs and docs/past incidents in parallel, "
                          "then send that evidence to the code agent to find the change or code path.")
     if _has(q, CODE_WORDS):
         return RoutePlan("code_lookup", ["docs"], ["code"], "Code question: docs for context, then code search.")

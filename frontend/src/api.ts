@@ -1,4 +1,4 @@
-import type { AccuracyResult, AccuracyReview, AnswerMode, CopilotResponse, HealthResponse, Incident, RoutingMode } from './types';
+import type { AnswerMode, CopilotResponse, HealthResponse, Incident, RoutingMode } from './types';
 
 // Same origin in production (FastAPI serves the build); Vite proxies /api in dev.
 const BASE = import.meta.env.VITE_API_URL ?? '';
@@ -22,11 +22,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  accuracy: () => request<AccuracyResult[]>('/api/accuracy'),
-  accuracyExportUrl: `${BASE}/api/accuracy.csv`,
-  reviewAccuracy: (id: string, review: AccuracyReview) => request<AccuracyResult>(`/api/accuracy/${encodeURIComponent(id)}`, {
-    method: 'PATCH', body: JSON.stringify(review),
-  }),
   health: () => request<HealthResponse>('/api/health'),
   ask: (question: string, incidentId?: string, conversationId?: string, routingMode?: RoutingMode, answerMode?: AnswerMode) =>
     request<CopilotResponse>('/api/ask', {

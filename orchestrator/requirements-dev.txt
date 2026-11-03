@@ -1,7 +1,2 @@
 -r requirements.txt
 pytest>=8
-
-# Integration tests import all three specialist service hosts.
--r ../docs_agent/requirements.txt
--r ../code_agent/requirements.txt
--r ../logs_agent/requirements.txt

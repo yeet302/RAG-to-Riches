@@ -2,7 +2,6 @@ import type { Message } from '../types';
 import AnswerCard from './AnswerCard';
 import DiagnosisCard from './DiagnosisCard';
 import Trace from './Trace';
-import Performance from './Performance';
 
 interface Props {
   messages: Message[];
@@ -50,7 +49,6 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
         const r = m.response;
         return (
           <div key={m.id} className="msg assistant">
-            <Performance response={r} />
             {r.synthesis && (
               <div className="answer-provenance">
                 <span className="pill">
@@ -96,7 +94,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
                 </ol>
               </details>
             )}
-            <Trace trace={r.trace} agents={r.agents_used} performance={r.performance} />
+            <Trace trace={r.trace} agents={r.agents_used} />
           </div>
         );
       })}

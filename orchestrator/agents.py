@@ -151,15 +151,8 @@ class LocalSearchAgent:
                     # API examples often repeat the exact user query without answering it.
                     if self.name == "docs" and re.search(r"[\"']question[\"']\s*:", line):
                         continue
-                    if (self.name == "docs" and question.strip().rstrip("?.!").casefold() in line.casefold()
-                            and ('"' in line or "'" in line)):
-                        continue  # A quoted example question does not answer itself.
                     line_terms = terms(line)
                     score = 3 * len(query & line_terms) + min(2, len(extra & line_terms))
-                    if self.name == "code":
-                        definition = re.match(r"\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:def|class|function)\s+([A-Za-z_]\w*)(?=\s*[(\:{])", line)
-                        if definition and definition.group(1).lower() in query:
-                            score += 20  # Prefer the requested symbol's definition to examples/imports.
                     # The question must match; prior context alone cannot make an unrelated file relevant.
                     if not query & (line_terms | path_terms):
                         continue
