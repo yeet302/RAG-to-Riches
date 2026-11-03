@@ -219,3 +219,50 @@ h1, h2, h3 { margin: 0; }
 .answer-provenance p {
   margin-top: 0.4rem;
 }
+
+/* Investigation walkthrough and accuracy workbench. */
+.view-tabs { display: flex; gap: 4px; }
+.view-tabs button { border: 0; border-radius: 8px; padding: 7px 10px; background: transparent; font-size: 13px; }
+.view-tabs button[aria-pressed="true"] { background: #dbeafe; color: var(--blue-ink); font-weight: 600; }
+.source-notice { background: #eff6ff; border: 1px solid #bfdbfe; color: var(--blue-ink); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; }
+.example-questions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.example-questions > p { width: 100%; }
+.example-questions .chip { font-size: 13px; }
+.performance { display: flex; flex-direction: column; gap: 16px; }
+.performance-head { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.elapsed { font-size: 24px; letter-spacing: -0.03em; }
+.timing-bars { display: flex; flex-direction: column; gap: 9px; }
+.timing-row { display: grid; grid-template-columns: 150px 1fr 92px; align-items: center; gap: 12px; font-size: 12px; }
+.timing-row > span:last-child { text-align: right; font-family: var(--mono); }
+.timing-track { height: 9px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.timing-track > span { display: block; height: 100%; background: #93c5fd; border-radius: 999px; }
+.timing-track > span.bottleneck { background: #d97706; }
+.performance details { font-size: 13px; }
+.performance summary { cursor: pointer; color: var(--blue-ink); }
+.saved-note { color: var(--green); font-size: 13px; }
+.results-page { max-width: 1180px; }
+.workbench-heading, .workbench-summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+.workbench-heading h1 { font-size: 28px; margin-bottom: 6px; }
+.export-link { display: inline-flex; align-items: center; text-decoration: none; }
+.workbench-summary { justify-content: flex-start; font-size: 14px; }
+.workbench-summary button { margin-left: auto; }
+.results-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 24px; }
+.results-table { border-collapse: collapse; width: 100%; min-width: 850px; font-size: 13px; }
+.results-table th, .results-table td { padding: 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.results-table th { background: var(--surface-2); font-size: 12px; white-space: nowrap; }
+.results-table caption { text-align: left; padding: 12px 14px; color: var(--muted); font-size: 12px; }
+.results-table tr.selected td { background: #eff6ff; }
+.results-table td:first-child { min-width: 190px; max-width: 250px; }
+.run-source { display: block; color: var(--muted); margin-top: 8px; }
+.answer-preview { max-width: 300px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.review-card { display: flex; flex-direction: column; gap: 16px; }
+.review-answer { white-space: pre-wrap; font-size: 14px; }
+.review-card form { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.review-card label { display: flex; flex-direction: column; gap: 6px; width: 100%; font-size: 13px; font-weight: 600; }
+.review-card input, .review-card textarea, .review-card select { font: inherit; font-weight: 400; padding: 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+.review-card textarea { min-height: 70px; resize: vertical; }
+.review-outcomes { display: flex; gap: 20px; width: 100%; }
+@media (max-width: 640px) { .timing-row { grid-template-columns: 105px 1fr 80px; gap: 6px; } .view-tabs { order: 5; width: 100%; } .review-outcomes { flex-direction: column; } }
+
+.topbar-inner { max-width: 1180px; }
+.brand-name { white-space: nowrap; }

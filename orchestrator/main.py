@@ -14,16 +14,20 @@ If frontend/dist exists (after `npm run build`), it is served at /.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
+import sqlite3
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from orchestrator import AGENTS, SETTINGS, investigate
 from query_analysis import analyze_question
+from accuracy import AccuracyReview, AccuracyStore
 from schemas import AskRequest, CopilotResponse, Feedback, Incident, RoutingMode
 
 log = logging.getLogger("orchestrator")
@@ -31,12 +35,16 @@ app = FastAPI(title="Incident Copilot Orchestrator", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 
+ACCURACY = AccuracyStore(Path(os.getenv("ACCURACY_DB_PATH", str(Path(__file__).parent / "results" / "accuracy.sqlite3"))))
+
 FEEDBACK: list[Feedback] = []  # in-memory local feedback
 
 
 @app.get("/api/health")
 def health():
     return {"status": "ok", "mode": SETTINGS.mode,
+            "source_note": ("Offline walkthrough: repository docs/code and bundled historical logs. No live Azure diagnosis."
+                            if os.getenv("SHOWCASE_OFFLINE") == "1" else "Configured specialist services" if SETTINGS.mode == "remote" else "Operator-selected local files"),
             "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()},
             "routing_mode": SETTINGS.effective_routing_mode,
             "llm_configured": SETTINGS.llm_configured,
@@ -71,9 +79,36 @@ async def ask(req: AskRequest):
         raise HTTPException(400, "question is empty")
     if len(q) > 2000:
         raise HTTPException(400, "question is too long (max 2000 characters)")
-    return await investigate(q, incident_id=req.incident_id,
+    response = await investigate(q, incident_id=req.incident_id,
                              conversation_id=req.conversation_id, routing_mode=req.routing_mode,
                              answer_mode=req.answer_mode)
+    try:
+        await asyncio.to_thread(ACCURACY.record, response,
+                               "Local source search" if SETTINGS.mode == "local" else "Configured services")
+        response.accuracy_recorded = True
+    except (OSError, sqlite3.Error):
+        log.error("request_id=%s accuracy recording failed", response.request_id)
+    return response
+
+
+@app.get("/api/accuracy")
+def accuracy_results(limit: int = Query(default=100, ge=1, le=200)):
+    return ACCURACY.list(limit)
+
+
+@app.patch("/api/accuracy/{request_id}")
+def accuracy_review(request_id: str, review: AccuracyReview):
+    result = ACCURACY.review(request_id, review)
+    if result is None:
+        raise HTTPException(404, "Investigation result not found")
+    return result
+
+
+@app.get("/api/accuracy.csv")
+def accuracy_export():
+    return Response(ACCURACY.export(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="accuracy-results.csv"'})
+
 
 
 @app.post("/api/feedback")

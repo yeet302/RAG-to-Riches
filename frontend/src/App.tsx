@@ -4,10 +4,13 @@ import type { AnswerMode, HealthResponse, Incident, Message, RoutingMode } from 
 import Composer from './components/Composer';
 import IncidentList from './components/IncidentList';
 import Thread from './components/Thread';
+import AccuracyResults from './components/AccuracyResults';
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export default function App() {
+  const [view, setView] = useState<'investigate' | 'accuracy'>('investigate');
+  const [sourceNote, setSourceNote] = useState('');
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [incidentsError, setIncidentsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -23,6 +26,7 @@ export default function App() {
     api.incidents().then(setIncidents).catch((e) => setIncidentsError(String(e.message ?? e)));
     api.health().then((health) => {
       setMode(health.mode);
+      setSourceNote(health.source_note ?? '');
       setLlmConfigured(health.llm_configured);
       setAnswerMode(health.answer_mode ?? (health.llm_configured ? 'llm' : 'evidence'));
       setRoutingMode(!health.llm_configured ? 'keyword' : health.routing_mode ?? 'keyword');
@@ -60,6 +64,7 @@ export default function App() {
   );
 
   const goHome = () => {
+    setView('investigate');
     setMessages([]);
     conversationId.current = uid();
   };
@@ -84,6 +89,10 @@ export default function App() {
             <span className="team">Ads team</span>
           )}
           <span className="spacer" />
+          <nav className="view-tabs" aria-label="Workspace">
+            <button aria-pressed={view === 'investigate'} onClick={() => setView('investigate')}>Investigate</button>
+            <button aria-pressed={view === 'accuracy'} onClick={() => setView('accuracy')}>Accuracy results</button>
+          </nav>
           {mode && (
             <span className="pill">
               {mode === 'remote' ? 'Remote agents' : 'Local search'}
@@ -93,9 +102,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="page">
+      <main className={view === 'accuracy' ? 'page results-page' : 'page'}>
+        {view === 'accuracy' ? <AccuracyResults /> : <>
+        {sourceNote && <p className="source-notice">{sourceNote}</p>}
         {!inChat && <h1 className="hero">What's going on?</h1>}
-        {mode === 'local' && <>
+        {mode === 'local' && !sourceNote.startsWith('Offline walkthrough') && <>
         <div className="analysis-controls">
           <label htmlFor="routing-mode">Question analysis</label>
           <select
@@ -127,6 +138,11 @@ export default function App() {
           </span>
         </div>
         </>}
+        {!inChat && <div className="example-questions" aria-label="Example investigations">
+          <p className="muted small">Try a plain-language question</p>
+          {['Where is the investigate function defined?', 'How does the orchestrator route requests?', 'Show ad service warning logs', 'The ad service is returning errors. Why?'].map((question) =>
+            <button className="chip" key={question} disabled={busy} onClick={() => ask(question)}>{question}</button>)}
+        </div>}
         <Composer onSubmit={(q) => ask(q)} busy={busy} compact={inChat} />
 
         {inChat ? (
@@ -137,6 +153,7 @@ export default function App() {
         ) : (
           <IncidentList incidents={incidents} error={incidentsError} onOpen={(inc) => ask(inc.question, inc)} />
         )}
+        </>}
       </main>
     </div>
   );

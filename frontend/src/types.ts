@@ -32,6 +32,7 @@ export interface QueryAnalysis {
 export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';
 
 export interface HealthResponse {
+  source_note?: string;
   status: string;
   mode: 'local' | 'remote';
   agents: Record<AgentName, string>;
@@ -78,7 +79,17 @@ export interface PipelineError {
   http_status?: number | null;
 }
 
+export interface PerformanceSummary {
+  total_ms: number;
+  steps: { name: string; latency_ms: number; parallel: boolean }[];
+  slowest_step: string;
+  recommendations: string[];
+}
+
 export interface CopilotResponse {
+  request_id?: string;
+  accuracy_recorded?: boolean;
+  performance?: PerformanceSummary | null;
   kind: 'diagnosis' | 'answer';
   question: string;
   answer: string;
@@ -120,3 +131,18 @@ export type Message =
   | { id: string; role: 'assistant'; status: 'loading'; question: string }
   | { id: string; role: 'assistant'; status: 'done'; response: CopilotResponse }
   | { id: string; role: 'assistant'; status: 'error'; error: string; question: string };
+
+export interface AccuracyReview {
+  bug: string;
+  expected_cause: string;
+  correct: 'Not reviewed' | 'Yes' | 'No' | 'Partly';
+  fix_worked: 'Not tested' | 'Yes' | 'No';
+  notes: string;
+}
+
+export interface AccuracyResult extends AccuracyReview {
+  request_id: string;
+  created_at: string;
+  run_type: string;
+  response: CopilotResponse;
+}
