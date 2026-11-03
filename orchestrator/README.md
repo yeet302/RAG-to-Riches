@@ -45,6 +45,32 @@ To use the terminal interface instead:
 Terminal chat uses exported environment variables; it does not automatically load
 .env. Questions are independent; conversation IDs do not provide stored history.
 
+## Start all configured services with one command
+
+From the repository root in WSL:
+
+```bash
+orchestrator/.venv/bin/python orchestrator/run_local.py
+```
+
+Or from this directory: `.venv/bin/python run_local.py`.
+Open http://127.0.0.1:8000. The launcher reads the agent URLs from this service's
+`.env`, starts local docs/logs/code adapters on the configured ports, and loads each
+adapter's own `.env` in its own process. Azure models and data access stay configured
+as before. Hosted agent URLs are used without starting a local adapter.
+
+Healthy services already listening on the configured ports are reused. Ctrl+C
+stops only the processes created by the launcher. It does not restart an existing
+service; stop an old service in its original terminal if it needs a code reload.
+Readiness checks establish service liveness, not successful Azure authentication.
+Logs are saved under `diagnostics/local-run/<timestamp>/` at the repository root.
+Use `--port 8001` to change the orchestrator port. Local agent ports come from their
+URLs in `orchestrator/.env`. Existing shell variables take precedence over .env.
+
+Build the frontend with `npm run build` from `frontend/` if needed. Service packages
+must be installed in the interpreter running the launcher; install
+`orchestrator/requirements-dev.txt` to include all three adapters' dependencies.
+
 ## Choose data sources
 
 Specialist mode, question analysis, and answer generation are independent.
@@ -170,3 +196,38 @@ diagnosis. Configured-service answers require human review. No fixes are execute
 `fix worked?` stays `Not tested` until someone applies and verifies a remediation.
 The shared results sheet is not yet available; local CSV rows are ready for import.
 Use `results/VALIDATION.md` for the measured findings and remaining live blockers.
+
+
+## Low-latency routing fast path
+
+With `ROUTING_FAST_PATH=true` (the default), clear single-source lookup requests
+skip Azure planning even when server routing is `llm` or `auto`. Examples:
+
+- Where is GetAds implemented? -> code
+- Show ad service warning logs from the last hour. -> logs
+- Show documentation for configuring tracing. -> docs
+
+The full original question and constraints are preserved in the specialist request.
+Complex incidents, mixed-source questions, diagnosis requests, and unclear questions
+retain model-generated assignments and staged delegation. This is not answer caching;
+source retrieval and final synthesis still run normally. No subagent code is changed.
+
+Inspect `analysis.fast_path` and the routing trace to see when planning was skipped.
+The UI labels that route `Fast path (no planning call)`. Set
+`ROUTING_FAST_PATH=false` to disable it. An explicit API request
+`routing_mode="llm"` also forces model planning, which allows controlled comparisons.
+Existing explicit keyword mode continues to use keyword routing.
+
+To repeat the deployed-model routing benchmark from this directory:
+
+```bash
+.venv/bin/python benchmark_routing.py --live --repeat 2
+```
+
+This sends only handcrafted example questions to the configured orchestrator model.
+It runs no subagents and sends no saved source evidence. Trial order alternates,
+all results are appended to the local accuracy CSV, and detailed measurements are
+saved under `diagnostics/routing-benchmark/`. Reported savings measure routing only;
+they are not claims about full live investigation latency. Complex incident controls
+are retained to verify the model is still used when the fast path is ineligible.
+Restart the orchestrator or launcher to load the implementation.

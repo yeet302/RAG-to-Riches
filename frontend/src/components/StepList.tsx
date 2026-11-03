@@ -21,7 +21,7 @@ export default function StepList({ steps, question, conversationId }: Props) {
   const [active, setActive] = useState(0);
   const [outcomes, setOutcomes] = useState<Outcome[]>([]);
   const resolved = outcomes.includes('worked');
-  const exhausted = !resolved && active >= steps.length;
+  const exhausted = !resolved && steps.length > 0 && steps.every((_, i) => outcomes[i] === 'failed');
 
   const answer = (i: number, worked: boolean) => {
     api.feedback(question, i, worked, conversationId).catch(() => {});
@@ -30,18 +30,18 @@ export default function StepList({ steps, question, conversationId }: Props) {
       n[i] = worked ? 'worked' : 'failed';
       return n;
     });
-    if (!worked) setActive(i + 1);
+    if (!worked) setActive(Math.min(i + 1, steps.length - 1));
   };
 
   return (
-    <section className="card steps-card">
+    <section className="card steps-card" aria-label="What to try">
       <h2 className="steps-title">What to try</h2>
       <p className="muted">
-        Suggested from the sources above, one step at a time. Tell Copilot if it worked and it moves to the next step.
+        Suggested from the sources above. Use Previous and Next to review steps; record whether a step worked separately.
       </p>
       <ol className="steps">
         {steps.map((s, i) => {
-          const isActive = i === active && !resolved;
+          const isActive = i === active;
           const outcome = outcomes[i];
           return (
             <li key={i} className={`step${isActive ? ' active' : ''}${outcome ? ` ${outcome}` : ''}`}>
@@ -70,17 +70,24 @@ export default function StepList({ steps, question, conversationId }: Props) {
                   </div>
                 </div>
               )}
-              {outcome === 'failed' && <p className="muted small step-note">Didn't work. Moved to the next step.</p>}
+              {outcome === 'failed' && <p className="muted small step-note">Previously marked as not working.</p>}
             </li>
           );
         })}
       </ol>
+      <nav className="step-navigation" aria-label="Suggested step navigation">
+        <button type="button" className="btn ghost" disabled={active === 0}
+          onClick={() => setActive((index) => Math.max(0, index - 1))}>Previous step</button>
+        <span className="muted small" aria-live="polite">Step {active + 1} of {steps.length}</span>
+        <button type="button" className="btn ghost" disabled={active >= steps.length - 1}
+          onClick={() => setActive((index) => Math.min(steps.length - 1, index + 1))}>Next step</button>
+      </nav>
       {resolved && (
-        <p className="resolved-note">Marked as fixed. Copilot will suggest this step first for similar incidents.</p>
+        <p className="resolved-note">A step was marked as worked. You can review earlier steps without changing their recorded outcomes.</p>
       )}
       {exhausted && (
         <p className="resolved-note warn">
-          None of the steps worked. Copilot will gather more evidence; consider escalating with the evidence above.
+          All steps were marked as not working. Review a previous step or investigate further using the evidence above.
         </p>
       )}
     </section>

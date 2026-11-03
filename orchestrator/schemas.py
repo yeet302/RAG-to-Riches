@@ -57,6 +57,7 @@ class AgentAssignment(BaseModel):
 
 
 class QueryAnalysis(BaseModel):
+    fast_path: bool = False
     source: Literal["keyword", "llm", "keyword_fallback"]
     intent: QueryIntent
     summary: str
@@ -68,6 +69,7 @@ class QueryAnalysis(BaseModel):
 
 
 class AnswerSynthesis(BaseModel):
+    failure_reason: Optional[Literal["timeout", "access_denied", "provider_error", "invalid_response", "invalid_citations", "invalid_solutions"]] = None
     source: Literal["evidence", "llm", "evidence_fallback"]
     citations: list[str] = Field(default_factory=list)
     warning: Optional[str] = None

@@ -66,3 +66,25 @@ def classify(question: str) -> RoutePlan:
     if _has(q, LOG_WORDS):
         return RoutePlan("logs_lookup", ["logs"], [], "Log question: logs agent only.")
     return RoutePlan("unknown", ["logs", "docs"], ["code"], "Unclear intent: default to the full incident path.")
+
+
+def fast_route(question: str) -> RoutePlan | None:
+    """Bypass planning only for short, explicit, single-source retrieval requests."""
+    q = question.strip().lower()
+    if (len(q) > 500 or re.search(r"[;\n]", q)
+            or re.search(r"\b(and|also|then|compare|correlate|both|why|cause|causes|caused|causing|fix|resolve|investigate|diagnose|explain|recommend)\b", q)):
+        return None
+    prefix = r"^(?:please\s+)?"
+    docs = prefix + r"(?:show|find|locate|retrieve|fetch|where\s+(?:is|are))\s+(?:the\s+)?(?:documentation|docs|runbooks?|guides?)\b"
+    if re.search(docs, q) and not _has(q, INCIDENT_WORDS):
+        return RoutePlan("how_to", ["docs"], [], "Fast path: explicit documentation lookup; no planning model call.")
+    retrieval = re.search(prefix + r"(?:show|list|fetch|retrieve|search|find)\b", q)
+    if (retrieval and _has(q, {"logs", "log", "traces", "trace"})
+            and not _has(q, {"documentation", "docs", "runbook", "guide", "code", "function", "implementation", "codebase", "repository"})):
+        return RoutePlan("logs_lookup", ["logs"], [], "Fast path: explicit log retrieval; no planning model call.")
+    location = re.search(prefix + r"(?:where\s+(?:is|are)|locate|find|search)\b", q)
+    implementation = _has(q, {"function", "method", "class", "symbol", "codebase", "repository", "implementation", "defined", "implemented", "declared"})
+    if (location and implementation and not _has(q, INCIDENT_WORDS)
+            and not _has(q, {"documentation", "docs", "runbook", "guide", "logs", "log", "traces", "trace"})):
+        return RoutePlan("code_lookup", ["code"], [], "Fast path: explicit source-location lookup; no planning model call.")
+    return None

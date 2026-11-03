@@ -5,6 +5,7 @@ export type RoutingMode = 'keyword' | 'llm';
 export type AnswerMode = 'evidence' | 'llm';
 
 export interface AnswerSynthesis {
+  failure_reason?: 'timeout' | 'access_denied' | 'provider_error' | 'invalid_response' | 'invalid_citations' | 'invalid_solutions' | null;
   source: 'evidence' | 'llm' | 'evidence_fallback';
   citations: string[];
   warning?: string | null;
@@ -20,6 +21,7 @@ export interface AgentAssignment {
 }
 
 export interface QueryAnalysis {
+  fast_path?: boolean;
   source: 'keyword' | 'llm' | 'keyword_fallback';
   intent: 'incident' | 'how_to' | 'code_lookup' | 'logs_lookup' | 'unknown';
   summary: string;
@@ -32,6 +34,7 @@ export interface QueryAnalysis {
 export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';
 
 export interface HealthResponse {
+  routing_fast_path?: boolean;
   source_note?: string;
   status: string;
   mode: 'local' | 'remote';

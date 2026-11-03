@@ -1,4 +1,5 @@
 import type { CopilotResponse } from '../types';
+import RoutingFlow from './RoutingFlow';
 
 export default function Performance({ response }: { response: CopilotResponse }) {
   const report = response.performance;
@@ -14,6 +15,7 @@ export default function Performance({ response }: { response: CopilotResponse })
         <div><p className="eyebrow">Slowest step</p><strong>{report.slowest_step.replace('agent:', '')}</strong></div>
       </div>
       <p className="muted small">{response.analysis?.reason}</p>
+      <RoutingFlow response={response} />
       <div className="timing-bars">
         {report.steps.map((step) => <div className="timing-row" key={step.name}>
           <span>{step.name.replace('agent:', '').replace(/_/g, ' ')}{step.parallel && <small> | parallel</small>}</span>

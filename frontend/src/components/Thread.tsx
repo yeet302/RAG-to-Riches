@@ -80,7 +80,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
             {r.analysis && (
               <details className="trace">
                 <summary>
-                  Question analysis: {r.analysis.source === 'llm' ? 'Azure AI' : r.analysis.source === 'keyword_fallback' ? 'Keyword fallback' : 'Keywords'}
+                  Question analysis: {r.analysis.fast_path ? 'Fast path (no planning call)' : r.analysis.source === 'llm' ? 'Azure AI' : r.analysis.source === 'keyword_fallback' ? 'Keyword fallback' : 'Keywords'}
                 </summary>
                 <p>{r.analysis.summary}</p>
                 <p className="muted small">{r.analysis.reason}</p>

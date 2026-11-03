@@ -47,6 +47,7 @@ def health():
                             if os.getenv("SHOWCASE_OFFLINE") == "1" else "Configured specialist services" if SETTINGS.mode == "remote" else "Operator-selected local files"),
             "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()},
             "routing_mode": SETTINGS.effective_routing_mode,
+            "routing_fast_path": SETTINGS.routing_fast_path,
             "llm_configured": SETTINGS.llm_configured,
             "answer_mode": SETTINGS.effective_answer_mode,
             "agent_timeouts_seconds": {name: SETTINGS.timeout_for(name) for name in AGENTS}}

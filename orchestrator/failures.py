@@ -23,10 +23,21 @@ def annotate_errors(response: CopilotResponse) -> CopilotResponse:
             resolution="Check the orchestrator model configuration, Azure access, and planning timeout.",
             retryable=True))
     if response.synthesis and response.synthesis.source == "evidence_fallback":
+        details = {
+            "timeout": ("Final answer generation timed out; source evidence was preserved.",
+                        "Check model latency and the synthesis timeout, then retry."),
+            "access_denied": ("The final-answer model denied access; source evidence was preserved.",
+                              "Check the orchestrator model credentials and inference permissions."),
+            "invalid_citations": ("The final model answer had invalid source citations; source evidence was preserved.",
+                                  "Check the answer's citation IDs against the collected evidence using the request ID."),
+            "invalid_response": ("The final model answer was incomplete or invalid; source evidence was preserved.",
+                                 "Check the final model response format and output limits using the request ID."),
+        }
+        message, resolution = details.get(response.synthesis.failure_reason, (
+            "The final model answer was unavailable; source evidence was preserved.",
+            "Check model access, response validation, and the synthesis timeout, then retry."))
         errors.append(PipelineError(code="SYNTHESIS_FAILED", stage="synthesis",
-            message="The final model answer was unavailable; source evidence was preserved.",
-            resolution="Check model access, response validation, and the synthesis timeout, then retry.",
-            retryable=True))
+            message=message, resolution=resolution, retryable=True))
     response.errors = errors
     response.partial = response.partial or bool(errors)
     if response.findings and all(f.status in {"error", "no_access"} for f in response.findings):

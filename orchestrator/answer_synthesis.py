@@ -167,9 +167,19 @@ def evidence_context(response: CopilotResponse) -> tuple[dict, dict, bool]:
     return payload, references, bool(truncated)
 
 
-def validate_citations(answer: ModelAnswer, references: dict) -> list[str]:
+def validate_citations(answer: ModelAnswer, references: dict,
+                       evidence_text: dict[str, str] | None = None) -> list[str]:
     identifiers = answer.evidence_ids
-    inline = re.findall(r"\[([^\[\]\n]+)\]", answer.answer)
+    if re.search(r"\[[^\]\n]*\]\s*\(", answer.answer):
+        raise ValueError("Answer citations cannot be Markdown links")
+    # Source literals such as [injected-test-failure] are data, not source IDs.
+    # Permit them only when reproduced exactly from evidence this answer cites.
+    literal_brackets = {
+        token for identifier in identifiers
+        for token in re.findall(r"\[([^\[\]\n]+)\]", (evidence_text or {}).get(identifier, ""))
+    }
+    inline = [token for token in re.findall(r"\[([^\[\]\n]+)\]", answer.answer)
+              if token not in literal_brackets or re.search(r"\bE[0-9]+\b", token)]
     if (len(identifiers) != len(set(identifiers))
             or set(inline) != set(identifiers)
             or not set(identifiers).issubset(references)):
@@ -263,10 +273,12 @@ async def generate_answer(response: CopilotResponse, settings: Settings,
         metadata.source = "evidence_fallback"
         metadata.warning = "Azure answer generation is not configured; the evidence list was used."
     else:
+        failure_stage = "context"
         try:
             payload, references, truncated = evidence_context(response)
             if not references:
                 raise ValueError("No bounded evidence available")
+            failure_stage = "model"
             content = await asyncio.wait_for(
                 complete_json(
                     settings, SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False),
@@ -274,8 +286,12 @@ async def generate_answer(response: CopilotResponse, settings: Settings,
                 ),
                 timeout=settings.synthesis_timeout_seconds,
             )
+            failure_stage = "schema"
             generated = ModelAnswer.model_validate_json(content)
-            citations = validate_citations(generated, references)
+            evidence_text = {record["id"]: f"{record['summary']} {record['snippet']}"
+                             for record in payload["evidence"]}
+            failure_stage = "citations"
+            citations = validate_citations(generated, references, evidence_text)
             text = re.sub(
                 r"\[(E[1-9][0-9]*)\]",
                 lambda match: "[" + references[match.group(1)] + "]",
@@ -285,8 +301,7 @@ async def generate_answer(response: CopilotResponse, settings: Settings,
                 gaps = "; ".join(response.sources_unavailable[:20])
                 text += "\n\nCoverage gaps: " + (gaps or "Some agents or sources were unavailable.")
             response.answer = text
-            evidence_text = {record["id"]: f"{record['summary']} {record['snippet']}"
-                             for record in payload["evidence"]}
+            failure_stage = "solutions"
             cause, steps, not_ruled_out, notes = validate_solutions(
                 generated, references, evidence_text, diagnosis=response.kind == "diagnosis")
             response.likely_cause, response.steps, response.not_ruled_out = cause, steps, not_ruled_out
@@ -297,8 +312,15 @@ async def generate_answer(response: CopilotResponse, settings: Settings,
                 warning=" ".join(warnings) or None,
             )
         except Exception as exc:
-            log.warning("request_id=%s synthesis_failure_type=%s",
-                        response.request_id, type(exc).__name__)
+            if isinstance(exc, (asyncio.TimeoutError, httpx.TimeoutException)):
+                metadata.failure_reason = "timeout"
+            elif isinstance(exc, httpx.HTTPStatusError):
+                metadata.failure_reason = "access_denied" if exc.response.status_code in (401, 403) else "provider_error"
+            else:
+                metadata.failure_reason = {"citations": "invalid_citations", "solutions": "invalid_solutions"}.get(
+                    failure_stage, "invalid_response")
+            log.warning("request_id=%s synthesis_failure_type=%s synthesis_failure_stage=%s synthesis_failure_reason=%s",
+                        response.request_id, type(exc).__name__, failure_stage, metadata.failure_reason)
             metadata.source = "evidence_fallback"
             metadata.warning = "Azure answer generation failed or returned invalid citations; the evidence list was used."
     metadata.latency_ms = max(0, round((time.perf_counter() - started) * 1000))
