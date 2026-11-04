@@ -1,0 +1,122 @@
+{
+  "bug": "D04",
+  "question": "A developer cannot build the Ad Service locally using JDK 17. What documented Java requirement and build command should they check?",
+  "expected_cause": "Controlled setup violates the pinned documentation's minimum JDK 21 requirement; no build was actually executed.",
+  "expected_docs": [
+    {
+      "source": "src/ad/README.md",
+      "terms": [
+        "JDK 21"
+      ]
+    },
+    {
+      "source": "src/ad/README.md",
+      "terms": [
+        "./gradlew installDist"
+      ]
+    }
+  ],
+  "review_rule": "State at least JDK 21 and ./gradlew installDist with supporting references; do not claim a successful build.",
+  "agent_answer": "The Ad service requires at least JDK 21 to build. [1] The Ad service uses gradlew (the Gradle wrapper) to compile, install, and distribute, and the wrapper is included in the source code. [1]",
+  "correct?": "No",
+  "fix_worked?": "Not tested",
+  "time_taken_seconds": 4.39,
+  "agent_status": "ok",
+  "retrieval_hit_at_5": false,
+  "final_evidence_hit": false,
+  "reviewer_notes": "Correctly stated minimum JDK 21, but omitted the required ./gradlew installDist command. The command excerpt was absent from the retrieved top five; generic gradlew advice does not meet the predefined rule.",
+  "retrieved_evidence": [
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source c",
+      "ref": "src/ad/README.md:L1-L12",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12",
+      "snippet": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Java\nJDK 17+\nGradle 7+",
+      "ref": "https://opentelemetry.io/docs/demo/development/#java (text lines 31-33)",
+      "link": "https://opentelemetry.io/docs/demo/development/#java",
+      "snippet": "Java\nJDK 17+\nGradle 7+"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Auto-instrumentation\nThis service relies on the OpenTelemetry Java agent to automatically instrument\nlibraries such as gRPC, and to configure the OpenTelemetry SDK. The agent is\npassed into the process using the\n-javaagent\ncommand line argument. Command\nline arguments are added through the\nJAVA_TOOL",
+      "ref": "https://opentelemetry.io/docs/demo/services/ad/#auto-instrumentation (text lines 5-16)",
+      "link": "https://opentelemetry.io/docs/demo/services/ad/#auto-instrumentation",
+      "snippet": "Auto-instrumentation\nThis service relies on the OpenTelemetry Java agent to automatically instrument\nlibraries such as gRPC, and to configure the OpenTelemetry SDK. The agent is\npassed into the process using the\n-javaagent\ncommand line argument. Command\nline arguments are added through the\nJAVA_TOOL_OPTIONS\nin the\nDockerfile\n,\nand leveraged during the automatically generated Gradle startup script."
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Bridging non-OTel custom metrics (Prometheus client library)\nThe Ad service also exposes a small set of custom metrics using the\nPrometheus Java client library\nrather than the OpenTelemetry SDK. These metrics are exposed on a separate HTTP\nendpoint (\n/metrics\non\nAD_PROMETHEUS_PORT\n, default\n9465\n) a",
+      "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 233-244)",
+      "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+      "snippet": "Bridging non-OTel custom metrics (Prometheus client library)\nThe Ad service also exposes a small set of custom metrics using the\nPrometheus Java client library\nrather than the OpenTelemetry SDK. These metrics are exposed on a separate HTTP\nendpoint (\n/metrics\non\nAD_PROMETHEUS_PORT\n, default\n9465\n) and scraped by the\nOpenTelemetry Collector\u2019s"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+      "ref": "README.md:L25-L36",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+      "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing"
+    }
+  ],
+  "finding": {
+    "agent": "docs",
+    "status": "ok",
+    "summary": "The Ad service requires at least JDK 21 to build. [1] The Ad service uses gradlew (the Gradle wrapper) to compile, install, and distribute, and the wrapper is included in the source code. [1]",
+    "hypotheses": [
+      "The developer should verify their Java JDK version is 21 or higher to meet the documented Java requirement for building the Ad service. [1]",
+      "They should use the gradlew command (provided in the Ad service source) to build the service locally. [1]"
+    ],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source c",
+        "ref": "src/ad/README.md:L1-L12",
+        "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12",
+        "snippet": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh"
+      }
+    ],
+    "sources_searched": [
+      "README.md",
+      "https://opentelemetry.io/docs/demo/",
+      "https://opentelemetry.io/docs/demo/architecture/",
+      "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+      "https://opentelemetry.io/docs/demo/development/",
+      "https://opentelemetry.io/docs/demo/docker-deployment/",
+      "https://opentelemetry.io/docs/demo/feature-flags/",
+      "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+      "https://opentelemetry.io/docs/demo/forking/",
+      "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+      "https://opentelemetry.io/docs/demo/requirements/",
+      "https://opentelemetry.io/docs/demo/requirements/application/",
+      "https://opentelemetry.io/docs/demo/requirements/architecture/",
+      "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+      "https://opentelemetry.io/docs/demo/requirements/system/",
+      "https://opentelemetry.io/docs/demo/sample-configurations/",
+      "https://opentelemetry.io/docs/demo/services/ad/",
+      "src/ad/README.md"
+    ],
+    "sources_unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "confidence": 0.5,
+    "latency_ms": 4390
+  },
+  "mode": "live_azure",
+  "corpus": "live",
+  "review": {
+    "reviewer": "Codex",
+    "method": "Evidence review against predefined review_rule and saved online excerpts; not an independent human sign-off.",
+    "verdict": "No",
+    "reason": "Correctly stated minimum JDK 21, but omitted the required ./gradlew installDist command. The command excerpt was absent from the retrieved top five; generic gradlew advice does not meet the predefined rule."
+  }
+}

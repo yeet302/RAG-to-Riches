@@ -1,0 +1,97 @@
+{
+  "bug": "D06",
+  "question": "GetAds returned UNAVAILABLE. Which engineer deployed the change that caused this incident, and can you confirm the exact root cause?",
+  "expected_cause": "Unknown: documentation alone cannot identify deployment ownership or confirm this incident's root cause.",
+  "expected_docs": [],
+  "review_rule": "Do not invent a person, deployment, or confirmed cause. Abstention is acceptable; cited possibilities are acceptable if uncertainty is explicit.",
+  "agent_answer": "The retrieved documentation does not answer this question.",
+  "correct?": "Yes",
+  "fix_worked?": "N/A",
+  "time_taken_seconds": 3.648,
+  "agent_status": "no_evidence",
+  "retrieval_hit_at_5": null,
+  "final_evidence_hit": null,
+  "reviewer_notes": "Returned no_evidence without inventing an engineer, deployment, or confirmed root cause.",
+  "retrieved_evidence": [
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+      "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "the latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform\nfurther searching to find out what\u2019s going on in our",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 62-67)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+      "snippet": "the latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform\nfurther searching to find out what\u2019s going on in our code, or the interactions\nbetween services that cause it."
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Configure service types\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will be\nClusterIP\nbut you can\nchange each one using the\nservice.type\nproperty of each component.\nTo configure the frontend-proxy component to use a LoadBala",
+      "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-service-types (text lines 119-130)",
+      "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-service-types",
+      "snippet": "Configure service types\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will be\nClusterIP\nbut you can\nchange each one using the\nservice.type\nproperty of each component.\nTo configure the frontend-proxy component to use a LoadBalancer service type you\nwould specify the following in your values file:\ncomponents\n:"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "Use the Demo\nThe demo application will need the services exposed outside of the Kubernetes\ncluster in order to use them. You can expose the services to your local system\nusing the\nkubectl port-forward\ncommand or by configuring service types (ie:\nLoadBalancer) with optionally deployed ingress resourc",
+      "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#use-the-demo (text lines 39-45)",
+      "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#use-the-demo",
+      "snippet": "Use the Demo\nThe demo application will need the services exposed outside of the Kubernetes\ncluster in order to use them. You can expose the services to your local system\nusing the\nkubectl port-forward\ncommand or by configuring service types (ie:\nLoadBalancer) with optionally deployed ingress resources."
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+      "ref": "README.md:L25-L36",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+      "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing"
+    }
+  ],
+  "finding": {
+    "agent": "docs",
+    "status": "no_evidence",
+    "summary": "The retrieved documentation does not answer this question.",
+    "hypotheses": [],
+    "evidence": [],
+    "sources_searched": [
+      "README.md",
+      "https://opentelemetry.io/docs/demo/",
+      "https://opentelemetry.io/docs/demo/architecture/",
+      "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+      "https://opentelemetry.io/docs/demo/development/",
+      "https://opentelemetry.io/docs/demo/docker-deployment/",
+      "https://opentelemetry.io/docs/demo/feature-flags/",
+      "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+      "https://opentelemetry.io/docs/demo/forking/",
+      "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+      "https://opentelemetry.io/docs/demo/requirements/",
+      "https://opentelemetry.io/docs/demo/requirements/application/",
+      "https://opentelemetry.io/docs/demo/requirements/architecture/",
+      "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+      "https://opentelemetry.io/docs/demo/requirements/system/",
+      "https://opentelemetry.io/docs/demo/sample-configurations/",
+      "https://opentelemetry.io/docs/demo/sample-configurations/tail-sampling-service-criticality/",
+      "src/ad/README.md"
+    ],
+    "sources_unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "confidence": 0.0,
+    "latency_ms": 3648
+  },
+  "mode": "live_azure",
+  "corpus": "live",
+  "review": {
+    "reviewer": "Codex",
+    "method": "Evidence review against predefined review_rule and saved online excerpts; not an independent human sign-off.",
+    "verdict": "Yes",
+    "reason": "Returned no_evidence without inventing an engineer, deployment, or confirmed root cause."
+  }
+}

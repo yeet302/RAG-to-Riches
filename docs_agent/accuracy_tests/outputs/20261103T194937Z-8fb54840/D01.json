@@ -1,0 +1,134 @@
+{
+  "bug": "D01",
+  "question": "GetAds requests in the Ad Service fail intermittently, about one in ten requests. What documented behavior should we check?",
+  "expected_cause": "Controlled scenario: adFailure is enabled; documentation alone cannot confirm the runtime cause.",
+  "expected_docs": [
+    {
+      "source": "https://opentelemetry.io/docs/demo/feature-flags/",
+      "terms": [
+        "adFailure",
+        "GetAds",
+        "1/10th"
+      ]
+    }
+  ],
+  "review_rule": "Explain adFailure as a possible check, including its documented failure rate; do not assert a verified incident cause.",
+  "agent_answer": "Intermittent failures in requests such as GetAds in a service may be investigated through observing anomalous behavior in CPU utilization, memory utilization, and long tail latency in service latency histograms. [1] [3] Using tracing tools like Jaeger to trace and filter requests can provide visibility into the end-to-end latency of requests and help identify whether certain requests experience higher latency or failures. [1] Comparing request traces or telemetry data where a cache is hit versus where it is missed can help confirm if cache miss is affecting request latency and possibly causing intermittent failures. [2]",
+  "correct?": "No",
+  "fix_worked?": "Not tested",
+  "time_taken_seconds": 5.774,
+  "agent_status": "ok",
+  "retrieval_hit_at_5": false,
+  "final_evidence_hit": false,
+  "reviewer_notes": "Missed adFailure and its 1/10 failure behavior. Cited Recommendation Service cache documentation and extrapolated cache/CPU hypotheses to Ad Service without supporting incident evidence.",
+  "retrieved_evidence": [
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+      "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, ",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 54-65)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+      "snippet": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+      "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+      "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+      "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+      "ref": "README.md:L25-L36",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+      "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing"
+    },
+    {
+      "source_type": "doc",
+      "agent": "docs",
+      "summary": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our",
+      "ref": "README.md:L33-L44",
+      "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L33-L44",
+      "snippet": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our\n[fork guidance](https://opentelemetry.io/docs/demo/forking/).\n\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for"
+    }
+  ],
+  "finding": {
+    "agent": "docs",
+    "status": "ok",
+    "summary": "Intermittent failures in requests such as GetAds in a service may be investigated through observing anomalous behavior in CPU utilization, memory utilization, and long tail latency in service latency histograms. [1] [3] Using tracing tools like Jaeger to trace and filter requests can provide visibility into the end-to-end latency of requests and help identify whether certain requests experience higher latency or failures. [1] Comparing request traces or telemetry data where a cache is hit versus where it is missed can help confirm if cache miss is affecting request latency and possibly causing intermittent failures. [2]",
+    "hypotheses": [
+      "The intermittent failure rate of about one in ten GetAds requests might be caused by cache misses leading to higher latency or errors. [2]",
+      "Spiky CPU usage and intermittent memory utilization spikes in the Ad Service could be correlated with the intermittent failures. [1] [3]"
+    ],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, ",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 54-65)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+        "snippet": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in"
+      }
+    ],
+    "sources_searched": [
+      "README.md",
+      "https://opentelemetry.io/docs/demo/",
+      "https://opentelemetry.io/docs/demo/architecture/",
+      "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+      "https://opentelemetry.io/docs/demo/development/",
+      "https://opentelemetry.io/docs/demo/docker-deployment/",
+      "https://opentelemetry.io/docs/demo/feature-flags/",
+      "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+      "https://opentelemetry.io/docs/demo/forking/",
+      "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+      "https://opentelemetry.io/docs/demo/requirements/",
+      "https://opentelemetry.io/docs/demo/requirements/application/",
+      "https://opentelemetry.io/docs/demo/requirements/architecture/",
+      "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+      "https://opentelemetry.io/docs/demo/requirements/system/",
+      "https://opentelemetry.io/docs/demo/sample-configurations/",
+      "https://opentelemetry.io/docs/demo/services/ad/",
+      "src/ad/README.md"
+    ],
+    "sources_unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "confidence": 0.5,
+    "latency_ms": 5774
+  },
+  "mode": "live_azure",
+  "corpus": "live",
+  "review": {
+    "reviewer": "Codex",
+    "method": "Evidence review against predefined review_rule and saved online excerpts; not an independent human sign-off.",
+    "verdict": "No",
+    "reason": "Missed adFailure and its 1/10 failure behavior. Cited Recommendation Service cache documentation and extrapolated cache/CPU hypotheses to Ad Service without supporting incident evidence."
+  }
+}
