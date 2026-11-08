@@ -108,12 +108,14 @@ def test_source_failures(partial):
 
 
 @pytest.mark.parametrize('citations', [[0], [99], ['1'], [True], []])
-def test_invalid_citations_fail_closed(citations):
+def test_invalid_citations_discard_model_claims(citations):
     agent = offline_agent()
     agent.llm_transport = httpx.MockTransport(lambda _: model_json({
         'status': 'ok', 'claims': [{'text': 'Unsupported answer', 'citations': citations}], 'hypotheses': []}))
     result = asyncio.run(agent.run(request(CASES[0]['question'])))
-    assert result.status == 'error'
+    assert result.status == 'ok' and result.error is not None
+    assert 'Retrieval-only' in result.summary and result.evidence
+    assert result.hypotheses == []
     assert 'Unsupported answer' not in result.summary
 
 
@@ -131,7 +133,10 @@ def test_model_failures_are_sanitized(mode):
             'message': {'content': '{}', 'refusal': 'secret provider details' if mode == 'refusal' else None}}]})
     agent.llm_transport = httpx.MockTransport(failure)
     result = asyncio.run(agent.run(request(CASES[0]['question'])))
-    assert result.status == 'error'
+    assert result.status == ('error' if mode == 'http_error' else 'ok')
+    assert result.error is not None
+    if mode != 'http_error':
+        assert 'Retrieval-only' in result.summary and result.evidence
     assert 'secret' not in result.model_dump_json()
 
 
@@ -143,7 +148,8 @@ def test_total_deadline():
     agent.llm_transport = httpx.MockTransport(delayed)
     started = time.perf_counter()
     result = asyncio.run(agent.run(request(CASES[0]['question'])))
-    assert result.status == 'error' and 'time budget' in result.summary
+    assert result.status == 'ok' and result.error.code == 'DOCS_MODEL_BUDGET_EXHAUSTED'
+    assert result.evidence and 'Retrieval-only' in result.summary
     assert time.perf_counter() - started < 0.5
 
 
@@ -284,5 +290,93 @@ def test_unsupported_url_is_reported_with_a_specific_safe_error_code():
     agent.llm_transport=httpx.MockTransport(lambda req:model_json({
         'status':'ok','claims':[{'text':'Open https://invented.invalid/private','citations':[1]}],'hypotheses':[]}))
     finding=asyncio.run(agent.run(request('How are flags configured?')))
-    assert finding.status=='error' and finding.error.code=='DOCS_UNSUPPORTED_URL'
+    assert finding.status=='ok' and finding.error.code=='DOCS_UNSUPPORTED_URL'
+    assert 'Retrieval-only' in finding.summary and finding.evidence
+    assert not finding.hypotheses
     assert 'invented.invalid' not in finding.model_dump_json()
+
+
+@pytest.mark.parametrize('first,code', [
+    ({'status':'ok','claims':[],'hypotheses':[]}, 'MODEL_CLAIMS_EMPTY'),
+    ({'status':'no_evidence','claims':[{'text':'bad','citations':[1]}],'hypotheses':[]}, 'MODEL_ABSTENTION_INVALID'),
+    ({'status':'ok','claims':[{'text':'bad','citations':[99]}],'hypotheses':[]}, 'INVALID_CITATION'),
+    ({'status':'ok','claims':[{'text':'bad','citations':['1']}],'hypotheses':[]}, 'MODEL_SCHEMA_INVALID'),
+])
+def test_invalid_answer_is_retried_once_with_same_evidence(first, code, caplog):
+    agent = offline_agent()
+    bodies = []
+    def respond(req):
+        bodies.append(json.loads(req.content))
+        if len(bodies) == 1:
+            return model_json(first)
+        return model_json({'status':'ok','claims':[{'text':'Build using JDK 21.','citations':[1]}],'hypotheses':[]})
+    agent.llm_transport = httpx.MockTransport(respond)
+    result = asyncio.run(agent.run(request(CASES[0]['question'])))
+    assert result.status == 'ok' and result.error is None
+    assert 'Build using JDK 21.' in result.summary
+    assert len(bodies) == 2
+    assert bodies[0]['messages'][1] == bodies[1]['messages'][1]
+    assert code in bodies[1]['messages'][0]['content']
+    assert 'docs-test-001' in caplog.text and code in caplog.text
+
+
+@pytest.mark.parametrize('mode,code,calls', [
+    ('truncated','MODEL_INCOMPLETE',2),
+    ('refused','MODEL_REFUSED',1),
+    ('filtered','MODEL_REFUSED',1),
+    ('malformed','MODEL_ENVELOPE_INVALID',2),
+    ('empty','MODEL_EMPTY',2),
+    ('json','MODEL_SCHEMA_INVALID',2),
+    ('claims','MODEL_CLAIMS_EMPTY',2),
+])
+def test_persistent_failure_returns_original_excerpts_with_specific_warning(mode,code,calls,caplog):
+    agent = offline_agent()
+    seen = []
+    def respond(req):
+        seen.append(req)
+        if mode == 'malformed':
+            return httpx.Response(200,json={'choices':[]})
+        if mode == 'claims':
+            return model_json({'status':'ok','claims':[],'hypotheses':[]})
+        return httpx.Response(200,json={'choices':[{
+            'finish_reason': {'truncated':'length','filtered':'content_filter'}.get(mode,'stop'),
+            'message': {'content': '' if mode == 'empty' else 'private-invalid-json',
+                        'refusal':'private-refusal' if mode == 'refused' else None}}]})
+    agent.llm_transport=httpx.MockTransport(respond)
+    expected_evidence,_,_=asyncio.run(agent.retrieve(CASES[0]['question']))
+    finding=asyncio.run(agent.run(request(CASES[0]['question'])))
+    assert len(seen)==calls
+    assert finding.status=='ok' and 'Retrieval-only' in finding.summary
+    assert finding.error.code=='DOCS_'+code
+    assert finding.evidence==expected_evidence and finding.hypotheses==[]
+    assert 'private-' not in finding.model_dump_json()+caplog.text
+    assert code in caplog.text
+
+
+def test_timeout_retry_and_fallback_fit_total_budget():
+    agent=offline_agent(timeout=0.3, llm_timeout=1)
+    calls=[]
+    async def delayed(req):
+        calls.append(req)
+        await asyncio.sleep(1)
+        return model_json({'status':'no_evidence','claims':[],'hypotheses':[]})
+    agent.llm_transport=httpx.MockTransport(delayed)
+    started=time.perf_counter()
+    finding=asyncio.run(agent.run(request(CASES[0]['question'])))
+    assert finding.status=='ok' and finding.error.code=='DOCS_MODEL_TIMEOUT'
+    assert finding.evidence and len(calls)==2
+    assert time.perf_counter()-started < 0.4
+
+
+@pytest.mark.parametrize('status',[401,403,429])
+def test_http_errors_are_not_retried_or_hidden(status):
+    agent=offline_agent()
+    calls=[]
+    def respond(req):
+        calls.append(req)
+        return httpx.Response(status,text='private-provider-body')
+    agent.llm_transport=httpx.MockTransport(respond)
+    finding=asyncio.run(agent.run(request(CASES[0]['question'])))
+    assert len(calls)==1
+    assert finding.status==('no_access' if status in (401,403) else 'error')
+    assert finding.error.http_status==status

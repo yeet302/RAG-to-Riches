@@ -28,8 +28,9 @@ incident list is empty.
 
 In remote integration mode, the browser lets the orchestrator choose the planning
 and answer modes. Configure `ROUTING_MODE=llm` and `ANSWER_MODE=llm` in
-`orchestrator/.env` for model delegation and final compilation. The local-search
-mode retains the Question analysis and Answer generation controls for debugging.
+`orchestrator/.env` for model delegation and final compilation. The browser uses
+the server routing and answer settings in both local and remote modes; configure
+those settings in `orchestrator/.env`.
 The header reads the actual mode from `/api/health`. Each response shows the model's
 assignments, specialist execution trace, evidence, and any planning or answer fallback.
 Azure credentials stay on the backend. See [Azure setup](../orchestrator/LLM_ROUTING.md).
@@ -74,3 +75,20 @@ buttons. Selecting a number reveals the full source, expands hidden evidence whe
 needed, opens the excerpt, and focuses the selected source. Full references remain
 in Sources; stored answers and exports remain unchanged. Unknown bracketed text and
 literal log labels are displayed as supplied. Paragraph breaks are retained.
+
+
+## Example investigations and saved results
+
+The home-page buttons query the connected OpenTelemetry Demo sources: Ad Service
+build documentation, GetAds implementation, recent warning logs, and an UNAVAILABLE
+investigation using logs, docs, and code. The first three are single-source fast
+paths; the incident prompt uses semantic planning (keyword fallback selects logs
+and docs, then code). Actual evidence depends on available sources and access.
+
+Returning home or refreshing clears the browser conversation, not saved Accuracy
+results. Completed investigation responses and reviews persist in the backend
+SQLite file, normally orchestrator/results/accuracy.sqlite3; ACCURACY_DB_PATH can
+override its location. Restarting the server preserves that file. The tab shows
+the latest 100 runs and Download CSV exports all stored runs. Exports are separate
+downloaded files. Step Yes/No feedback is currently in server memory and is lost
+on restart; use the saved Accuracy review for a durable fix outcome.

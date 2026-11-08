@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import type { AnswerMode, HealthResponse, Incident, Message, RoutingMode } from './types';
+import type { HealthResponse, Incident, Message } from './types';
 import Composer from './components/Composer';
 import IncidentList from './components/IncidentList';
 import Thread from './components/Thread';
@@ -16,9 +16,6 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<HealthResponse['mode'] | null>(null);
-  const [routingMode, setRoutingMode] = useState<RoutingMode>('keyword');
-  const [llmConfigured, setLlmConfigured] = useState(false);
-  const [answerMode, setAnswerMode] = useState<AnswerMode>('evidence');
   const conversationId = useRef(uid());
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -27,9 +24,6 @@ export default function App() {
     api.health().then((health) => {
       setMode(health.mode);
       setSourceNote(health.source_note ?? '');
-      setLlmConfigured(health.llm_configured);
-      setAnswerMode(health.answer_mode ?? (health.llm_configured ? 'llm' : 'evidence'));
-      setRoutingMode(!health.llm_configured ? 'keyword' : health.routing_mode ?? 'keyword');
     }).catch(() => setMode(null));
   }, []);
 
@@ -49,9 +43,7 @@ export default function App() {
         { id: pendingId, role: 'assistant', status: 'loading', question: q },
       ]);
       try {
-        const response = await api.ask(q, incident?.id, conversationId.current,
-          mode === 'local' ? routingMode : undefined,
-          mode === 'local' ? answerMode : undefined);
+        const response = await api.ask(q, incident?.id, conversationId.current);
         setMessages((m) => m.map((x) => (x.id === pendingId ? { id: pendingId, role: 'assistant', status: 'done', response } : x)));
       } catch (e) {
         const error = e instanceof Error ? e.message : String(e);
@@ -60,7 +52,7 @@ export default function App() {
         setBusy(false);
       }
     },
-    [busy, mode, routingMode, answerMode],
+    [busy],
   );
 
   const goHome = () => {
@@ -106,41 +98,14 @@ export default function App() {
         {view === 'accuracy' ? <AccuracyResults /> : <>
         {sourceNote && <p className="source-notice">{sourceNote}</p>}
         {!inChat && <h1 className="hero">What's going on?</h1>}
-        {mode === 'local' && !sourceNote.startsWith('Offline walkthrough') && <>
-        <div className="analysis-controls">
-          <label htmlFor="routing-mode">Question analysis</label>
-          <select
-            id="routing-mode"
-            value={routingMode}
-            onChange={(event) => setRoutingMode(event.target.value as RoutingMode)}
-            disabled={busy}
-          >
-            <option value="keyword">Keywords</option>
-            <option value="llm" disabled={!llmConfigured}>Azure AI{!llmConfigured ? ' (not configured)' : ''}</option>
-          </select>
-          <span className="muted small">
-            {routingMode === 'llm' ? 'AI plans specialist questions and tasks.' : 'Rules select the route.'}
-          </span>
-        </div>
-        <div className="analysis-controls">
-          <label htmlFor="answer-mode">Answer generation</label>
-          <select
-            id="answer-mode"
-            value={answerMode}
-            onChange={(event) => setAnswerMode(event.target.value as AnswerMode)}
-            disabled={busy}
-          >
-            <option value="llm" disabled={!llmConfigured}>AI explanation{!llmConfigured ? ' (not configured)' : ''}</option>
-            <option value="evidence">Evidence list</option>
-          </select>
-          <span className="muted small">
-            {answerMode === 'llm' ? 'Azure explains the collected evidence with citations.' : 'Show matching excerpts without AI answer generation.'}
-          </span>
-        </div>
-        </>}
         {!inChat && <div className="example-questions" aria-label="Example investigations">
           <p className="muted small">Try a plain-language question</p>
-          {['Where is the investigate function defined?', 'How does the orchestrator route requests?', 'Show ad service warning logs', 'The ad service is returning errors. Why?'].map((question) =>
+          {[
+            'Show documentation for building the OpenTelemetry Demo Ad Service locally.',
+            'Where is GetAds implemented in the OpenTelemetry Demo Ad Service?',
+            'Show Ad Service warning logs from the last hour.',
+            'Investigate why Ad Service GetAds requests return UNAVAILABLE using logs, documentation, and source code.',
+          ].map((question) =>
             <button className="chip" key={question} disabled={busy} onClick={() => ask(question)}>{question}</button>)}
         </div>}
         <Composer onSubmit={(q) => ask(q)} busy={busy} compact={inChat} />

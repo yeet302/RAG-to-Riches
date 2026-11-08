@@ -80,9 +80,30 @@ def test_docs_evidence_reaches_code_stage(monkeypatch, retrieval_only):
             received.append(context['evidence_bundle'])
             return schemas.AgentFinding(agent='code', status='no_evidence', summary='Test probe only')
     result = asyncio.run(pipeline.investigate(
-        'Where is the Ad Service build configuration in the code?',
+        'Explain the Ad Service build configuration in documentation and code.',
         agents={'docs': docs, 'code': CodeProbe()}, settings=settings))
     assert result.agents_used == ['docs', 'code']
     assert received and received[0]['agent_statuses']['docs'] == 'ok'
     assert received[0]['evidence'] and received[0]['evidence'][0]['agent'] == 'docs'
     assert ('Retrieval-only' if retrieval_only else 'JDK 21') in received[0]['summaries']['docs']
+
+
+def test_model_fallback_preserves_excerpts_for_next_stage(monkeypatch):
+    docs, pipeline, settings, schemas = reference(monkeypatch)
+    # HTTP adapter still passes through real schema validation and execution.
+    hosted = offline_agent(token='test-token')
+    hosted.llm_transport = httpx.MockTransport(lambda req: httpx.Response(200, json={'choices':[]}))
+    agents = importlib.import_module('agents')
+    docs = agents.HTTPAgent('docs', 'http://docs.test/agents/docs/run', token='test-token',
+        transport=httpx.ASGITransport(app=create_app(hosted)))
+    received=[]
+    class CodeProbe:
+        async def run(self, question, context):
+            received.append(context['evidence_bundle'])
+            return schemas.AgentFinding(agent='code',status='no_evidence',summary='Test probe only')
+    result=asyncio.run(pipeline.investigate('Explain the Ad Service build configuration in documentation and code.',
+        agents={'docs':docs,'code':CodeProbe()}, settings=settings))
+    assert result.evidence and result.partial
+    assert any(error.code=='DOCS_MODEL_ENVELOPE_INVALID' for error in result.errors)
+    assert received[0]['evidence'] and 'Retrieval-only' in received[0]['summaries']['docs']
+    assert result.findings[0].hypotheses==[]
