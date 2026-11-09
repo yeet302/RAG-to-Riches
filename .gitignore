@@ -58,3 +58,7 @@ src/frontend/cypress/screenshots
 src/shipping/target/
 
 !src/currency/build
+
+.env
+.env.*
+!.env.example

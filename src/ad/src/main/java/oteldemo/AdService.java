@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,12 +161,16 @@ public final class AdService {
   }
 
   private static class AdServiceImpl extends oteldemo.AdServiceGrpc.AdServiceImplBase {
-    
+
     private static final String AD_FAILURE = "adFailure";
     private static final String AD_MANUAL_GC_FEATURE_FLAG = "adManualGc";
     private static final String AD_HIGH_CPU_FEATURE_FLAG = "adHighCpu";
+    private static final String AD_TARGETED_FAILURE = "adTargetedFailure";
+    private static final String AD_EMPTY_RESPONSE = "adEmptyResponse";
+    // Rotate primary inject path so one demo run emits all five scenario fingerprints.
+    private static final AtomicInteger INJECT_LANE = new AtomicInteger();
     private static final Client ffClient = OpenFeatureAPI.getInstance().getClient();
-    
+
     private AdServiceImpl() {}
 
     /**
@@ -201,8 +206,10 @@ public final class AdService {
           logger.info("no baggage found in context");
         }
 
+        // Scenario 3: high CPU (continuous while flag is on)
         CPULoad cpuload = CPULoad.getInstance();
-        cpuload.execute(ffClient.getBooleanValue(AD_HIGH_CPU_FEATURE_FLAG, false, evaluationContext));
+        cpuload.execute(
+            ffClient.getBooleanValue(AD_HIGH_CPU_FEATURE_FLAG, false, evaluationContext));
 
         span.setAttribute("demo.ad.context_keys", req.getContextKeysList().toString());
         span.setAttribute("demo.ad.context_keys.count", req.getContextKeysCount());
@@ -234,15 +241,56 @@ public final class AdService {
             Attributes.of(
                 adRequestTypeKey, adRequestType.name(), adResponseTypeKey, adResponseType.name()));
 
-        // Always fail when adFailure is enabled (intentional injection for logs-agent eval)
-        if (ffClient.getBooleanValue(AD_FAILURE, false, evaluationContext)) {
-          throw new StatusRuntimeException(Status.UNAVAILABLE);
+        boolean flagFailure =
+            ffClient.getBooleanValue(AD_FAILURE, false, evaluationContext);
+        boolean flagTargetedFailure =
+            ffClient.getBooleanValue(AD_TARGETED_FAILURE, false, evaluationContext);
+        boolean flagManualGc =
+            ffClient.getBooleanValue(AD_MANUAL_GC_FEATURE_FLAG, false, evaluationContext);
+        boolean flagEmptyResponse =
+            ffClient.getBooleanValue(AD_EMPTY_RESPONSE, false, evaluationContext);
+
+        // Lanes 0-3 cover scenarios 1,2,4,5. Scenario 3 (CPU) runs above on every request.
+        int lane = Math.floorMod(INJECT_LANE.getAndIncrement(), 4);
+        span.setAttribute("demo.ad.inject_lane", lane);
+
+        if (lane == 0 && flagFailure) {
+          // Scenario 1: generic GetAds UNAVAILABLE
+          throw new StatusRuntimeException(
+              Status.UNAVAILABLE.withDescription("inject:ads-unavailable"));
         }
 
-        if (ffClient.getBooleanValue(AD_MANUAL_GC_FEATURE_FLAG, false, evaluationContext)) {
-          logger.warn("Feature Flag " + AD_MANUAL_GC_FEATURE_FLAG + " enabled, performing a manual gc now");
+        if (lane == 1) {
+          // Scenario 2: targeted-only failure when possible; else fall back to scenario 1
+          if (flagTargetedFailure && adRequestType == AdRequestType.TARGETED) {
+            throw new StatusRuntimeException(
+                Status.UNAVAILABLE.withDescription("inject:ads-targeted"));
+          }
+          if (flagFailure) {
+            throw new StatusRuntimeException(
+                Status.UNAVAILABLE.withDescription("inject:ads-unavailable"));
+          }
+        }
+
+        if (lane == 2 && flagManualGc) {
+          // Scenario 4: manual GC / pause path, then still return ads
+          logger.warn(
+              "Feature Flag {} enabled, performing a manual gc now [inject:ads-gc]",
+              AD_MANUAL_GC_FEATURE_FLAG);
           GarbageCollectionTrigger gct = new GarbageCollectionTrigger();
           gct.doExecute();
+        }
+
+        if (lane == 3 && flagEmptyResponse) {
+          // Scenario 5: successful RPC with empty payload
+          logger.warn(
+              "Serving empty AdResponse for request type {} [inject:ads-empty]",
+              adRequestType.name());
+          span.setAttribute("demo.ad.count", 0);
+          span.setAttribute("demo.ad.response_type", "EMPTY");
+          responseObserver.onNext(AdResponse.newBuilder().build());
+          responseObserver.onCompleted();
+          return;
         }
 
         AdResponse reply = AdResponse.newBuilder().addAllAds(allAds).build();
@@ -252,10 +300,13 @@ public final class AdService {
         span.addEvent(
             "Error", Attributes.of(AttributeKey.stringKey("exception.message"), e.getMessage()));
         span.setStatus(StatusCode.ERROR);
+        String injectTag =
+            Optional.ofNullable(e.getStatus().getDescription()).orElse("inject:ads-unavailable");
         logger.log(
             Level.WARN,
-            "GetAds Failed with status {} [injected-test-failure]",
-            e.getStatus());
+            "GetAds Failed with status {} [{}]",
+            e.getStatus(),
+            injectTag);
         responseObserver.onError(e);
       }
     }

@@ -3,7 +3,7 @@
   "flags": {
     "adFailure": {
       "defaultVariant": "on",
-      "description": "Fail ad service",
+      "description": "Fail ad service (inject:ads-unavailable)",
       "state": "ENABLED",
       "variants": {
         "off": false,
@@ -11,8 +11,8 @@
       }
     },
     "adHighCpu": {
-      "defaultVariant": "off",
-      "description": "Triggers high cpu load in the ad service",
+      "defaultVariant": "on",
+      "description": "Triggers high cpu load in the ad service (inject:ads-cpu)",
       "state": "ENABLED",
       "variants": {
         "off": false,
@@ -20,8 +20,26 @@
       }
     },
     "adManualGc": {
-      "defaultVariant": "off",
-      "description": "Triggers full manual garbage collections in the ad service",
+      "defaultVariant": "on",
+      "description": "Triggers full manual garbage collections in the ad service (inject:ads-gc)",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "adTargetedFailure": {
+      "defaultVariant": "on",
+      "description": "Fail targeted GetAds requests (inject:ads-targeted)",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "adEmptyResponse": {
+      "defaultVariant": "on",
+      "description": "Return empty AdResponse payloads (inject:ads-empty)",
       "state": "ENABLED",
       "variants": {
         "off": false,

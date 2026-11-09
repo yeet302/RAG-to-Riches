@@ -45,7 +45,7 @@ public class CPULoad {
      */
     public void execute(Boolean enabled) {
         if (enabled) {
-            logger.info("High CPU-Load problempattern enabled");
+            logger.info("High CPU-Load problempattern enabled [inject:ads-cpu]");
             if (!running) {
                 spawnLoadWorkers(THREAD_COUNT);
                 running = true;
