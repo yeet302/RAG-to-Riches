@@ -1,2 +1,4 @@
-outputs/
+outputs/*
+!outputs/261103-Accuracy Test/
+!outputs/261109-Planted Bug Test/
 __pycache__/
