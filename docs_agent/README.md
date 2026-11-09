@@ -179,6 +179,7 @@ claim's cited excerpts. Source IDs still control all evidence references; invent
 URLs, URLs found only in uncited excerpts, out-of-range citation IDs, and inline
 citation markup are rejected. This permits documented UI addresses without trusting
 model-generated links. Validation failures include a sanitized reason code.
+
 ## Local Azure run
 
 Configuration is loaded from `docs_agent/.env` regardless of the working directory.

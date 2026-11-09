@@ -6,7 +6,7 @@ UW-Madison CS 620 Capstone Project
 - Navya P.
 - John W. 
 - Roshan S.
-- Justine R.
+- Justina R.
 - Kalyan M.
 - Lantian Y.
 
