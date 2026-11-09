@@ -1,4 +1,4 @@
-# Docs Agent Accuracy Tests
+# Docs Agent Accuracy Tests (2026-11-09)
 
 Six fixed cases test whether the docs agent finds and uses the right online documentation: four questions with expected supporting documents and two questions the documentation cannot establish an answer to.
 
@@ -28,4 +28,16 @@ Accuracy = Yes / all attempted cases, including errors. New runs start as REVIEW
 
 ## Current Results
 
-Six cases were evaluated using online documentation and gpt-4.1-mini. Four passed (**66.7%**); D01 and D04 failed. Average response time was **4.03 seconds**. See [RESULTS.md](RESULTS.md) for failure analysis.
+Six cases were evaluated using online documentation and gpt-4.1-mini. Four passed (**66.7%**); D01 and D04 failed. Average response time was **4.03 seconds**. [Test analysis](<261103-Accuracy Test.md>) · [Raw run output](<outputs/261103-Accuracy Test/report.json>)
+
+## B-01 to B-04 Retrieval Baseline (2026-11-09)
+
+The original ranking returned five excerpts per query. B-01 (GetAds UNAVAILABLE)
+and B-03 (high CPU usage) each had a direct match at rank 1.
+
+Expected documents for existing bugs are candidate references found through
+manual or LLM-assisted search. Either method may miss a more relevant source.
+Within the scope of this review, no directly matching document was found for
+B-02 or B-04, so their exact retrieval correctness is unscored.
+
+[Test analysis and Top 5 rankings](<261109-Planted Bug Test.md>) · [Raw run output](<outputs/261109-Planted Bug Test/report.json>)

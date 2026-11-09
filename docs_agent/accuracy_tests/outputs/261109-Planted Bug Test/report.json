@@ -1,0 +1,202 @@
+[
+  {
+    "bug": "B-01",
+    "question": "Why are GetAds requests failing with UNAVAILABLE errors in the Ad Service?",
+    "status": "ok",
+    "unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "calls.\npaymentUnreachable\nCheckout\nUse a bad address when calling the Payment service to make it seem like the Payment service is unavailable.\nproductCatalogFailure\nProduct Catalog\nGenerate an error for\nGetProduct\nrequests with product ID:\nOLJCESPC7Z\nproductCatalogLockContention\nProduct Catalog",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 82-93)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "calls.\npaymentUnreachable\nCheckout\nUse a bad address when calling the Payment service to make it seem like the Payment service is unavailable.\nproductCatalogFailure\nProduct Catalog\nGenerate an error for\nGetProduct\nrequests with product ID:\nOLJCESPC7Z\nproductCatalogLockContention\nProduct Catalog"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prom",
+        "ref": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics (text lines 355-366)",
+        "link": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics",
+        "snippet": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prometheus client library, scraped by the Collector):\nA counter of ads served, labeled by\ncategory\n(e.g.\ntelescopes"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\"",
+        "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 217-228)",
+        "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+        "snippet": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\""
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();",
+        "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 225-232)",
+        "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+        "snippet": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();"
+      }
+    ]
+  },
+  {
+    "bug": "B-02",
+    "question": "Why are targeted ad requests failing in the Ad Service, especially requests for binoculars?",
+    "status": "ok",
+    "unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prom",
+        "ref": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics (text lines 355-366)",
+        "link": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics",
+        "snippet": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prometheus client library, scraped by the Collector):\nA counter of ads served, labeled by\ncategory\n(e.g.\ntelescopes"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\"",
+        "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 217-228)",
+        "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+        "snippet": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\""
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();",
+        "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 225-232)",
+        "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+        "snippet": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n\nThe Ad service intentionally emits custom metrics in **two different ways**:\n\n1. **OpenTelemetry SDK** (recommended): `adRequestsCounter`\n   (`demo.ad.requests`) is created via `GlobalOpenTelemetry.getMeter(...)`\n   and exported to the OT",
+        "ref": "src/ad/README.md:L41-L52",
+        "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L41-L52",
+        "snippet": "```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n\nThe Ad service intentionally emits custom metrics in **two different ways**:\n\n1. **OpenTelemetry SDK** (recommended): `adRequestsCounter`\n   (`demo.ad.requests`) is created via `GlobalOpenTelemetry.getMeter(...)`\n   and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+        "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 27-38)",
+        "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+        "snippet": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service"
+      }
+    ]
+  },
+  {
+    "bug": "B-03",
+    "question": "What could cause unusually high CPU usage in the Ad Service?",
+    "status": "ok",
+    "unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a ",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Using Metrics and Traces to diagnose a memory leak\nApplication telemetry, such as the kind that OpenTelemetry can provide, is very\nuseful for diagnosing issues in a distributed system. In this scenario, we will\nwalk through a scenario demonstrating how to move from high-level metrics and\ntraces to d",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/ (text lines 1-5)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+        "snippet": "Using Metrics and Traces to diagnose a memory leak\nApplication telemetry, such as the kind that OpenTelemetry can provide, is very\nuseful for diagnosing issues in a distributed system. In this scenario, we will\nwalk through a scenario demonstrating how to move from high-level metrics and\ntraces to determine the cause of a memory leak."
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+        "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 27-38)",
+        "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+        "snippet": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP",
+        "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 35-46)",
+        "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+        "snippet": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP"
+      }
+    ]
+  },
+  {
+    "bug": "B-04",
+    "question": "Why is the Ad Service returning an empty AdResponse instead of advertisements?",
+    "status": "ok",
+    "unavailable": [
+      "Official website page limit reached; coverage is incomplete"
+    ],
+    "evidence": [
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a ",
+        "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+        "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+        "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 27-38)",
+        "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+        "snippet": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP",
+        "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 35-46)",
+        "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+        "snippet": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator",
+        "ref": "https://opentelemetry.io/docs/demo/#service-documentation (text lines 64-75)",
+        "link": "https://opentelemetry.io/docs/demo/#service-documentation",
+        "snippet": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator"
+      },
+      {
+        "source_type": "doc",
+        "agent": "docs",
+        "summary": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(",
+        "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 1-12)",
+        "link": "https://opentelemetry.io/docs/demo/architecture/",
+        "snippet": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python"
+      }
+    ]
+  }
+]

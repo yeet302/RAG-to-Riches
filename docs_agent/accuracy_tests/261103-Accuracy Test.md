@@ -1,6 +1,6 @@
-# Online Test Results
+# Online Answer Evaluation — 2026-11-03
 
-Run: `20261103T194937Z-8fb54840` — online documentation and gpt-4.1-mini. Review by Codex against the predefined rules: **4/6 passed (66.7%)**. D01 and D04 failed; D02, D03, D05 and D06 passed.
+Run: `20261103T194937Z-8fb54840` — online documentation and gpt-4.1-mini. **4/6 passed (66.7%)**. D01 and D04 failed; D02, D03, D05 and D06 passed.
 
 ## D01 — GetAds intermittent failures
 
@@ -14,7 +14,7 @@ Run: `20261103T194937Z-8fb54840` — online documentation and gpt-4.1-mini. Revi
 
 **Why it failed:** The target page was fetched, but the adFailure paragraph did not enter the top five retrieved excerpts. The model then applied another service's cache documentation to Ad Service without sufficient support. This is a retrieval-selection and answer-grounding failure.
 
-[Actual output and evidence](outputs/20261103T194937Z-8fb54840/D01.json)
+[Actual output and evidence](<outputs/261103-Accuracy Test/D01.json>)
 
 ## D04 — Local build with JDK 17
 
@@ -28,6 +28,6 @@ Run: `20261103T194937Z-8fb54840` — online documentation and gpt-4.1-mini. Revi
 
 **Why it failed:** The cited excerpt covered lines 1–12, including the JDK requirement, but the command was on line 13. The command-containing excerpt did not enter the top five. The answer was partially correct but incomplete under the original scoring rule.
 
-[Actual output and evidence](outputs/20261103T194937Z-8fb54840/D04.json)
+[Actual output and evidence](<outputs/261103-Accuracy Test/D04.json>)
 
 Expected answers are examples, not exact wording requirements. Both failures were judged from the actual answers and evidence, not from keyword checks alone. All six cases reached the website page limit, so coverage was incomplete. No fixes were executed.
