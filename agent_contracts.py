@@ -50,7 +50,6 @@ class AgentFinding(BaseModel):
     status: Literal["ok", "no_evidence", "error", "no_access"] = "ok"
     summary: str  # 1-2 sentence takeaway
     hypotheses: list[str] = Field(default_factory=list)
-    suggested_fix: Optional[str] = None
     evidence: list[Evidence] = Field(default_factory=list)
     sources_searched: list[str] = Field(default_factory=list)
     sources_unavailable: list[str] = Field(default_factory=list)

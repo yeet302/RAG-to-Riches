@@ -51,12 +51,6 @@ evidence (array of {path, commit, start_line, end_line, summary}),
 upstream_refs_used (array of reference strings from supplied upstream evidence),
 limitations (array of strings).
 
-When the root cause is supported by verified source code, recommend a
-specific and actionable fix in suggested_fix. Explain what configuration,
-condition, or code behavior needs to change.
-Do not invent fixes or assume they have been tested.
-If there is insufficient evidence to recommend a fix, return null.
-
 Every code citation must include its exact retrieved commit SHA and lines read via read_source.
 Do not mix evidence from different commits as if it represents one source version.
 When no verified evidence exists, say so and give low confidence.
@@ -280,7 +274,6 @@ class CodeAgent:
                 status=status,
                 summary=result.get("summary", "No source-grounded finding"),
                 hypotheses=result.get("hypotheses", []) if evidence else [],
-                suggested_fix=result.get("suggested_fix") if evidence else None,
                 evidence=evidence,
                 sources_searched=searched + [f"Upstream: {r}" for r in correlated_refs],
                 sources_unavailable=limits,
