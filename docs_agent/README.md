@@ -198,6 +198,6 @@ A successful `no_evidence` result means the model abstained because the sources 
 answer the question. The existing stdin CLI and HTTP contract remain available.
 Never commit `.env` or share API keys in chat.
 
-## Initial test
+## Initial Accuracy Evaluation
 
 See [accuracy tests](accuracy_tests/README.md) for the initial evaluation and results.
