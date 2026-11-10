@@ -16,16 +16,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import json
+from contextlib import suppress
 import os
 import sqlite3
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from orchestrator import AGENTS, SETTINGS, investigate
+from suggestions import SuggestionContext, followup_questions
 from query_analysis import analyze_question
 from accuracy import AccuracyReview, AccuracyStore
 from schemas import AskRequest, CopilotResponse, Feedback, Incident, RoutingMode
@@ -64,6 +67,11 @@ def suggestions():
     return []
 
 
+@app.post("/api/suggestions")
+async def contextual_suggestions(context: SuggestionContext):
+    return await followup_questions(context, SETTINGS)
+
+
 @app.get("/api/route")
 async def route(q: str, routing_mode: RoutingMode | None = None):
     q = q.strip()
@@ -75,6 +83,10 @@ async def route(q: str, routing_mode: RoutingMode | None = None):
 
 @app.post("/api/ask", response_model=CopilotResponse)
 async def ask(req: AskRequest):
+    return await run_ask(req)
+
+
+async def run_ask(req: AskRequest, on_progress=None):
     q = req.question.strip()
     if not q:
         raise HTTPException(400, "question is empty")
@@ -82,7 +94,7 @@ async def ask(req: AskRequest):
         raise HTTPException(400, "question is too long (max 2000 characters)")
     response = await investigate(q, incident_id=req.incident_id,
                              conversation_id=req.conversation_id, routing_mode=req.routing_mode,
-                             answer_mode=req.answer_mode)
+                             answer_mode=req.answer_mode, **({"on_progress": on_progress} if on_progress else {}))
     try:
         await asyncio.to_thread(ACCURACY.record, response,
                                "Local source search" if SETTINGS.mode == "local" else "Configured services")
@@ -90,6 +102,42 @@ async def ask(req: AskRequest):
     except (OSError, sqlite3.Error):
         log.error("request_id=%s accuracy recording failed", response.request_id)
     return response
+
+
+@app.post("/api/ask/stream")
+async def ask_stream(req: AskRequest):
+    if not req.question.strip() or len(req.question.strip()) > 2000:
+        raise HTTPException(400, "question must contain 1 to 2000 characters")
+
+    async def events():
+        queue = asyncio.Queue()
+
+        async def run():
+            try:
+                response = await run_ask(req, lambda event: queue.put_nowait({"type": "progress", **event}))
+                queue.put_nowait({"type": "result", "response": response.model_dump(mode="json")})
+            except Exception:
+                log.exception("Streaming investigation failed")
+                queue.put_nowait({"type": "error", "message": "The investigation could not finish. Please try again."})
+
+        task = asyncio.create_task(run())
+        try:
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=10)
+                except asyncio.TimeoutError:
+                    yield json.dumps({"type": "heartbeat"}) + "\n"
+                    continue
+                yield json.dumps(event) + "\n"
+                if event["type"] in {"result", "error"}:
+                    break
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
+
+    return StreamingResponse(events(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.get("/api/accuracy")

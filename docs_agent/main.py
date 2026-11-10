@@ -251,7 +251,9 @@ class DocsAgent:
                     code='DOCS_MODEL_ACCESS_DENIED' if denied else 'DOCS_MODEL_REQUEST_FAILED',
                     agent='docs', stage='model', http_status=status,
                     message='Azure denied access to the docs model.' if denied else 'The docs model request failed.',
-                    resolution='Ask the model resource owner to grant your signed-in account model inference access.' if denied
+                    resolution=('Check the docs agent API key and endpoint: use a current key from the same Azure resource as the configured endpoint, then restart the docs agent.'
+                        if self.settings.auth_mode == 'api_key' else
+                        'Check your Azure sign-in, token audience, and tenant; ask the resource owner to verify model inference access.') if denied
                         else 'Check model availability and deployment configuration, then retry.',
                     retryable=status == 429 or status >= 500),
                 **{**base, 'sources_unavailable': unavailable + [reason]})

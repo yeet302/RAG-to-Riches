@@ -1,3 +1,4 @@
+import { duration } from '../duration';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import type { AccuracyResult, AccuracyReview } from '../types';
@@ -44,7 +45,7 @@ export default function AccuracyResults() {
     </tr></thead><tbody>{rows.map((row) => <tr key={row.request_id} className={selected?.request_id === row.request_id ? 'selected' : ''}>
       <td><button className="link" onClick={() => choose(row)}>{row.bug}</button><small className="run-source">{row.run_type} | {row.response.pipeline_status}</small></td>
       <td>{row.expected_cause}</td><td><p className="answer-preview">{row.response.answer}</p></td><td>{row.correct}</td><td>{row.fix_worked}</td>
-      <td className="nowrap">{row.response.performance?.total_ms.toFixed(1) ?? '--'} ms</td>
+      <td className="nowrap">{row.response.performance ? duration(row.response.performance.total_ms) : '--'}</td>
     </tr>)}</tbody></table></div>}
     {selected && review && <section className="card review-card" aria-label="Review investigation">
       <h2>Review this result</h2><p className="muted small">{new Date(selected.created_at).toLocaleString()} | {selected.request_id}</p>

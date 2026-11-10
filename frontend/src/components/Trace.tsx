@@ -1,3 +1,4 @@
+import { duration } from '../duration';
 import type { AgentName, TraceEvent, PerformanceSummary } from '../types';
 
 const STAGE: Record<number, string> = {
@@ -20,7 +21,7 @@ export default function Trace({ trace, agents, performance }: { trace: TraceEven
         </span>
       </summary>
       {performance && (
-        <p>Total: {performance.total_ms.toFixed(1)} ms. Slowest step: {performance.slowest_step}.</p>
+        <p>Total: {duration(performance.total_ms)}. Slowest step: {performance.slowest_step}.</p>
       )}
       <ol>
         {trace.map((t, i) => (
@@ -30,7 +31,7 @@ export default function Trace({ trace, agents, performance }: { trace: TraceEven
               {t.agent}
               {t.parallel && <span className="parallel"> · parallel</span>}
             </span>
-            <span className="trace-action">{t.action} <small>({t.latency_ms} ms)</small></span>
+            <span className="trace-action">{t.action} <small>({duration(t.latency_ms)})</small></span>
           </li>
         ))}
       </ol>

@@ -92,3 +92,27 @@ override its location. Restarting the server preserves that file. The tab shows
 the latest 100 runs and Download CSV exports all stored runs. Exports are separate
 downloaded files. Step Yes/No feedback is currently in server memory and is lost
 on restart; use the saved Accuracy review for a durable fix outcome.
+
+### Live investigation progress
+
+Queries use `POST /api/ask/stream`, an NDJSON response carrying `progress` events
+for planning, selected specialists, individual specialist starts/completions, and
+answer preparation, followed by a terminal `result` or `error` event. The original
+`POST /api/ask` JSON endpoint remains available for other clients.
+
+The loading card displays completed stages, agent states, elapsed time, and
+animated accents (disabled with reduced-motion preferences). Stage completion
+measures workflow milestones, not predicted time remaining. Specialist failures
+and empty results appear explicitly while the investigation continues.
+Restart the orchestrator and rebuild the frontend together when deploying this change.
+
+### Questions beside the composer
+
+Starter questions cover documentation, source code, logs, and a full investigation.
+After an answer, the frontend independently calls `POST /api/suggestions` with a
+bounded question, answer, source gaps, and up to three recent questions. The
+orchestrator uses its configured Azure model to generate up to three self-contained
+follow-ups. Suggestion generation has an eight-second deadline and does not delay
+or invalidate the investigation answer. If the model is unavailable, the composer
+stays usable and shows that suggestions are unavailable. Starting a new query or
+returning home invalidates older suggestion requests.

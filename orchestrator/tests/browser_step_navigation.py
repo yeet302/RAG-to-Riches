@@ -61,8 +61,8 @@ def main():
                 route.fulfill(json={"recorded":True})
             page.route("**/api/feedback",record_feedback)
             def show(response):
-                page.unroute("**/api/ask")
-                page.route("**/api/ask",lambda route:route.fulfill(json=response))
+                page.unroute("**/api/ask/stream")
+                page.route("**/api/ask/stream",lambda route:route.fulfill(content_type="application/x-ndjson", body=json.dumps({"type": "result", "response": response}) + "\n"))
                 page.goto(f"http://127.0.0.1:{server.server_port}")
                 page.get_by_role("textbox").first.fill("Inspect the fixture incident")
                 page.locator("form.composer").get_by_role("button",name="Investigate",exact=True).click()
