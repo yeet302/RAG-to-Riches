@@ -12,11 +12,14 @@ from fastapi import FastAPI, Header, HTTPException, Response
 from typing import Optional
 from .contracts import AgentFinding, AgentRequest
 from agent_contracts import PipelineError
+from service_secrets import load_service_secrets, require_agent_token
 
 log = logging.getLogger('code_agent.service')
 
 
 def create_app(agent=None):
+    load_service_secrets('code')   # Key Vault -> environment, when KEY_VAULT_URL is set
+    require_agent_token('code')    # REQUIRE_AGENT_AUTH=true: never run without a token
     app = FastAPI(title='RAG-to-Riches Code Agent', version='1.0')
     app.state.agent = agent  # Lazily construct Foundry client on first real request.
 

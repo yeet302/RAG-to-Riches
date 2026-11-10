@@ -19,6 +19,8 @@ class Settings:
     def load(cls):
         from dotenv import load_dotenv
         load_dotenv()
+        from service_secrets import load_service_secrets
+        load_service_secrets('code')   # Key Vault -> environment, when KEY_VAULT_URL is set
         required = ['FOUNDRY_PROJECT_ENDPOINT', 'MODEL_DEPLOYMENT_NAME', 'AZURE_SEARCH_ENDPOINT']
         missing = [k for k in required if not os.getenv(k)]
         if missing:

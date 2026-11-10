@@ -89,7 +89,7 @@ def test_actual_files_through_api(corpus, monkeypatch):
     assert body["likely_cause"] is None
     assert 0 < body["confidence"] <= 95 and body["confidence_band"] in {"high", "medium", "low"}
     assert body["confidence_reasons"] and set(body["confidence_components"]) == {
-        "coverage", "corroboration", "relevance", "grounding"}
+                "agreement", "docs_relevance", "agent_context", "measured_accuracy", "grounding"}
 
 
 def test_docs_only_actual_repo_api():
