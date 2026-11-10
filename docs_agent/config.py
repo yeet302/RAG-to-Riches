@@ -7,9 +7,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlsplit
 
-from . import contracts as _contracts  # noqa: F401  (puts the repo root on sys.path)
-from service_secrets import load_service_secrets
-
 
 @dataclass(frozen=True)
 class Settings:
@@ -74,7 +71,6 @@ class Settings:
     @classmethod
     def from_env(cls):
         load_dotenv(Path(__file__).with_name('.env'), override=False)
-        load_service_secrets('docs')   # Key Vault -> environment, when KEY_VAULT_URL is set
         return cls(
             endpoint=(os.getenv('AZURE_AI_ENDPOINT') or os.getenv('AZURE_OPENAI_ENDPOINT', '')).strip(),
             model=(os.getenv('AZURE_AI_MODEL') or os.getenv('AZURE_OPENAI_DEPLOYMENT', '')).strip(),

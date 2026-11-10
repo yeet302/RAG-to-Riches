@@ -29,7 +29,6 @@ from orchestrator import AGENTS, SETTINGS, investigate
 from query_analysis import analyze_question
 from accuracy import AccuracyReview, AccuracyStore
 from schemas import AskRequest, CopilotResponse, Feedback, Incident, RoutingMode
-from service_secrets import secrets_source
 
 log = logging.getLogger("orchestrator")
 app = FastAPI(title="Incident Copilot Orchestrator", version="0.2.0")
@@ -51,11 +50,7 @@ def health():
             "routing_fast_path": SETTINGS.routing_fast_path,
             "llm_configured": SETTINGS.llm_configured,
             "answer_mode": SETTINGS.effective_answer_mode,
-            "agent_timeouts_seconds": {name: SETTINGS.timeout_for(name) for name in AGENTS},
-            # Whether each agent call carries a credential, and where keys come from (never values).
-            "agent_auth": {name: bool(SETTINGS.agent_tokens.get(name)) for name in AGENTS},
-            "require_agent_auth": SETTINGS.require_agent_auth,
-            "secrets_source": secrets_source()}
+            "agent_timeouts_seconds": {name: SETTINGS.timeout_for(name) for name in AGENTS}}
 
 
 @app.get("/api/incidents", response_model=list[Incident])

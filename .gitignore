@@ -17,8 +17,5 @@ orchestrator/results/*.sqlite3*
 # Investigation exports contain local answers and logs; share them separately.
 orchestrator/results/*accuracy_results.csv
 
-# Azure resource names for security/setup_azure.sh (not secrets, but subscription-specific)
-security/azure.env
-
 # Personal editor settings
 .vscode/

@@ -3,19 +3,12 @@ from __future__ import annotations
 
 import math
 import os
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 NAMES = ("logs", "docs", "code")  # "code" is the wire name for the codebase agent.
-LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1"}
-
-if str(ROOT.parent) not in sys.path:   # the shared repo-root modules (agent_contracts, service_secrets)
-    sys.path.insert(0, str(ROOT.parent))
-
-from service_secrets import load_service_secrets  # noqa: E402
 
 
 def env_bool(name: str, default: str) -> bool:
@@ -49,7 +42,6 @@ class Settings:
     llm_timeout_seconds: float = 10.0
     answer_mode: str = "auto"
     synthesis_timeout_seconds: float = 30.0
-    require_agent_auth: bool = False
 
     def timeout_for(self, name: str) -> float:
         """One effective deadline shared by HTTP transport and orchestration."""
@@ -107,24 +99,9 @@ class Settings:
                 raise ValueError("Agent endpoints must be absolute HTTP(S) URLs")
             if parsed.username or parsed.password or parsed.fragment:
                 raise ValueError("Use AGENT_TOKEN variables for credentials; URLs cannot have fragments")
-        if self.require_agent_auth and self.mode == "remote":
-            missing = [n for n in self.agent_urls if not self.agent_tokens.get(n)]
-            if missing:
-                raise ValueError("REQUIRE_AGENT_AUTH=true: no token for " + ", ".join(missing) + " agent "
-                                 "(set KEY_VAULT_URL, or the *_AGENT_TOKEN variables)")
-            tokens = [self.agent_tokens[n] for n in self.agent_urls]
-            if len(set(tokens)) != len(tokens):
-                raise ValueError("REQUIRE_AGENT_AUTH=true: each agent needs its own token, so a leaked token "
-                                 "only opens one agent")
-            plaintext = [n for n, url in self.agent_urls.items()
-                         if urlsplit(url).scheme == "http" and urlsplit(url).hostname not in LOCAL_HOSTS]
-            if plaintext:
-                raise ValueError("REQUIRE_AGENT_AUTH=true: use https for remote agents so tokens aren't sent "
-                                 "in plain text: " + ", ".join(plaintext))
 
     @classmethod
     def from_env(cls) -> Settings:
-        load_service_secrets("orchestrator")   # Key Vault -> environment, when KEY_VAULT_URL is set
         return cls(
             mode=os.getenv("ORCHESTRATOR_MODE", "remote").lower(),
             routing_mode=os.getenv("ROUTING_MODE", "auto").lower(),
@@ -149,5 +126,4 @@ class Settings:
                         if os.getenv(f"{n.upper()}_AGENT_URL")},
             agent_tokens={n: os.environ[f"{n.upper()}_AGENT_TOKEN"] for n in NAMES
                           if os.getenv(f"{n.upper()}_AGENT_TOKEN")},
-            require_agent_auth=env_bool("REQUIRE_AGENT_AUTH", "false"),
         )

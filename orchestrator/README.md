@@ -17,7 +17,6 @@ evidence list are used. Planning and answer generation are independent controls.
 | [Docs-agent handoff](DOCS_AGENT_HANDOFF.md) | Docs-specific onboarding and acceptance checks. |
 | [Frontend setup](../frontend/README.md) | Running the browser interface with this backend. |
 | [Confidence score definition](CONFIDENCE_DEFINITION.md) | What goes into the score, the weights, the team's measured numbers, and the old-vs-new comparison. |
-| [Security setup](../SECURITY_SETUP.md) | Key Vault for API keys, per-agent identities and access, authenticated agent calls. |
 
 ## Quick start
 

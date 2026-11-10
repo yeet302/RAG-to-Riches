@@ -6,12 +6,10 @@ from fastapi import FastAPI, Header, HTTPException, Response
 
 from .contracts import AgentFinding, AgentRequest
 from .main import DocsAgent
-from service_secrets import require_agent_token
 
 
 def create_app(agent=None):
     agent = agent or DocsAgent()
-    require_agent_token('docs')    # REQUIRE_AGENT_AUTH=true: never run without a token
     app = FastAPI(title='Docs Agent', version='1.0')
 
     @app.get('/health')
