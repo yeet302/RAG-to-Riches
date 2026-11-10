@@ -1,4 +1,5 @@
-import type { AgentName, TraceEvent } from '../types';
+import { duration } from '../duration';
+import type { AgentName, TraceEvent, PerformanceSummary } from '../types';
 
 const STAGE: Record<number, string> = {
   0: 'Route',
@@ -8,7 +9,7 @@ const STAGE: Record<number, string> = {
   4: 'Answer',
 };
 
-export default function Trace({ trace, agents }: { trace: TraceEvent[]; agents: AgentName[] }) {
+export default function Trace({ trace, agents, performance }: { trace: TraceEvent[]; agents: AgentName[]; performance?: PerformanceSummary | null }) {
   return (
     <details className="trace">
       <summary>
@@ -19,6 +20,9 @@ export default function Trace({ trace, agents }: { trace: TraceEvent[]; agents: 
           ))}
         </span>
       </summary>
+      {performance && (
+        <p>Total: {duration(performance.total_ms)}. Slowest step: {performance.slowest_step}.</p>
+      )}
       <ol>
         {trace.map((t, i) => (
           <li key={i}>
@@ -27,7 +31,7 @@ export default function Trace({ trace, agents }: { trace: TraceEvent[]; agents: 
               {t.agent}
               {t.parallel && <span className="parallel"> · parallel</span>}
             </span>
-            <span className="trace-action">{t.action}</span>
+            <span className="trace-action">{t.action} <small>({duration(t.latency_ms)})</small></span>
           </li>
         ))}
       </ol>

@@ -3,6 +3,7 @@ import type { CopilotResponse } from '../types';
 import { ConfidenceReasons, ConfidenceScore } from './Confidence';
 import EvidenceList from './EvidenceList';
 import StepList from './StepList';
+import CitedAnswer from './CitedAnswer';
 
 interface Props {
   response: CopilotResponse;
@@ -12,6 +13,7 @@ interface Props {
 
 export default function AnswerCard({ response: r, onAsk, conversationId }: Props) {
   const [showWhy, setShowWhy] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<{ ref: string } | null>(null);
   return (
     <>
       <section className="card answer">
@@ -22,11 +24,11 @@ export default function AnswerCard({ response: r, onAsk, conversationId }: Props
           <ConfidenceScore response={r} showWhy={showWhy} onToggle={() => setShowWhy(!showWhy)} />
         </div>
         <ConfidenceReasons response={r} show={showWhy} />
-        <p className="answer-text">{r.answer}</p>
+        <CitedAnswer text={r.answer} evidence={r.evidence} onSource={(ref) => setSelectedSource({ ref })} />
         {r.evidence.length > 0 && (
           <>
             <h3 className="sub">Sources</h3>
-            <EvidenceList evidence={r.evidence} />
+            <EvidenceList evidence={r.evidence} focus={selectedSource} />
           </>
         )}
         {r.suggestions.length > 0 && (
