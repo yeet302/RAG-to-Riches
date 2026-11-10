@@ -9,3 +9,6 @@ fastapi
 uvicorn
 httpx
 pytest
+
+# Agent token from Azure Key Vault (KEY_VAULT_URL).
+azure-keyvault-secrets>=4.8,<5

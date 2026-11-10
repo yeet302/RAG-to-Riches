@@ -1,11 +1,14 @@
 {
+  "_comment": "Confidence score v2 weights. Definition and reasoning: CONFIDENCE_DEFINITION.md. Weights must add up to 1; parts that don't apply to a question are left out and the rest are re-weighted.",
   "weights": {
-    "coverage": 0.3,
-    "corroboration": 0.3,
-    "relevance": 0.2,
-    "grounding": 0.2
+    "agreement": 0.30,
+    "docs_relevance": 0.10,
+    "agent_context": 0.20,
+    "measured_accuracy": 0.20,
+    "grounding": 0.20
   },
   "max_score": 95,
   "high_threshold": 75,
-  "medium_threshold": 50
+  "medium_threshold": 50,
+  "disagreement_cap": 74
 }

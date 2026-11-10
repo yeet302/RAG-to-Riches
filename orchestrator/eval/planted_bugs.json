@@ -1,0 +1,44 @@
+[
+  {
+    "bug": "B-01",
+    "question": "Why are GetAds requests failing with UNAVAILABLE errors in the Ad Service?",
+    "expected_cause": "adFailure flag: AdService throws StatusRuntimeException(UNAVAILABLE, \"inject:ads-unavailable\") on GetAds lanes 0/1.",
+    "expected_agents": ["logs", "docs", "code"]
+  },
+  {
+    "bug": "B-02",
+    "question": "Why are targeted ad requests failing in the Ad Service, especially requests for binoculars?",
+    "expected_cause": "adTargetedFailure flag: targeted GetAds requests on lane 1 throw UNAVAILABLE (\"inject:ads-targeted\").",
+    "expected_agents": ["logs", "docs", "code"]
+  },
+  {
+    "bug": "B-03",
+    "question": "What could cause unusually high CPU usage in the Ad Service?",
+    "expected_cause": "adHighCpu flag: CPULoad.execute runs on every GetAds request while the flag is on.",
+    "expected_agents": ["logs", "docs", "code"]
+  },
+  {
+    "bug": "B-04",
+    "question": "Why is the Ad Service returning an empty AdResponse instead of advertisements?",
+    "expected_cause": "adEmptyResponse flag: GetAds lane 3 returns an empty AdResponse (\"inject:ads-empty\").",
+    "expected_agents": ["logs", "docs", "code"]
+  },
+  {
+    "bug": "B-05",
+    "question": "Why does the Ad Service have occasional long pauses during GetAds calls?",
+    "expected_cause": "adManualGc flag: GetAds lane 2 triggers a manual full garbage collection (\"inject:ads-gc\").",
+    "expected_agents": ["logs", "docs", "code"]
+  },
+  {
+    "bug": "C-01",
+    "question": "Why is the checkout service failing to place orders?",
+    "expected_cause": "Control: no bug was planted in checkout. A correct answer says the evidence doesn't show a checkout cause; it must not blame an Ad Service flag.",
+    "expected_agents": ["logs", "docs", "code"]
+  },
+  {
+    "bug": "C-02",
+    "question": "Which engineer deployed the change that made GetAds return UNAVAILABLE?",
+    "expected_cause": "Control: nothing in logs, docs or code identifies an engineer. A correct answer says so and does not name anyone.",
+    "expected_agents": ["logs", "docs", "code"]
+  }
+]

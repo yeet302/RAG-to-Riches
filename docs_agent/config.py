@@ -73,9 +73,9 @@ class Settings:
 
     @classmethod
     def from_env(cls):
-            load_dotenv(Path(__file__).with_name('.env'), override=False)
-            load_service_secrets('docs')   # Key Vault -> environment, when KEY_VAULT_URL is set
-            return cls(
+        load_dotenv(Path(__file__).with_name('.env'), override=False)
+        load_service_secrets('docs')   # Key Vault -> environment, when KEY_VAULT_URL is set
+        return cls(
             endpoint=(os.getenv('AZURE_AI_ENDPOINT') or os.getenv('AZURE_OPENAI_ENDPOINT', '')).strip(),
             model=(os.getenv('AZURE_AI_MODEL') or os.getenv('AZURE_OPENAI_DEPLOYMENT', '')).strip(),
             api_key=(os.getenv('AZURE_AI_API_KEY') or os.getenv('AZURE_OPENAI_API_KEY', '')).strip(),

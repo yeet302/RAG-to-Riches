@@ -17,7 +17,11 @@ from typing import Annotated
 from fastapi import FastAPI, Header, HTTPException
 
 from orchestrator_adapter import handle_agent_request
-from orchestrator_contract import AgentFinding, AgentRequest
+from orchestrator_contract import AgentFinding, AgentRequest  # also puts the repo root on sys.path
+from service_secrets import load_service_secrets, require_agent_token
+
+load_service_secrets("logs")   # Key Vault -> environment, when KEY_VAULT_URL is set
+require_agent_token("logs")    # REQUIRE_AGENT_AUTH=true: never run without a token
 
 app = FastAPI(title="Logs Agent", version="1.0")
 

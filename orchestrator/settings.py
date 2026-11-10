@@ -148,6 +148,6 @@ class Settings:
             agent_urls={n: os.environ[f"{n.upper()}_AGENT_URL"] for n in NAMES
                         if os.getenv(f"{n.upper()}_AGENT_URL")},
             agent_tokens={n: os.environ[f"{n.upper()}_AGENT_TOKEN"] for n in NAMES
-                        if os.getenv(f"{n.upper()}_AGENT_TOKEN")},
+                          if os.getenv(f"{n.upper()}_AGENT_TOKEN")},
             require_agent_auth=env_bool("REQUIRE_AGENT_AUTH", "false"),
         )

@@ -1,0 +1,28 @@
+{
+  "_comment": "Measured accuracy per agent, used by the 'measured_accuracy' part of the confidence score. Add one entry per test run: correct = cases the agent got right, total = cases checked. Reliability = (all correct + 1) / (all total + 2); an agent with no entries counts as 50%. Restart the orchestrator after editing.",
+  "prior": {"correct": 1, "total": 2},
+  "agents": {
+    "docs": [
+      {
+        "name": "Docs accuracy test D01-D06 (answer correct)",
+        "metric": "answer correct",
+        "correct": 4,
+        "total": 6,
+        "measured_by": "Lantian",
+        "date": "2026-11-03",
+        "source": "docs_agent/accuracy_tests (run 20261103T194937Z-8fb54840)"
+      },
+      {
+        "name": "Planted bugs B-01..B-04, expected doc in top 5 (cases with a direct reference)",
+        "metric": "retrieval hit@5",
+        "correct": 2,
+        "total": 2,
+        "measured_by": "Lantian",
+        "date": "2026-11-09",
+        "source": "docs_agent/accuracy_tests/261109-Planted Bug Test.md (main branch)"
+      }
+    ],
+    "logs": [],
+    "code": []
+  }
+}
