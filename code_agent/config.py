@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 APPROVED_REPOSITORY = "yeet302/RAG-to-Riches"
 
+
 @dataclass(frozen=True)
 class Settings:
     project_endpoint: str
@@ -52,6 +53,9 @@ class Settings:
             APPROVED_REPOSITORY,
             os.getenv("FOUNDRY_CODE_AGENT_NAME", "rag-to-riches-code-agent"),
             os.getenv("CODE_REF", "").strip(),
+<<<<<<< HEAD
             float(os.getenv("CODE_INVESTIGATION_TIMEOUT_SECONDS", "120")),
             float(os.getenv("CODE_REQUEST_TIMEOUT_SECONDS", "30")),
+=======
+>>>>>>> e6b048e (Redirecting code agent to source from test-Opentelemetry branch)
         )
