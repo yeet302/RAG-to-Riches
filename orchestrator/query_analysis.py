@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from agents import TASKS
 from azure_client import complete_json, completion_url
-from router import classify
+from router import classify, fast_route
 from schemas import AgentAssignment, QueryAnalysis, QueryIntent, RoutingMode
 from settings import Settings
 
@@ -85,15 +85,18 @@ async def analyze_question(question: str, settings: Settings,
     if selected not in {"keyword", "llm"}:
         raise ValueError("routing mode must be keyword or llm")
 
-    fallback = classify(question)
+    quick_plan = (fast_route(question) if selected == "llm" and mode is None
+                  and settings.routing_fast_path and settings.llm_configured else None)
+    fallback = quick_plan or classify(question)
     result = QueryAnalysis(
-        source="keyword", intent=fallback.intent, summary=question, reason=fallback.reason,
+        source="keyword", fast_path=quick_plan is not None,
+        intent=fallback.intent, summary=question, reason=fallback.reason,
         stage1=fallback.stage1, stage2=fallback.stage2,
         assignments=[AgentAssignment(agent=name, stage=stage, question=question, task=TASKS[name])
                      for stage, names in ((1, fallback.stage1), (2, fallback.stage2))
                      for name in names],
     )
-    if selected == "keyword":
+    if selected == "keyword" or quick_plan is not None:
         return result
     if not settings.llm_configured:
         return result.model_copy(update={

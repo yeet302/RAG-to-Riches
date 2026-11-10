@@ -57,3 +57,34 @@ Do not put secrets, tokens or confidential repositories in prompts, logs, test f
 The agent is **hard-restricted to `open-telemetry/opentelemetry-demo`**, but it is **not restricted to one commit**. Empty `CODE_REF` follows the current default branch; set `CODE_REF` to a branch, tag or SHA to index and query that revision. The LLM may choose `ref` per tool call. All source citations use the *resolved immutable SHA* so citations remain accurate after new GitHub commits.
 
 **Index freshness:** after a branch changes, rerun `python -m code_agent.index_repo` to update that branch's code in Azure AI Search. Searching a revision that has not been indexed returns no indexed hits; the agent can still discover files and read GitHub directly. For a single incident, all code findings should ideally use the same revision as the incident's logs and documentation.
+
+
+## Model JSON failures
+
+The Foundry prompt-agent definition now requests strict `json_schema` output for
+its final code investigation. The request explicitly pins that configured agent
+version and reads only the final assistant message, rather than concatenating
+intermediate message text. Responses using an agent reference inherit that
+format; do not add a response-level `text` override because the configured Foundry
+endpoint rejects it. The handoff is also validated locally before use. Code
+citations still require exact commit/line ranges verified through `read_source`.
+
+`CODE_MODEL_RESPONSE_FAILED` now distinguishes malformed JSON, empty output,
+schema mismatch, incomplete responses, and unfinished tool calls. Look for
+`model_output_reason` with the same request ID in the code-agent log. Diagnostics
+include output length and JSON error offset where available, not raw model text,
+credentials, or source contents. These errors are returned as structured findings;
+HTTP 200 alone does not establish successful evidence retrieval.
+
+Restart the code service after updating the Python code:
+
+```bash
+orchestrator/.venv/bin/python -m uvicorn code_agent.service:app --env-file code_agent/.env --host 127.0.0.1 --port 8103
+```
+
+Stop the existing process in its own terminal with Ctrl+C before restarting.
+The regression suite runs from the repository root:
+
+```bash
+orchestrator/.venv/bin/python -m pytest -q code_agent/tests
+```

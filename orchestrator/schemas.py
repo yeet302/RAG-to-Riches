@@ -30,6 +30,7 @@ class Step(BaseModel):
     risk: Literal["low", "medium", "high", "other_team"] = "low"
     kind: Literal["mitigation", "fix", "verify", "escalate"] = "mitigation"
     link: Optional[str] = None
+    evidence_refs: list[str] = Field(default_factory=list)   # sources this step is grounded in
 
 
 class TraceEvent(BaseModel):
@@ -56,6 +57,7 @@ class AgentAssignment(BaseModel):
 
 
 class QueryAnalysis(BaseModel):
+    fast_path: bool = False
     source: Literal["keyword", "llm", "keyword_fallback"]
     intent: QueryIntent
     summary: str
@@ -67,6 +69,7 @@ class QueryAnalysis(BaseModel):
 
 
 class AnswerSynthesis(BaseModel):
+    failure_reason: Optional[Literal["timeout", "access_denied", "provider_error", "invalid_response", "invalid_citations", "invalid_solutions"]] = None
     source: Literal["evidence", "llm", "evidence_fallback"]
     citations: list[str] = Field(default_factory=list)
     warning: Optional[str] = None
@@ -84,13 +87,29 @@ class AskRequest(BaseModel):
 
 
 
+class StepTiming(BaseModel):
+    name: str
+    latency_ms: float = Field(ge=0)
+    parallel: bool = False
+
+
+class PerformanceSummary(BaseModel):
+    total_ms: float = Field(ge=0)
+    steps: list[StepTiming]
+    slowest_step: str
+    recommendations: list[str]
+
+
 class CopilotResponse(BaseModel):
     kind: Literal["diagnosis", "answer"]
     question: str
     answer: str                                   # plain-language answer / headline
     likely_cause: Optional[str] = None
-    confidence: Optional[int] = None              # percent
+    # Evidence-support score computed by confidence.py (never by the model). Percent, 0-95.
+    confidence: Optional[int] = Field(default=None, ge=0, le=100)
+    confidence_band: Optional[Literal["high", "medium", "low"]] = None
     confidence_reasons: list[str] = Field(default_factory=list)
+    confidence_components: dict[str, float] = Field(default_factory=dict)
     evidence: list[Evidence] = Field(default_factory=list)
     not_ruled_out: Optional[str] = None
     not_ruled_out_pct: Optional[int] = None
@@ -106,6 +125,8 @@ class CopilotResponse(BaseModel):
     pipeline_status: Literal["ok", "partial", "failed", "no_evidence"] = "ok"
     errors: list[PipelineError] = Field(default_factory=list)
     demo: Literal[False] = False                   # retained for response compatibility; prepared answers are disabled
+    accuracy_recorded: bool = False
+    performance: Optional[PerformanceSummary] = None
     analysis: Optional[QueryAnalysis] = None
     synthesis: Optional[AnswerSynthesis] = None
 

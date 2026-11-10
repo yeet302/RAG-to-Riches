@@ -122,7 +122,7 @@ The endpoint returns an `AgentFinding` directly, without a `data` or `result` wr
 
 Each `[n]` citation refers to the nth item in that finding’s `evidence` list. GitHub references use file line numbers; website references use page or section links.
 
-**Current integration scope:** Without Azure configuration, the endpoint operates in retrieval-only mode. Matching documents return `ok` with original excerpts and a summary explicitly stating that no LLM analysis was performed; `hypotheses` is empty. No matches return `no_evidence`, and inaccessible documentation returns `no_access`. Actual coverage gaps remain visible. The orchestrator can use successful retrieved evidence in downstream analysis now. Once Azure is configured, the same endpoint and schema return generated answers; model failures still return `error` rather than silently switching modes.
+**Current integration scope:** Without Azure configuration, the endpoint operates in retrieval-only mode. Matching documents return `ok` with original excerpts and a summary explicitly stating that no LLM analysis was performed; `hypotheses` is empty. No matches return `no_evidence`, and inaccessible documentation returns `no_access`. Actual coverage gaps remain visible. The orchestrator can use successful retrieved evidence in downstream analysis now. Once Azure is configured, the same endpoint and schema return generated answers; model output validation failures use the explicit retrieval-only fallback described below; authentication and HTTP failures remain errors.
 
 ## 5. Tests and Results
 
@@ -201,3 +201,30 @@ Never commit `.env` or share API keys in chat.
 ## Initial Accuracy Evaluation
 
 See [accuracy tests](accuracy_tests/README.md) for the initial evaluation and results.
+
+
+## Model response recovery
+
+The docs agent includes the answer schema in its model instructions and validates
+response completion, JSON structure, claim status, source IDs, and literal URLs.
+Recoverable content failures and model timeouts get at most one fresh attempt,
+using the same retrieved sources and a safe validation reason. Refusals and HTTP
+access errors are not retried. Both attempts share the remaining agent deadline.
+
+If output validation still fails, the agent discards all generated claims and
+returns the original retrieved excerpts as an explicitly labeled retrieval-only
+finding (`status=ok`, `confidence=0.4`, empty hypotheses). A specific `DOCS_*`
+error remains attached, so the orchestrator marks the investigation partial and
+shows the warning while preserving these excerpts for downstream analysis.
+This is successful retrieval, not successful model analysis or a verified cause.
+No evidence is invented and citation checks are not relaxed. Valid `no_evidence`
+answers still abstain without a fallback; authentication and HTTP failures retain
+their existing error behavior. Retrieval that exceeds the total deadline still
+returns `DOCS_TIMEOUT`.
+
+Diagnostics record request ID, attempt, and safe reason codes such as
+`MODEL_INCOMPLETE`, `MODEL_EMPTY`, `MODEL_SCHEMA_INVALID`,
+`MODEL_ABSTENTION_INVALID`, and `MODEL_CLAIMS_EMPTY`. They never log raw model
+answers, provider bodies, credentials, or retrieved source contents. Model and
+network failures remain possible; this prevents invalid model output from
+unnecessarily discarding independently retrieved documentation.

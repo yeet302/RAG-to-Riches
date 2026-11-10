@@ -11,6 +11,16 @@ ROOT = Path(__file__).resolve().parent
 NAMES = ("logs", "docs", "code")  # "code" is the wire name for the codebase agent.
 
 
+def env_bool(name: str, default: str) -> bool:
+    value = os.getenv(name, default).strip().lower()
+    if value in {"true", "1", "yes", "on"}:
+        return True
+    if value in {"false", "0", "no", "off"}:
+        return False
+    raise ValueError(f"{name} must be true or false")
+
+
+
 @dataclass(frozen=True)
 class Settings:
     mode: str = "remote"
@@ -22,6 +32,7 @@ class Settings:
     agent_urls: dict[str, str] = field(default_factory=dict)
     agent_tokens: dict[str, str] = field(default_factory=dict, repr=False)
     routing_mode: str = "auto"
+    routing_fast_path: bool = True
     llm_endpoint: str = ""
     llm_model: str = ""
     llm_api_key: str = field(default="", repr=False)
@@ -61,6 +72,8 @@ class Settings:
         for name, timeout in self.agent_timeouts.items():
             if name not in NAMES or not math.isfinite(timeout) or timeout <= 0:
                 raise ValueError("Agent timeout overrides must name logs/docs/code and be positive finite numbers")
+        if not isinstance(self.routing_fast_path, bool):
+            raise ValueError("routing_fast_path must be a boolean")
         if self.routing_mode not in {"auto", "keyword", "llm"}:
             raise ValueError("ROUTING_MODE must be auto, keyword, or llm")
         if self.llm_auth_mode not in {"api_key", "entra"}:
@@ -92,6 +105,7 @@ class Settings:
         return cls(
             mode=os.getenv("ORCHESTRATOR_MODE", "remote").lower(),
             routing_mode=os.getenv("ROUTING_MODE", "auto").lower(),
+            routing_fast_path=env_bool("ROUTING_FAST_PATH", "true"),
             answer_mode=os.getenv("ANSWER_MODE", "auto").lower(),
             synthesis_timeout_seconds=float(os.getenv("SYNTHESIS_TIMEOUT_SECONDS", "30")),
             llm_endpoint=os.getenv("AZURE_AI_ENDPOINT", "").strip().rstrip("/"),

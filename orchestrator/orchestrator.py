@@ -4,16 +4,20 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from typing import Callable
 from uuid import uuid4
 
 import httpx
 from agents import Agent, build_agents
 from answer_synthesis import generate_answer
+from confidence import apply_confidence
 from failures import annotate_errors, normalize_failure
 from router import RoutePlan
 from query_analysis import analyze_question
 from schemas import AgentFinding, AnswerMode, CopilotResponse, Evidence, RoutingMode, TraceEvent, PipelineError
 from settings import Settings
+from schemas import StepTiming
+from performance import summarize
 
 log = logging.getLogger("orchestrator")
 SETTINGS = Settings.from_env()
@@ -121,8 +125,8 @@ def synthesize(question: str, plan: RoutePlan, findings: list[AgentFinding],
     no_evidence = [f.agent for f in findings if f.status == "no_evidence"]
     if no_evidence:
         answer += "\n\nNo matching evidence returned by: " + ", ".join(no_evidence) + "."
-    # Scores indicate retrieval relevance supplied by specialists, never root-cause probability.
-    # Keep diagnosis confidence unset until a validated diagnosis/synthesis policy exists.
+    # Specialist scores are retrieval relevance, never root-cause probability. The answer's
+    # confidence is computed after synthesis by confidence.py from observable, measured signals.
     return CopilotResponse(
         kind="diagnosis" if plan.intent == "incident" else "answer", question=question,
         answer=answer, evidence=evidence, sources_unavailable=unavailable,
@@ -135,14 +139,25 @@ async def investigate(question: str, *, incident_id: str | None = None,
                       conversation_id: str | None = None, agents: dict[str, Agent] | None = None,
                       settings: Settings | None = None,
                       routing_mode: RoutingMode | None = None,
-                      answer_mode: AnswerMode | None = None) -> CopilotResponse:
+                      answer_mode: AnswerMode | None = None,
+                      on_progress: Callable[[dict], None] | None = None) -> CopilotResponse:
+    emit = on_progress or (lambda event: None)
+    emit({"phase": "planning"})
+    request_started = time.perf_counter()
+    timings = []
     question = question.strip()
     if not question or len(question) > 2000:
         raise ValueError("question must contain 1 to 2000 characters")
     settings = settings or SETTINGS
     registry = agents if agents is not None else (AGENTS if settings is SETTINGS else build_agents(settings))
+    setup_ms = (time.perf_counter() - request_started) * 1000
+    timings.append(StepTiming(name="setup", latency_ms=setup_ms))
+    routing_started = time.perf_counter()
     analysis = await analyze_question(question, settings, routing_mode)
+    routing_ms = (time.perf_counter() - routing_started) * 1000
+    timings.append(StepTiming(name="routing", latency_ms=routing_ms))
     plan = RoutePlan(analysis.intent, analysis.stage1, analysis.stage2, analysis.reason)
+    emit({"phase": "collecting", "agents": plan.stage1 + plan.stage2})
     assignments = {assignment.agent: assignment for assignment in analysis.assignments}
     context = {"request_id": str(uuid4()), "intent": plan.intent,
                "original_question": question,
@@ -150,22 +165,49 @@ async def investigate(question: str, *, incident_id: str | None = None,
     route_action = f"Routed with {analysis.source} as '{plan.intent}': {plan.reason}"
     if analysis.warning:
         route_action += f" {analysis.warning}"
-    trace = [TraceEvent(stage=0, agent="orchestrator", action=route_action)]
-    started = time.perf_counter()
+    trace = [TraceEvent(stage=0, agent="orchestrator", action=route_action, latency_ms=round(routing_ms))]
     findings = []
+
+    async def dispatch(name: str, parallel: bool) -> AgentFinding:
+        emit({"phase": "agent", "agent": name, "status": "running"})
+        agent_started = time.perf_counter()
+        finding = await call_agent(name, registry, assignments[name].question,
+            {**context, "task": assignments[name].task}, settings.timeout_for(name))
+        timings.append(StepTiming(name=f"agent:{name}",
+            latency_ms=(time.perf_counter() - agent_started) * 1000, parallel=parallel))
+        emit({"phase": "agent", "agent": name, "status": finding.status})
+        return finding
+
     for stage, names in ((1, plan.stage1), (2, plan.stage2)):
+        if not names:
+            continue
         if stage == 2:
+            merge_started = time.perf_counter()
             context["evidence_bundle"] = merge_findings(findings)
+            timings.append(StepTiming(name="evidence_handoff",
+                latency_ms=(time.perf_counter() - merge_started) * 1000))
         # Give each concurrent specialist its own context and its generated assignment.
-        results = await asyncio.gather(*(call_agent(
-            name, registry, assignments[name].question,
-            {**context, "task": assignments[name].task}, settings.timeout_for(name),
-        ) for name in names))
+        results = await asyncio.gather(*(dispatch(name, len(names) > 1) for name in names))
         findings.extend(results)
         trace.extend(TraceEvent(stage=stage, agent=f.agent, action=f.summary,
                                 parallel=len(names) > 1, latency_ms=f.latency_ms) for f in results)
-    trace.append(TraceEvent(stage=3, agent="orchestrator", action="Combined validated evidence with source references",
-                            latency_ms=round((time.perf_counter() - started) * 1000)))
+    emit({"phase": "synthesis"})
+    combine_started = time.perf_counter()
     response = synthesize(question, plan, findings, trace, context)
     response.analysis = analysis
-    return annotate_errors(await generate_answer(response, settings, answer_mode))
+    combine_ms = (time.perf_counter() - combine_started) * 1000
+    timings.append(StepTiming(name="combine", latency_ms=combine_ms))
+    response.trace.append(TraceEvent(stage=3, agent="orchestrator",
+        action="Combined validated evidence with source references", latency_ms=round(combine_ms)))
+    answer_started = time.perf_counter()
+    response = await generate_answer(response, settings, answer_mode)
+    timings.append(StepTiming(name="answer_generation",
+        latency_ms=(time.perf_counter() - answer_started) * 1000))
+    finalization_started = time.perf_counter()
+    response = apply_confidence(annotate_errors(response))
+    timings.append(StepTiming(name="finalization",
+        latency_ms=(time.perf_counter() - finalization_started) * 1000))
+    response.performance = summarize((time.perf_counter() - request_started) * 1000, timings)
+    log.info("request_id=%s total_ms=%s slowest_step=%s", response.request_id,
+             response.performance.total_ms, response.performance.slowest_step)
+    return response

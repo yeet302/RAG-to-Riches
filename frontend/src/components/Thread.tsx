@@ -2,6 +2,8 @@ import type { Message } from '../types';
 import AnswerCard from './AnswerCard';
 import DiagnosisCard from './DiagnosisCard';
 import Trace from './Trace';
+import Performance from './Performance';
+import InvestigationProgress from './InvestigationProgress';
 
 interface Props {
   messages: Message[];
@@ -28,13 +30,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
         }
         if (m.status === 'loading') {
           return (
-            <div key={m.id} className="card investigating">
-              <span className="spinner" aria-hidden />
-              <div>
-                <p className="strong">Investigating…</p>
-                <p className="muted small">Gathering relevant evidence and preparing your answer.</p>
-              </div>
-            </div>
+            <InvestigationProgress key={m.id} events={m.progress ?? []} />
           );
         }
         if (m.status === 'error') {
@@ -49,6 +45,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
         const r = m.response;
         return (
           <div key={m.id} className="msg assistant">
+            <Performance response={r} />
             {r.synthesis && (
               <div className="answer-provenance">
                 <span className="pill">
@@ -73,12 +70,12 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
             {r.kind === 'diagnosis' ? (
               <DiagnosisCard response={r} conversationId={conversationId} />
             ) : (
-              <AnswerCard response={r} onAsk={onAsk} />
+              <AnswerCard response={r} onAsk={onAsk} conversationId={conversationId} />
             )}
             {r.analysis && (
               <details className="trace">
                 <summary>
-                  Question analysis: {r.analysis.source === 'llm' ? 'Azure AI' : r.analysis.source === 'keyword_fallback' ? 'Keyword fallback' : 'Keywords'}
+                  Question analysis: {r.analysis.fast_path ? 'Fast path (no planning call)' : r.analysis.source === 'llm' ? 'Azure AI' : r.analysis.source === 'keyword_fallback' ? 'Keyword fallback' : 'Keywords'}
                 </summary>
                 <p>{r.analysis.summary}</p>
                 <p className="muted small">{r.analysis.reason}</p>
@@ -94,7 +91,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
                 </ol>
               </details>
             )}
-            <Trace trace={r.trace} agents={r.agents_used} />
+            <Trace trace={r.trace} agents={r.agents_used} performance={r.performance} />
           </div>
         );
       })}

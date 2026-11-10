@@ -86,7 +86,7 @@ def test_grounded_answer_request_citations_and_metadata():
     {"answer": "Repeated ID [E1]", "evidence_ids": ["E1", "E1"]},
     {"answer": "A finding [E1] [E2]", "evidence_ids": ["E1"]},
     {"answer": " ", "evidence_ids": ["E1"]},
-    {"answer": "A finding [E1]", "evidence_ids": ["E1"], "likely_cause": "unsupported"},
+    {"answer": "A finding [E1]", "evidence_ids": ["E1"], "invented_field": "unsupported"},
 ])
 def test_invalid_or_fabricated_citations_preserve_fallback(generated):
     original = result()
@@ -295,3 +295,41 @@ def test_log_volume_does_not_exclude_docs_and_code_from_final_model():
     assert response.synthesis.source=='llm'
     assert response.synthesis.citations==['events:0','flags:1','AdService.java:1']
     assert len(response.evidence)==15 and response.evidence==original.evidence
+
+
+def test_bracketed_log_label_in_cited_source_does_not_break_synthesis():
+    original = result()
+    original.evidence[0].snippet = "GetAds failed with [injected-test-failure] and UNAVAILABLE."
+    generated = {"answer": "The log contains [injected-test-failure] with UNAVAILABLE. [E1]",
+                 "evidence_ids": ["E1"]}
+    response = asyncio.run(generate_answer(original, configured(), transport=httpx.MockTransport(
+        lambda request: httpx.Response(200, json=completion(json.dumps(generated))))))
+    assert response.synthesis.source == "llm" and response.synthesis.failure_reason is None
+    assert "[injected-test-failure]" in response.answer
+    assert "[runbooks/checkout.md:L12-L15]" in response.answer
+    assert response.synthesis.citations == ["runbooks/checkout.md:L12-L15"]
+
+
+@pytest.mark.parametrize("answer,identifiers,text", [
+    ("Invented label [invented-label]. [E1]", ["E1"], {"E1":"Only [real-label] was retrieved"}),
+    ("Label from an uncited source [label]. [E1]", ["E1"], {"E2":"Source contains [label]"}),
+    ("Unknown evidence ID [E99]. [E1]", ["E1"], {"E1":"Source itself mentions [E99]"}),
+    ("Missing actual citation [label].", ["E1"], {"E1":"Source contains [label]"}),
+    ("A copied label with an invented link [label](https://invalid.example). [E1]", ["E1"], {"E1":"Source contains [label]"}),
+])
+def test_source_literal_exception_never_allows_fabricated_citations(answer, identifiers, text):
+    generated = answer_synthesis.ModelAnswer(answer=answer, evidence_ids=identifiers)
+    with pytest.raises(ValueError):
+        answer_synthesis.validate_citations(generated, {"E1":"source:1", "E2":"source:2"}, text)
+
+
+def test_citation_failure_has_specific_safe_diagnostics(caplog):
+    generated = {"answer":"Unsupported reference [E99]", "evidence_ids":["E99"]}
+    response = asyncio.run(generate_answer(result(), configured(), transport=httpx.MockTransport(
+        lambda request: httpx.Response(200, json=completion(json.dumps(generated))))))
+    assert response.synthesis.failure_reason == "invalid_citations"
+    assert "synthesis_failure_stage=citations" in caplog.text
+    assert "Unsupported reference" not in caplog.text
+    from failures import annotate_errors
+    error = annotate_errors(response).errors[0]
+    assert error.code == "SYNTHESIS_FAILED" and "invalid source citations" in error.message

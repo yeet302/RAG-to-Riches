@@ -1,0 +1,17 @@
+Our orchestrator coordinates the investigation across three specialist agents: logs, documentation, and code.
+
+When a user submits a question, it enters through the ask endpoint in main.py. That endpoint calls the investigate function in orchestrator.py, which manages the overall workflow.
+
+First, the orchestrator decides which agents are needed. In query_analysis.py, an Azure model can create a plan with a focused question and task for each specialist. If model planning is unavailable, router.py provides keyword-based routing.
+
+For a typical incident question, like "Why is checkout timing out?", the logs and documentation agents run in parallel. The logs agent looks for operational evidence, while the documentation agent searches for relevant behavior and troubleshooting guidance.
+
+Once that first stage finishes, the orchestrator combines the successful findings into an evidence bundle. It also includes errors and source gaps, so the next agent knows what information is missing.
+
+The code agent then receives that bundle along with its assignment. This lets it investigate implementation details using the earlier findings as context. It searches the repository and checks source lines before returning code evidence.
+
+The agents communicate with the orchestrator through HTTP using shared request and response models in agent_contracts.py. Each response includes a summary, evidence, source references, and a status. The orchestrator validates these responses and handles timeouts or failures so the remaining results can still be used.
+
+Finally, it combines the evidence and can use Azure to generate a cited answer. If generation fails, it returns the evidence list instead.
+
+The key idea is that each agent contributes specialized evidence, while the orchestrator controls the plan, the handoffs, and the final response.

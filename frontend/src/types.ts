@@ -5,6 +5,7 @@ export type RoutingMode = 'keyword' | 'llm';
 export type AnswerMode = 'evidence' | 'llm';
 
 export interface AnswerSynthesis {
+  failure_reason?: 'timeout' | 'access_denied' | 'provider_error' | 'invalid_response' | 'invalid_citations' | 'invalid_solutions' | null;
   source: 'evidence' | 'llm' | 'evidence_fallback';
   citations: string[];
   warning?: string | null;
@@ -20,6 +21,7 @@ export interface AgentAssignment {
 }
 
 export interface QueryAnalysis {
+  fast_path?: boolean;
   source: 'keyword' | 'llm' | 'keyword_fallback';
   intent: 'incident' | 'how_to' | 'code_lookup' | 'logs_lookup' | 'unknown';
   summary: string;
@@ -32,6 +34,8 @@ export interface QueryAnalysis {
 export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';
 
 export interface HealthResponse {
+  routing_fast_path?: boolean;
+  source_note?: string;
   status: string;
   mode: 'local' | 'remote';
   agents: Record<AgentName, string>;
@@ -58,6 +62,7 @@ export interface Step {
   risk: 'low' | 'medium' | 'high' | 'other_team';
   kind: 'mitigation' | 'fix' | 'verify' | 'escalate';
   link?: string | null;
+  evidence_refs: string[];          // sources this step is grounded in
 }
 
 export interface TraceEvent {
@@ -78,13 +83,25 @@ export interface PipelineError {
   http_status?: number | null;
 }
 
+export interface PerformanceSummary {
+  total_ms: number;
+  steps: { name: string; latency_ms: number; parallel: boolean }[];
+  slowest_step: string;
+  recommendations: string[];
+}
+
 export interface CopilotResponse {
+  request_id?: string;
+  accuracy_recorded?: boolean;
+  performance?: PerformanceSummary | null;
   kind: 'diagnosis' | 'answer';
   question: string;
   answer: string;
   likely_cause?: string | null;
-  confidence?: number | null;
+  confidence?: number | null;                               // evidence-support score, 0-95
+  confidence_band?: 'high' | 'medium' | 'low' | null;
   confidence_reasons: string[];
+  confidence_components?: Record<string, number>;
   evidence: Evidence[];
   not_ruled_out?: string | null;
   not_ruled_out_pct?: number | null;
@@ -117,6 +134,28 @@ export interface Incident {
 
 export type Message =
   | { id: string; role: 'user'; text: string; incident?: Incident }
-  | { id: string; role: 'assistant'; status: 'loading'; question: string }
+  | { id: string; role: 'assistant'; status: 'loading'; question: string; progress?: InvestigationProgress[] }
   | { id: string; role: 'assistant'; status: 'done'; response: CopilotResponse }
   | { id: string; role: 'assistant'; status: 'error'; error: string; question: string };
+
+export interface AccuracyReview {
+  bug: string;
+  expected_cause: string;
+  correct: 'Not reviewed' | 'Yes' | 'No' | 'Partly';
+  fix_worked: 'Not tested' | 'Yes' | 'No';
+  notes: string;
+}
+
+export interface AccuracyResult extends AccuracyReview {
+  request_id: string;
+  created_at: string;
+  run_type: string;
+  response: CopilotResponse;
+}
+
+export interface InvestigationProgress {
+  phase: 'planning' | 'collecting' | 'agent' | 'synthesis';
+  agents?: AgentName[];
+  agent?: AgentName;
+  status?: 'running' | 'ok' | 'error' | 'no_access' | 'no_evidence';
+}
