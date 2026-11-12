@@ -7,6 +7,7 @@ import { AddItemRequest, Empty } from '../../protos/demo';
 import ProductCatalogService from '../../services/ProductCatalog.service';
 import { IProductCart, IProductCartItem } from '../../types/Cart';
 import InstrumentationMiddleware from '../../utils/telemetry/InstrumentationMiddleware';
+import logger from '../../utils/telemetry/logger';
 
 type TResponse = IProductCart | Empty;
 
@@ -27,6 +28,19 @@ const handler: NextApiHandler<TResponse> = async ({ method, body, query }, res) 
           };
         })
       );
+
+      // Intentional inject for agent eval: drop cart contents so the shop UI
+      // shows EmptyCart while POST /api/cart still succeeds.
+      if (productList.length > 0) {
+        logger.warn(
+          {
+            'demo.cart.user_id': userId,
+            'demo.cart.dropped_count': productList.length,
+          },
+          `Cart GET dropping ${productList.length} items [inject:cart-items-dropped]`
+        );
+        return res.status(200).json({ userId, items: [] });
+      }
 
       return res.status(200).json({ userId, items: productList });
     }
