@@ -1,0 +1,374 @@
+{
+  "run_id": "261112-154532-6becccd8",
+  "source": "261112-154911-complete_results.json",
+  "reviewer": "Codex",
+  "scores": [
+    {
+      "case_id": "D01",
+      "version": "all-doc",
+      "blind_position": 1,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Identifies adFailure and the documented one-in-ten GetAds failure rate.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup"
+      ]
+    },
+    {
+      "case_id": "D01",
+      "version": "top5",
+      "blind_position": 2,
+      "score": 0,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Offers generic CPU, cache, and tracing hypotheses without a supported case-specific lead.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis"
+      ]
+    },
+    {
+      "case_id": "D01",
+      "version": "nodoc",
+      "blind_position": 3,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Leads with throttling or quota exhaustion, which is not the known cause.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "D02",
+      "version": "top5",
+      "blind_position": 1,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Connects adHighCpu to CPU load in Ad Service.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "D02",
+      "version": "nodoc",
+      "blind_position": 2,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Leads with an unsupported debug-profiling flag.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "D02",
+      "version": "all-doc",
+      "blind_position": 3,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Connects adHighCpu to simulated CPU load.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "D03",
+      "version": "nodoc",
+      "blind_position": 1,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Leads with JVM settings or external calls instead of the configured adManualGc flag.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "D03",
+      "version": "all-doc",
+      "blind_position": 2,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Names adManualGc and explains that it triggers full manual GC.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "D03",
+      "version": "top5",
+      "blind_position": 3,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Names adManualGc and connects it to full manual GC.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "D04",
+      "version": "all-doc",
+      "blind_position": 1,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "Partial",
+      "review_reason": "Explains the JDK 17 versus JDK 21 mismatch and gives the exact command, but omits the Ad Service working directory.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12",
+        "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L9-L20"
+      ]
+    },
+    {
+      "case_id": "D04",
+      "version": "nodoc",
+      "blind_position": 2,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "No",
+      "review_reason": "Leads with JDK 11 and suggests commands that do not match the expected build procedure.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "D04",
+      "version": "top5",
+      "blind_position": 3,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "Partial",
+      "review_reason": "States the JDK 21 minimum, which rules out JDK 17. Omits the exact command and working directory.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12"
+      ]
+    },
+    {
+      "case_id": "B01",
+      "version": "all-doc",
+      "blind_position": 1,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Names adFailure and connects it to the GetAds failure. The cited one-in-ten rate applies to upstream behavior.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "B01",
+      "version": "top5",
+      "blind_position": 2,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Names adFailure as the likely injection path for UNAVAILABLE. The quoted rate is upstream behavior.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "B01",
+      "version": "nodoc",
+      "blind_position": 3,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Claims a disabled service-availability flag is the primary cause.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "B02",
+      "version": "top5",
+      "blind_position": 1,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Presents generic adFailure as the leading explanation for targeted failures.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "B02",
+      "version": "nodoc",
+      "blind_position": 2,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Attributes targeted failures to an unsupported experimental flag.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "B02",
+      "version": "all-doc",
+      "blind_position": 3,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Presents generic adFailure as targeted fault injection.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12",
+        "https://opentelemetry.io/docs/demo/services/ad/"
+      ]
+    },
+    {
+      "case_id": "B03",
+      "version": "top5",
+      "blind_position": 1,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Connects adHighCpu with the observed CPU load and marker.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags"
+      ]
+    },
+    {
+      "case_id": "B03",
+      "version": "all-doc",
+      "blind_position": 2,
+      "score": 2,
+      "wrong_attribution": false,
+      "fix_complete": "N/A",
+      "review_reason": "Identifies adHighCpu as the feature flag that generates high load.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+        "https://opentelemetry.io/docs/demo/services/ad/"
+      ]
+    },
+    {
+      "case_id": "B03",
+      "version": "nodoc",
+      "blind_position": 3,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Treats the log marker inject:ads-cpu as the flag name.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "B04",
+      "version": "nodoc",
+      "blind_position": 1,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Describes the empty-payload behavior but asserts the wrong flag name, ads-empty.",
+      "run_failure": false,
+      "evidence_used": []
+    },
+    {
+      "case_id": "B04",
+      "version": "all-doc",
+      "blind_position": 2,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Leads with adFailure and conflates errors with successful empty responses.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+        "https://opentelemetry.io/docs/demo/feature-flags/",
+        "https://opentelemetry.io/docs/demo/feature-flags/",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+        "https://opentelemetry.io/docs/demo/services/ad/",
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward"
+      ]
+    },
+    {
+      "case_id": "B04",
+      "version": "top5",
+      "blind_position": 3,
+      "score": 0,
+      "wrong_attribution": true,
+      "fix_complete": "N/A",
+      "review_reason": "Leads with adFailure without evidence that it returns successful empty responses.",
+      "run_failure": false,
+      "evidence_used": [
+        "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application"
+      ]
+    }
+  ],
+  "summary": {
+    "nodoc": {
+      "correct": 0,
+      "partial": 0,
+      "wrong": 8,
+      "D_correct": 0,
+      "B_correct": 0
+    },
+    "top5": {
+      "correct": 5,
+      "partial": 0,
+      "wrong": 2,
+      "D_correct": 3,
+      "B_correct": 2
+    },
+    "all-doc": {
+      "correct": 6,
+      "partial": 0,
+      "wrong": 2,
+      "D_correct": 4,
+      "B_correct": 2
+    }
+  },
+  "pairwise_winners": {
+    "nodoc vs top5": {
+      "D01": "top5",
+      "D02": "top5",
+      "D03": "top5",
+      "D04": "top5",
+      "B01": "top5",
+      "B02": "tie",
+      "B03": "top5",
+      "B04": "tie"
+    },
+    "top5 vs all-doc": {
+      "D01": "all-doc",
+      "D02": "tie",
+      "D03": "tie",
+      "D04": "tie",
+      "B01": "tie",
+      "B02": "tie",
+      "B03": "tie",
+      "B04": "tie"
+    }
+  }
+}
