@@ -1,0 +1,1795 @@
+{
+  "original_run_id": "261112-154532-6becccd8",
+  "attempts": [
+    {
+      "case_id": "D01",
+      "question": "GetAds requests in the Ad Service fail intermittently, about one in ten requests. What documented behavior should we check?",
+      "version": "top5",
+      "docs_input": [
+        {
+          "source_type": "doc",
+          "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow,",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 54-65)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+          "snippet": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+          "ref": "README.md:L25-L36",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+          "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our",
+          "ref": "README.md:L33-L44",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L33-L44",
+          "snippet": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our\n[fork guidance](https://opentelemetry.io/docs/demo/forking/).\n\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for",
+          "agent": "docs"
+        }
+      ],
+      "response": {
+        "agent": "docs",
+        "status": "ok",
+        "summary": "Intermittent failures and latency spikes in a service, like the recommendation service example, may be accompanied by spiky CPU and memory utilization and long-tail latency in response time histograms. [1] [3] Tracing tools such as Jaeger can help diagnose intermittent request failures by allowing filtering of traces and viewing the end-to-end latency and sub-segment details of individual requests. [1] Cache hit status in requests can significantly affect latency and may be a factor to check when requests fail intermittently or show latency variance. [2]",
+        "hypotheses": [
+          "The intermittent failure of GetAds requests might be related to spiky CPU or memory utilization in the Ad Service, causing tail latency or error spikes similar to those seen in the recommendation service example. [1] [3]",
+          "The problem might be linked to cache effectiveness, so checking if cache hits/misses correlate with failure or latency spikes is advisable. [2]"
+        ],
+        "evidence": [
+          {
+            "source_type": "doc",
+            "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+            "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow,",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 54-65)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+            "snippet": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+            "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in",
+            "agent": "docs"
+          }
+        ],
+        "sources_searched": [
+          "README.md",
+          "https://opentelemetry.io/docs/demo/",
+          "https://opentelemetry.io/docs/demo/architecture/",
+          "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+          "https://opentelemetry.io/docs/demo/development/",
+          "https://opentelemetry.io/docs/demo/docker-deployment/",
+          "https://opentelemetry.io/docs/demo/feature-flags/",
+          "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "https://opentelemetry.io/docs/demo/forking/",
+          "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+          "https://opentelemetry.io/docs/demo/requirements/",
+          "https://opentelemetry.io/docs/demo/requirements/application/",
+          "https://opentelemetry.io/docs/demo/requirements/architecture/",
+          "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "https://opentelemetry.io/docs/demo/requirements/system/",
+          "https://opentelemetry.io/docs/demo/sample-configurations/",
+          "https://opentelemetry.io/docs/demo/services/ad/",
+          "src/ad/README.md"
+        ],
+        "sources_unavailable": [
+          "Official website page limit reached; coverage is incomplete"
+        ],
+        "confidence": 0.5,
+        "latency_ms": 2364,
+        "error": null
+      },
+      "error": null,
+      "shared_retrieval_seconds": 2.561,
+      "docs_sources_searched": [
+        "README.md",
+        "https://opentelemetry.io/docs/demo/",
+        "https://opentelemetry.io/docs/demo/architecture/",
+        "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+        "https://opentelemetry.io/docs/demo/development/",
+        "https://opentelemetry.io/docs/demo/docker-deployment/",
+        "https://opentelemetry.io/docs/demo/feature-flags/",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+        "https://opentelemetry.io/docs/demo/forking/",
+        "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+        "https://opentelemetry.io/docs/demo/requirements/",
+        "https://opentelemetry.io/docs/demo/requirements/application/",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/",
+        "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+        "https://opentelemetry.io/docs/demo/requirements/system/",
+        "https://opentelemetry.io/docs/demo/sample-configurations/",
+        "https://opentelemetry.io/docs/demo/services/ad/",
+        "src/ad/README.md"
+      ],
+      "docs_sources_unavailable": [
+        "Official website page limit reached; coverage is incomplete"
+      ],
+      "elapsed_seconds": 2.365,
+      "retry_request_id": "261112-154532-6becccd8-D01-top5-retry-261112-154911-1",
+      "retry_attempt": 1
+    },
+    {
+      "case_id": "D01",
+      "question": "GetAds requests in the Ad Service fail intermittently, about one in ten requests. What documented behavior should we check?",
+      "version": "all-doc",
+      "docs_input": [
+        {
+          "source_type": "doc",
+          "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow,",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 54-65)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+          "snippet": "recommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true\nin the Tags box. Notice that requests tend to be\nfaster when the cache is hit. Now search for\napp.cache_hit=false\nand compare\nthe latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+          "ref": "README.md:L25-L36",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+          "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our",
+          "ref": "README.md:L33-L44",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L33-L44",
+          "snippet": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our\n[fork guidance](https://opentelemetry.io/docs/demo/forking/).\n\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "## Documentation\n\nFor detailed documentation, see [Demo Documentation][docs]. If you're curious\nabout a specific feature, the [docs landing page][docs] can point you in the\nright direction.\n\n## Demos featuring the Astronomy Shop\n\nWe welcome any vendor to fork the project to demonstrate their service",
+          "ref": "README.md:L49-L60",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L49-L60",
+          "snippet": "\n## Documentation\n\nFor detailed documentation, see [Demo Documentation][docs]. If you're curious\nabout a specific feature, the [docs landing page][docs] can point you in the\nright direction.\n\n## Demos featuring the Astronomy Shop\n\nWe welcome any vendor to fork the project to demonstrate their services and\nadding a link below. The community is committed to maintaining the project and\nkeeping it up to date for you.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator",
+          "ref": "https://opentelemetry.io/docs/demo/#service-documentation (text lines 64-75)",
+          "link": "https://opentelemetry.io/docs/demo/#service-documentation",
+          "snippet": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Cart\nForce the readiness probe to fail with unhealthy status, simulating a pod \u201cNotReady\u201d condition. Applicable for Kubernetes deployments only.\nimageSlowLoad\nFrontend\nUtilizes envoy fault injection, produces a delay in loading of product images in the frontend. The variant sets the delay.\nintlShipp",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 58-69)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "Cart\nForce the readiness probe to fail with unhealthy status, simulating a pod \u201cNotReady\u201d condition. Applicable for Kubernetes deployments only.\nimageSlowLoad\nFrontend\nUtilizes envoy fault injection, produces a delay in loading of product images in the frontend. The variant sets the delay.\nintlShippingSlowdown\nShipping\nDelay non-US shipping requests by the selected number of seconds, simulating overseas shipping latency. US addresses are unaffected.\nkafkaConsumerDead\nFraud Detection\nFraud-detection leaves the orders consumer group (unsubscribes and stops polling). Checkout continues producing, so consumer group empties and lag accumulates. Reversible by toggling the flag.\nkafkaQueueProblems",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "the latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform\nfurther searching to find out what\u2019s going on in our",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 62-67)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+          "snippet": "the latency. You should notice some changes in the visualization at the top of\nthe trace list.\nNow, since this is a contrived scenario, we know where to find the underlying\nbug in our code. However, in a real-world scenario, we may need to perform\nfurther searching to find out what\u2019s going on in our code, or the interactions\nbetween services that cause it.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Diagnosis\nThe first step in diagnosing a problem is to determine that a problem exists.\nOften the first stop will be a metrics dashboard provided by a tool such as\nGrafana.\nA\ndemo dashboard folder\nshould exist\nafter launching the demo with two dashboards; One is to monitor your\nOpenTelemetry Collect",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 12-23)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "Diagnosis\nThe first step in diagnosing a problem is to determine that a problem exists.\nOften the first stop will be a metrics dashboard provided by a tool such as\nGrafana.\nA\ndemo dashboard folder\nshould exist\nafter launching the demo with two dashboards; One is to monitor your\nOpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Jaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include on",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 36-45)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "Jaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that\ninclude requests to the recommendation service.\nBy sorting by latency, we\u2019re able to quickly find specific traces that took a\nlong time. Clicking on a trace in the right panel, we\u2019re able to view the\nwaterfall view.\nWe can see that the recommendation service is taking a long time to complete its\nwork, and viewing the details allows us to get a better idea of what\u2019s going on.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified February 27, 2023:\nEnable Prettier check over demo docs (#2408) (f9cb26fb4)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/ (text lines 27-36)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified February 27, 2023:\nEnable Prettier check over demo docs (#2408) (f9cb26fb4)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 383-392)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prom",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics (text lines 355-366)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics",
+          "snippet": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prometheus client library, scraped by the Collector):\nA counter of ads served, labeled by\ncategory\n(e.g.\ntelescopes",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\"",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 217-228)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+          "snippet": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\"",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 225-232)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+          "snippet": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Setting span status\nIf the result of the operation is an error, the span status should be set\naccordingly using\nsetStatus\non the span object. In the\ngetAds\nfunction the\nspan status is set when an exception is caught.\nspan\n.\nsetStatus\n(",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status (text lines 88-99)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status",
+          "snippet": "Setting span status\nIf the result of the operation is an error, the span status should be set\naccordingly using\nsetStatus\non the span object. In the\ngetAds\nfunction the\nspan status is set when an exception is caught.\nspan\n.\nsetStatus\n(",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n\nThe Ad service intentionally emits custom metrics in **two different ways**:\n\n1. **OpenTelemetry SDK** (recommended): `adRequestsCounter`\n   (`demo.ad.requests`) is created via `GlobalOpenTelemetry.getMeter(...)`\n   and exported to the OT",
+          "ref": "src/ad/README.md:L41-L52",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L41-L52",
+          "snippet": "```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n\nThe Ad service intentionally emits custom metrics in **two different ways**:\n\n1. **OpenTelemetry SDK** (recommended): `adRequestsCounter`\n   (`demo.ad.requests`) is created via `GlobalOpenTelemetry.getMeter(...)`\n   and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for\nyour preferred deployment method:\n\n- [Docker](https://opentelemetry.io/docs/demo/docker_deployment/)\n- [Kubernetes](https://opentelemetry.io/docs/demo/kubernetes_deployment/)\n\n## Documentation\n\nFor detai",
+          "ref": "README.md:L41-L52",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L41-L52",
+          "snippet": "\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for\nyour preferred deployment method:\n\n- [Docker](https://opentelemetry.io/docs/demo/docker_deployment/)\n- [Kubernetes](https://opentelemetry.io/docs/demo/kubernetes_deployment/)\n\n## Documentation\n\nFor detailed documentation, see [Demo Documentation][docs]. If you're curious",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "We welcome any vendor to fork the project to demonstrate their services and\nadding a link below. The community is committed to maintaining the project and\nkeeping it up to date for you.\n\n|                           |                |                                  |\n|---------------------------|--",
+          "ref": "README.md:L57-L68",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L57-L68",
+          "snippet": "\nWe welcome any vendor to fork the project to demonstrate their services and\nadding a link below. The community is committed to maintaining the project and\nkeeping it up to date for you.\n\n|                           |                |                                  |\n|---------------------------|----------------|----------------------------------|\n| [AlibabaCloud LogService] | [Google Cloud] | [Rootprint]                      |\n| [Amazon Web Services]     | [Grafana Labs] | [Sentry]                         |\n| [Apache Doris]            | [Guance]       | [ServiceNow Cloud Observability] |\n| [AppDynamics]             | [Honeycomb.io] | [SigNoz]                         |\n| [Aspecto]                 | [Instana]      | [SolarWinds Observability]       |",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "[`#otel-community-demo`](https://cloud-native.slack.com/archives/C03B4CWV4DA).\n\n### Maintainers\n\n- [Cyrille Le Clerc](https://github.com/cyrille-leclerc), Datadog\n- [Juliano Costa](https://github.com/julianocosta89), Dash0\n- [Shenoy Pratik](https://github.com/ps48), AWS OpenSearch\n\nFor more informat",
+          "ref": "README.md:L89-L100",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L89-L100",
+          "snippet": "[`#otel-community-demo`](https://cloud-native.slack.com/archives/C03B4CWV4DA).\n\n### Maintainers\n\n- [Cyrille Le Clerc](https://github.com/cyrille-leclerc), Datadog\n- [Juliano Costa](https://github.com/julianocosta89), Dash0\n- [Shenoy Pratik](https://github.com/ps48), AWS OpenSearch\n\nFor more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).\n\n### Approvers\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).\n\n### Approvers\n\n- [D&#xF3;nal O'Sullivan](https://github.com/osullivandonal), Elastic\n- [Piotr Kie&#x142;kowicz](https://",
+          "ref": "README.md:L97-L108",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L97-L108",
+          "snippet": "For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).\n\n### Approvers\n\n- [D&#xF3;nal O'Sullivan](https://github.com/osullivandonal), Elastic\n- [Piotr Kie&#x142;kowicz](https://github.com/Kielek), Splunk\n\nFor more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).\n\n### Emeritus\n\n- [Austin Parker](https://github.com/austinlparker), Maintainer",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "- [Morgan McLean](https://github.com/mtwo), Approver\n- [Penghan Wang](https://github.com/wph95), Approver\n- [Pierre Tessier](https://github.com/puckpuck), Maintainer\n- [Reiley Yang](https://github.com/reyang), Approver\n- [Roger Coll](https://github.com/rogercoll), Maintainer\n- [Ziqi Zhao](https://gi",
+          "ref": "README.md:L113-L124",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L113-L124",
+          "snippet": "- [Morgan McLean](https://github.com/mtwo), Approver\n- [Penghan Wang](https://github.com/wph95), Approver\n- [Pierre Tessier](https://github.com/puckpuck), Maintainer\n- [Reiley Yang](https://github.com/reyang), Approver\n- [Roger Coll](https://github.com/rogercoll), Maintainer\n- [Ziqi Zhao](https://github.com/fatsheep9146), Approver\n\nFor more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).\n\n### Thanks to all the people who have contributed\n\n[![contributors](https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-demo)](https://github.com/open-telemetry/opentelemetry-demo/graphs/contributors)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified August 20, 2026:\nAdd documentation for agent, mcp and chatbot services. (#11106) (ffef14de8)",
+          "ref": "https://opentelemetry.io/docs/demo/ (text lines 116-125)",
+          "link": "https://opentelemetry.io/docs/demo/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified August 20, 2026:\nAdd documentation for agent, mcp and chatbot services. (#11106) (ffef14de8)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+          "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 27-38)",
+          "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+          "snippet": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP",
+          "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 35-46)",
+          "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+          "snippet": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 1-12)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "subgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python\ncache[(Cache<br/>Valkey)]\ncart(Cart):::dotnet\nchatbot(Chatbot):::python\ncheckout(Checkout):::golang\ncurrency(Currency):::cpp\nemail(Email):::ruby\nflagd(Flagd):::golang\nflagd-ui(Flagd-ui):::elixir",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 9-20)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "subgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python\ncache[(Cache<br/>Valkey)]\ncart(Cart):::dotnet\nchatbot(Chatbot):::python\ncheckout(Checkout):::golang\ncurrency(Currency):::cpp\nemail(Email):::ruby\nflagd(Flagd):::golang\nflagd-ui(Flagd-ui):::elixir",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "react-native-app(React Native App):::typescript\npostgresql[(astronomy-db<br/>PostgreSQL)]\nchatbot -->|HTTP| agent\nagent -.->|HTTP| frontend\nagent -.->|HTTP| mcp\nad --->|gRPC| flagd\ncheckout --->|gRPC| flagd\nproduct-catalog --->|gRPC| flagd\nemail --->|gRPC| flagd\nshipping --->|gRPC| flagd\nagent --->|",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 33-44)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "react-native-app(React Native App):::typescript\npostgresql[(astronomy-db<br/>PostgreSQL)]\nchatbot -->|HTTP| agent\nagent -.->|HTTP| frontend\nagent -.->|HTTP| mcp\nad --->|gRPC| flagd\ncheckout --->|gRPC| flagd\nproduct-catalog --->|gRPC| flagd\nemail --->|gRPC| flagd\nshipping --->|gRPC| flagd\nagent --->|gRPC| flagd\nload-generator -->|HTTP| flagd",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "checkout --->|gRPC| payment\ncheckout --->|HTTP| email\ncheckout -->|TCP| queue\ncheckout ---->|gRPC| product-catalog\ncheckout -->|HTTP| shipping\nshipping -->|HTTP| quote\nfraud-detection --->|gRPC| flagd\nfrontend -->|gRPC| ad\nfrontend ---->|gRPC| cart\nfrontend -->|gRPC| currency\nfrontend -->|gRPC| chec",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 49-60)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "checkout --->|gRPC| payment\ncheckout --->|HTTP| email\ncheckout -->|TCP| queue\ncheckout ---->|gRPC| product-catalog\ncheckout -->|HTTP| shipping\nshipping -->|HTTP| quote\nfraud-detection --->|gRPC| flagd\nfrontend -->|gRPC| ad\nfrontend ---->|gRPC| cart\nfrontend -->|gRPC| currency\nfrontend -->|gRPC| checkout\nfrontend -->|HTTP| shipping",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 22, 2026:\nFix(Demo): Added Missing Flagd connections to architecture diagram (#12264) (039630878)",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 223-232)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 22, 2026:\nFix(Demo): Added Missing Flagd connections to architecture diagram (#12264) (039630878)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 11, 2026:\nfix: correct memory_delimiter typo in English doc `content/en/docs/demo/collector-data-flow-dashboard/inde",
+          "ref": "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/ (text lines 77-86)",
+          "link": "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 11, 2026:\nfix: correct memory_delimiter typo in English doc `content/en/docs/demo/collector-data-flow-dashboard/index.md` (#11668) (8eeaf1352)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Process Metrics\nVery limited but informative process metrics are added to dashboard. For\nexample, you might observe more than one instance of otelcol running on the\nsystem during restarts or similar. This can be useful for understanding spikes\non dataflow.",
+          "ref": "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/#process-metrics (text lines 72-76)",
+          "link": "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/#process-metrics",
+          "snippet": "Process Metrics\nVery limited but informative process metrics are added to dashboard. For\nexample, you might observe more than one instance of otelcol running on the\nsystem during restarts or similar. This can be useful for understanding spikes\non dataflow.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified February 17, 2025:\nDemo - update required .NET version to .NET8 (#6359) (7c112ea41)",
+          "ref": "https://opentelemetry.io/docs/demo/development/ (text lines 48-57)",
+          "link": "https://opentelemetry.io/docs/demo/development/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified February 17, 2025:\nDemo - update required .NET version to .NET8 (#6359) (7c112ea41)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 11, 2026:\ndocs(demo): fix outdated Docker Compose commands (#11095) (944f1dc35)",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/ (text lines 348-357)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 11, 2026:\ndocs(demo): fix outdated Docker Compose commands (#11095) (944f1dc35)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Bring your own backend\nLikely you want to use the web store as a demo application for an observability\nbackend you already have (e.g., an existing instance of Jaeger, Zipkin, or one\nof the\nvendors of your choice\n).\nOpenTelemetry Collector can be used to export telemetry data to multiple\nbackends. Th",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 243-254)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "Bring your own backend\nLikely you want to use the web store as a demo application for an observability\nbackend you already have (e.g., an existing instance of Jaeger, Zipkin, or one\nof the\nvendors of your choice\n).\nOpenTelemetry Collector can be used to export telemetry data to multiple\nbackends. The collector in the demo application layers its configuration from\nseveral files, each merged on top of the previous one. Which files are loaded\ndepends on how you start the demo:\notelcol-config.yml\n\u2014 the base configuration, always loaded",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "several files, each merged on top of the previous one. Which files are loaded\ndepends on how you start the demo:\notelcol-config.yml\n\u2014 the base configuration, always loaded\notelcol-config-full.yml\n\u2014 adds the receivers for services that only run in\nthe full demo, such as Kafka\notelcol-config-observabi",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 251-262)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "several files, each merged on top of the previous one. Which files are loaded\ndepends on how you start the demo:\notelcol-config.yml\n\u2014 the base configuration, always loaded\notelcol-config-full.yml\n\u2014 adds the receivers for services that only run in\nthe full demo, such as Kafka\notelcol-config-observability.yml\n\u2014 wires up the bundled backends (Jaeger,\nPrometheus, and OpenSearch)\notelcol-config-extras.yml\n\u2014 your own additions, always loaded last",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "replaced. The\nspan_metrics\nconnector bridges traces to metrics, so it must\nbe retained on traces\nexporters\nand metrics\nreceivers\nwhen overriding\nthose pipelines \u2014 omitting it causes the collector to crash. All other\nexporters are optional: omitting one simply stops data from being sent to that\nbacke",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 299-310)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "replaced. The\nspan_metrics\nconnector bridges traces to metrics, so it must\nbe retained on traces\nexporters\nand metrics\nreceivers\nwhen overriding\nthose pipelines \u2014 omitting it causes the collector to crash. All other\nexporters are optional: omitting one simply stops data from being sent to that\nbackend. The upstream exporter names are:\ntraces",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "those pipelines \u2014 omitting it causes the collector to crash. All other\nexporters are optional: omitting one simply stops data from being sent to that\nbackend. The upstream exporter names are:\ntraces\n:\ndebug\n,\notlp_grpc/jaeger\n,\nspan_metrics\n(required)\nmetrics",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 307-318)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "those pipelines \u2014 omitting it causes the collector to crash. All other\nexporters are optional: omitting one simply stops data from being sent to that\nbackend. The upstream exporter names are:\ntraces\n:\ndebug\n,\notlp_grpc/jaeger\n,\nspan_metrics\n(required)\nmetrics",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "logs\n:\ndebug\n,\nopensearch\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require\ndifferent exporters, you may find them and their documentation available at\nopentelemetry-collector-contrib/exporter\n.\nAfter updating t",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 323-334)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "logs\n:\ndebug\n,\nopensearch\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require\ndifferent exporters, you may find them and their documentation available at\nopentelemetry-collector-contrib/exporter\n.\nAfter updating the\notelcol-config-extras.yml",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "opentelemetry-collector-contrib/exporter\n.\nAfter updating the\notelcol-config-extras.yml\n, start the demo by running\nmake start\n. After a while, you should see the traces flowing into your backend\nas well.\ndocker-compose\nis deprecated. For details, see\nMigrate to Compose V2\n.",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 331-342)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "opentelemetry-collector-contrib/exporter\n.\nAfter updating the\notelcol-config-extras.yml\n, start the demo by running\nmake start\n. After a while, you should see the traces flowing into your backend\nas well.\ndocker-compose\nis deprecated. For details, see\nMigrate to Compose V2\n.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 14, 2026:\ndocs(demo): Add kafkaConsumerDead and update kafkaQueueProblems descriptions (#11813) (cf0b64442)",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/ (text lines 119-128)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 14, 2026:\ndocs(demo): Add kafkaConsumerDead and update kafkaQueueProblems descriptions (#11813) (cf0b64442)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "EmptyCart\ncalls to a failing cart store\nemailMemoryLeak\nEmail\nSimulate a memory leak in the\nemail\nservice. The variant sets how much each confirmation email body is padded.\nfailedReadinessProbe\nCart\nForce the readiness probe to fail with unhealthy status, simulating a pod \u201cNotReady\u201d condition. Appli",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 50-61)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "EmptyCart\ncalls to a failing cart store\nemailMemoryLeak\nEmail\nSimulate a memory leak in the\nemail\nservice. The variant sets how much each confirmation email body is padded.\nfailedReadinessProbe\nCart\nForce the readiness probe to fail with unhealthy status, simulating a pod \u201cNotReady\u201d condition. Applicable for Kubernetes deployments only.\nimageSlowLoad\nFrontend",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "calls.\npaymentUnreachable\nCheckout\nUse a bad address when calling the Payment service to make it seem like the Payment service is unavailable.\nproductCatalogFailure\nProduct Catalog\nGenerate an error for\nGetProduct\nrequests with product ID:\nOLJCESPC7Z\nproductCatalogLockContention\nProduct Catalog",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 82-93)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "calls.\npaymentUnreachable\nCheckout\nUse a bad address when calling the Payment service to make it seem like the Payment service is unavailable.\nproductCatalogFailure\nProduct Catalog\nGenerate an error for\nGetProduct\nrequests with product ID:\nOLJCESPC7Z\nproductCatalogLockContention\nProduct Catalog",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "requests with product ID:\nOLJCESPC7Z\nproductCatalogLockContention\nProduct Catalog\nSimulate database lock contention by holding an\nACCESS EXCLUSIVE\nlock on the\ncatalog.products\ntable, blocking other product catalog queries.\nrecommendationCacheFailure\nRecommendation\nCreate a memory leak due to an expo",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 90-101)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "requests with product ID:\nOLJCESPC7Z\nproductCatalogLockContention\nProduct Catalog\nSimulate database lock contention by holding an\nACCESS EXCLUSIVE\nlock on the\ncatalog.products\ntable, blocking other product catalog queries.\nrecommendationCacheFailure\nRecommendation\nCreate a memory leak due to an exponentially growing cache. Roughly half of requests trigger growth.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "table, blocking other product catalog queries.\nrecommendationCacheFailure\nRecommendation\nCreate a memory leak due to an exponentially growing cache. Roughly half of requests trigger growth.",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 98-101)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "table, blocking other product catalog queries.\nrecommendationCacheFailure\nRecommendation\nCreate a memory leak due to an exponentially growing cache. Roughly half of requests trigger growth.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Using Metrics and Traces to diagnose a memory leak\nApplication telemetry, such as the kind that OpenTelemetry can provide, is very\nuseful for diagnosing issues in a distributed system. In this scenario, we will\nwalk through a scenario demonstrating how to move from high-level metrics and\ntraces to d",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/ (text lines 1-5)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "snippet": "Using Metrics and Traces to diagnose a memory leak\nApplication telemetry, such as the kind that OpenTelemetry can provide, is very\nuseful for diagnosing issues in a distributed system. In this scenario, we will\nwalk through a scenario demonstrating how to move from high-level metrics and\ntraces to determine the cause of a memory leak.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 10, 2026:\ndocs(demo): fix feature flag names and service coverage drift (#11096) (10fe33751)",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/ (text lines 68-77)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 10, 2026:\ndocs(demo): fix feature flag names and service coverage drift (#11096) (10fe33751)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Confirming the Diagnosis\nWe can see in our waterfall view that the\napp.cache_hit\nattribute is set to\nfalse, and that the\napp.products.count\nvalue is extremely high.\nReturning to the search UI, select\nrecommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis (text lines 46-57)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#confirming-the-diagnosis",
+          "snippet": "Confirming the Diagnosis\nWe can see in our waterfall view that the\napp.cache_hit\nattribute is set to\nfalse, and that the\napp.products.count\nvalue is extremely high.\nReturning to the search UI, select\nrecommendation\nin the Service dropdown, and\nsearch for\napp.cache_hit=true",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "We can see that the recommendation service is taking a long time to complete its\nwork, and viewing the details allows us to get a better idea of what\u2019s going on.",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 44-45)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "We can see that the recommendation service is taking a long time to complete its\nwork, and viewing the details allows us to get a better idea of what\u2019s going on.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Setup\nTo run this scenario, you will need to deploy the demo application and enable\nthe\nrecommendationCacheFailure\nfeature flag. Let the application run for about\n10 minutes or so after enabling the feature flag to allow for data to populate.",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup (text lines 6-11)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup",
+          "snippet": "Setup\nTo run this scenario, you will need to deploy the demo application and enable\nthe\nrecommendationCacheFailure\nfeature flag. Let the application run for about\n10 minutes or so after enabling the feature flag to allow for data to populate.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified February 10, 2025:\n[editorial] Add use of markdownlint-cli2 for linting, wrap some URLs in angle brackets (#6251) (5472965d7)",
+          "ref": "https://opentelemetry.io/docs/demo/forking/ (text lines 26-35)",
+          "link": "https://opentelemetry.io/docs/demo/forking/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified February 10, 2025:\n[editorial] Add use of markdownlint-cli2 for linting, wrap some URLs in angle brackets (#6251) (5472965d7)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Suggestions for Fork Maintainers\nIf you\u2019d like to enhance the telemetry data emitted or collected by the demo,\nthen we strongly encourage you to backport your changes to this repository.\nFor vendor or implementation specific changes, a strategy of modifying\ntelemetry in the pipeline via config is pr",
+          "ref": "https://opentelemetry.io/docs/demo/forking/#suggestions-for-fork-maintainers (text lines 11-22)",
+          "link": "https://opentelemetry.io/docs/demo/forking/#suggestions-for-fork-maintainers",
+          "snippet": "Suggestions for Fork Maintainers\nIf you\u2019d like to enhance the telemetry data emitted or collected by the demo,\nthen we strongly encourage you to backport your changes to this repository.\nFor vendor or implementation specific changes, a strategy of modifying\ntelemetry in the pipeline via config is preferable to underlying code changes.\nExtend rather than replace. Adding net-new services that interface with the\nexisting API is a great way to add vendor-specific or tool-specific features\nthat can\u2019t be accomplished through telemetry modification.\nTo support extensibility, please use repository or facade patterns around\nresources like queues, databases, caches, etc. This will allow for different\nimplementations of these services to be shimmed in for different platforms.\nPlease do not attempt to backport vendor or tool-specific enhancements to this",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "To support extensibility, please use repository or facade patterns around\nresources like queues, databases, caches, etc. This will allow for different\nimplementations of these services to be shimmed in for different platforms.\nPlease do not attempt to backport vendor or tool-specific enhancements to",
+          "ref": "https://opentelemetry.io/docs/demo/forking/#suggestions-for-fork-maintainers (text lines 19-25)",
+          "link": "https://opentelemetry.io/docs/demo/forking/#suggestions-for-fork-maintainers",
+          "snippet": "To support extensibility, please use repository or facade patterns around\nresources like queues, databases, caches, etc. This will allow for different\nimplementations of these services to be shimmed in for different platforms.\nPlease do not attempt to backport vendor or tool-specific enhancements to this\nrepository.\nIf you have any questions or would like to suggest ways that we can make your\nlife easier as a fork maintainer, please open an issue.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Kubernetes deployment\nWe provide a\nOpenTelemetry Demo Helm chart\nto help\ndeploy the demo to an existing Kubernetes cluster.\nHelm\nmust be installed to use the charts. Please refer to\nHelm\u2019s\ndocumentation\nto get started.",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/ (text lines 1-10)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+          "snippet": "Kubernetes deployment\nWe provide a\nOpenTelemetry Demo Helm chart\nto help\ndeploy the demo to an existing Kubernetes cluster.\nHelm\nmust be installed to use the charts. Please refer to\nHelm\u2019s\ndocumentation\nto get started.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 3, 2026:\ndocs(demo): update load generator docs from k6 back to Locust (#11551) (430938969)",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/ (text lines 209-218)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 3, 2026:\ndocs(demo): update load generator docs from k6 back to Locust (#11551) (430938969)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Bring your own backend\nLikely you want to use the web store as a demo application for an observability\nbackend you already have (e.g. an existing instance of Jaeger, Zipkin, or one of\nthe\nvendor of your choice\n).\nThe OpenTelemetry Collector\u2019s configuration is exposed in the Helm chart. Any\nadditions",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#bring-your-own-backend (text lines 158-169)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#bring-your-own-backend",
+          "snippet": "Bring your own backend\nLikely you want to use the web store as a demo application for an observability\nbackend you already have (e.g. an existing instance of Jaeger, Zipkin, or one of\nthe\nvendor of your choice\n).\nThe OpenTelemetry Collector\u2019s configuration is exposed in the Helm chart. Any\nadditions you do will be merged into the default configuration.\nYou can create a custom file (e.g.,\nmy-values-file.yaml\n) and use it to add\nyour own exporters to the desired pipeline(s):",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "spanmetrics, otlphttp/example]\nNote\nWhen merging YAML values with Helm, objects are merged and arrays are\nreplaced. The\nspanmetrics\nexporter must be included in the array of\nexporters for the\ntraces\npipeline if overridden. Not including this exporter\nwill result in an error.\nVendor backends might re",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#bring-your-own-backend (text lines 190-201)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#bring-your-own-backend",
+          "snippet": "spanmetrics, otlphttp/example]\nNote\nWhen merging YAML values with Helm, objects are merged and arrays are\nreplaced. The\nspanmetrics\nexporter must be included in the array of\nexporters for the\ntraces\npipeline if overridden. Not including this exporter\nwill result in an error.\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "pipeline if overridden. Not including this exporter\nwill result in an error.\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require\ndifferent exporters, you may find them and their documentation available at\nopentele",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#bring-your-own-backend (text lines 198-208)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#bring-your-own-backend",
+          "snippet": "pipeline if overridden. Not including this exporter\nwill result in an error.\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require\ndifferent exporters, you may find them and their documentation available at\nopentelemetry-collector-contrib/exporter\n.\nTo install the Helm chart with a custom\nmy-values-file.yaml\nvalues file use:\nhelm install my-otel-demo open-telemetry/opentelemetry-demo --values my-values-file.yaml",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Configure service types\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will be\nClusterIP\nbut you can\nchange each one using the\nservice.type\nproperty of each component.\nTo configure the frontend-proxy component to use a LoadBala",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-service-types (text lines 119-130)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#configure-service-types",
+          "snippet": "Configure service types\nEach demo component (ie: frontend-proxy) offers a way to have its Kubernetes\nservice type configured. By default, these will be\nClusterIP\nbut you can\nchange each one using the\nservice.type\nproperty of each component.\nTo configure the frontend-proxy component to use a LoadBalancer service type you\nwould specify the following in your values file:\ncomponents\n:",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Expose Demo components using service or ingress configurations\nNote\nWe recommend that you use a values file when installing the Helm chart in\norder to specify additional configuration options.",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-demo-components-using-service-or-ingress-configurations (text lines 71-74)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-demo-components-using-service-or-ingress-configurations",
+          "snippet": "Expose Demo components using service or ingress configurations\nNote\nWe recommend that you use a values file when installing the Helm chart in\norder to specify additional configuration options.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Install using Helm\nAdd OpenTelemetry Helm repository:\nhelm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts\nTo install the chart with the release name my-otel-demo, run the following\ncommand:\nhelm install my-otel-demo open-telemetry/opentelemetry-demo\nNote\nThe OpenT",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#install-using-helm (text lines 15-26)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#install-using-helm",
+          "snippet": "Install using Helm\nAdd OpenTelemetry Helm repository:\nhelm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts\nTo install the chart with the release name my-otel-demo, run the following\ncommand:\nhelm install my-otel-demo open-telemetry/opentelemetry-demo\nNote\nThe OpenTelemetry Demo Helm chart does not support being upgraded from one\nversion to another. If you need to upgrade the chart, you must first delete\nthe existing release and then install the new version.\nNote\nThe OpenTelemetry Demo Helm chart version 0.11.0 or greater is required to",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Use Helm to generate a Kubernetes manifests\nThe following command will generate a single Kubernetes manifest file which will\ncontain a definition for all required resources. You can apply this manifest\nusing\nkubectl apply -f opentelemetry-demo.yaml\nafter generating it.\nhelm template opentelemetry-de",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#use-helm-to-generate-a-kubernetes-manifests (text lines 28-38)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#use-helm-to-generate-a-kubernetes-manifests",
+          "snippet": "Use Helm to generate a Kubernetes manifests\nThe following command will generate a single Kubernetes manifest file which will\ncontain a definition for all required resources. You can apply this manifest\nusing\nkubectl apply -f opentelemetry-demo.yaml\nafter generating it.\nhelm template opentelemetry-demo open-telemetry/opentelemetry-demo --namespace otel-demo > opentelemetry-demo.yaml\nNote\nThe OpenTelemetry Demo Kubernetes manifests do not support being upgraded from\none version to another. If you need to upgrade the demo, you must first delete\nthe existing resources and then install the new version.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "The OpenTelemetry Demo Kubernetes manifests do not support being upgraded from\none version to another. If you need to upgrade the demo, you must first delete\nthe existing resources and then install the new version.",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#use-helm-to-generate-a-kubernetes-manifests (text lines 36-38)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#use-helm-to-generate-a-kubernetes-manifests",
+          "snippet": "The OpenTelemetry Demo Kubernetes manifests do not support being upgraded from\none version to another. If you need to upgrade the demo, you must first delete\nthe existing resources and then install the new version.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Last modified February 27, 2023:\nEnable Prettier check over demo docs (#2408) (f9cb26fb4)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/ (text lines 35-36)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/",
+          "snippet": "Last modified February 27, 2023:\nEnable Prettier check over demo docs (#2408) (f9cb26fb4)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Target Personas\nWe\u2019re building the demo application with several different target personas in\nmind:\nEnthusiasts\nat a company that can use the demo app as an individual to\nadvocate for OTel within their organization.\nDevelopers\nwith specific language skills who want to see a larger picture\nview.\nAPM",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/#target-personas (text lines 8-19)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/#target-personas",
+          "snippet": "Target Personas\nWe\u2019re building the demo application with several different target personas in\nmind:\nEnthusiasts\nat a company that can use the demo app as an individual to\nadvocate for OTel within their organization.\nDevelopers\nwith specific language skills who want to see a larger picture\nview.\nAPM Vendors\nwho can evaluate OTel in general or need to produce a demo of\ntheir OTel capabilities for customers.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Application Requirements\nThe following requirements were decided upon to define what OpenTelemetry (OTel)\nsignals the application will produce & when support for future SDKs should be\nadded:\nEvery supported language that has a GA Traces or Metrics SDK must have at\nleast 1 service example.\nMobile sup",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/application/ (text lines 1-12)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/application/",
+          "snippet": "Application Requirements\nThe following requirements were decided upon to define what OpenTelemetry (OTel)\nsignals the application will produce & when support for future SDKs should be\nadded:\nEvery supported language that has a GA Traces or Metrics SDK must have at\nleast 1 service example.\nMobile support (Swift) is not an initial priority and not included in the\nabove requirement.\nApplication processes must be language independent.\ngRPC is preferred where available and HTTP is to be used where it is not.\nServices should be architected to be modular components that can be switched\nout.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Application processes must be language independent.\ngRPC is preferred where available and HTTP is to be used where it is not.\nServices should be architected to be modular components that can be switched\nout.\nIndividual services can and should be encouraged to have multiple language\noptions available",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/application/ (text lines 9-19)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/application/",
+          "snippet": "Application processes must be language independent.\ngRPC is preferred where available and HTTP is to be used where it is not.\nServices should be architected to be modular components that can be switched\nout.\nIndividual services can and should be encouraged to have multiple language\noptions available.\nThe architecture must allow for the possible integration of platform generic\ncomponents like a database, queue, or blob storage.\nThere is no requirement for a particular component type - at least 1\ngeneric component should be present in general.\nA load generator must be provided to simulate user load against the demo.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "There is no requirement for a particular component type - at least 1\ngeneric component should be present in general.\nA load generator must be provided to simulate user load against the demo.",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/application/ (text lines 17-19)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/application/",
+          "snippet": "There is no requirement for a particular component type - at least 1\ngeneric component should be present in general.\nA load generator must be provided to simulate user load against the demo.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 28, 2025:\n[deps] Update Node, pkgs, Hugo to 0.152.2, and doc-page front-matter fixes (#8261) (8cc5285f7)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/application/ (text lines 20-29)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/application/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 28, 2025:\n[deps] Update Node, pkgs, Hugo to 0.152.2, and doc-page front-matter fixes (#8261) (8cc5285f7)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified March 4, 2025:\n[demo] rename demo services (#6438) (ae417344d)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/ (text lines 52-61)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified March 4, 2025:\n[demo] rename demo services (#6438) (ae417344d)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Main Application\nThe bulk of the demo app is a self-contained microservice-based application that\ndoes some useful \u2018real-world\u2019 work, such as an eCommerce site. This application\nis composed of multiple services that communicate with each other over gRPC and\nHTTP and runs on Kubernetes (or Docker, lo",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application (text lines 23-34)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+          "snippet": "Main Application\nThe bulk of the demo app is a self-contained microservice-based application that\ndoes some useful \u2018real-world\u2019 work, such as an eCommerce site. This application\nis composed of multiple services that communicate with each other over gRPC and\nHTTP and runs on Kubernetes (or Docker, locally).\nEach service shall be instrumented with OpenTelemetry for traces, metrics, and\nlogs (as applicable/available).\nEach service should be interchangeable with a service that performs the same\nbusiness logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "business logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps\nsolve problems in distributed applicat",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application (text lines 31-35)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+          "snippet": "business logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps\nsolve problems in distributed applications.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Orchestration and Deployment\nAll services run on Kubernetes. The OpenTelemetry Collector should be deployed\nvia the OpenTelemetry Operator, and run in a sidecar + gateway mode. Telemetry\nfrom each pod should be routed from agents to a gateway, and the gateway should\nexport telemetry by default to an",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#orchestration-and-deployment (text lines 40-51)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#orchestration-and-deployment",
+          "snippet": "Orchestration and Deployment\nAll services run on Kubernetes. The OpenTelemetry Collector should be deployed\nvia the OpenTelemetry Operator, and run in a sidecar + gateway mode. Telemetry\nfrom each pod should be routed from agents to a gateway, and the gateway should\nexport telemetry by default to an open source trace + metrics visualizer.\nFor local/non-Kubernetes deployment, the Collector should be deployed via\ncompose file and monitor not only traces/metrics from applications, but also the\ndocker containers via\ndockerstatsreceiver\n.\nA design goal of this project is to include a CI/CD pipeline for self-deployment\ninto cloud environments. This could be skipped for local development.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "OpenTelemetry Requirements\nThe following requirements were decided upon to define what OpenTelemetry (OTel)\nsignals the application will produce & when support for future SDKs should be\nadded:\nThe demo must produce OTel logs, traces, & metrics out of the box for\nlanguages that have a GA SDK.\nLanguag",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/ (text lines 1-12)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "snippet": "OpenTelemetry Requirements\nThe following requirements were decided upon to define what OpenTelemetry (OTel)\nsignals the application will produce & when support for future SDKs should be\nadded:\nThe demo must produce OTel logs, traces, & metrics out of the box for\nlanguages that have a GA SDK.\nLanguages that have a Beta SDK available may be included but are not required\nlike GA SDKs.\nNative OTel metrics should be produced where possible.\nBoth manual instrumentation and instrumentation libraries\n(auto-instrumentation) should be demonstrated in each language.\nAll data should be exported to the Collector first.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Native OTel metrics should be produced where possible.\nBoth manual instrumentation and instrumentation libraries\n(auto-instrumentation) should be demonstrated in each language.\nAll data should be exported to the Collector first.\nThe Collector must be configurable to allow for a variety of consumptio",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/ (text lines 9-16)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "snippet": "Native OTel metrics should be produced where possible.\nBoth manual instrumentation and instrumentation libraries\n(auto-instrumentation) should be demonstrated in each language.\nAll data should be exported to the Collector first.\nThe Collector must be configurable to allow for a variety of consumption\nexperiences but default tools must be selected for each signal.\nThe demo application architecture using the Collector should be designed to\nbe a best practices reference architecture.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 19, 2023:\nSupport page-relative aliases (#3417) (7f46ec2d7)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/ (text lines 17-26)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 19, 2023:\nSupport page-relative aliases (#3417) (7f46ec2d7)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "System Requirements\nTo ensure the demo runs correctly please ensure your environment meets the\nfollowing system requirements:\nYour system must meet\nDocker Desktop\nsystem requirements or you should use your preferred Cloud Service.\nThe demo must be able to work on the following Operating Systems (OS)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/system/ (text lines 1-8)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/system/",
+          "snippet": "System Requirements\nTo ensure the demo runs correctly please ensure your environment meets the\nfollowing system requirements:\nYour system must meet\nDocker Desktop\nsystem requirements or you should use your preferred Cloud Service.\nThe demo must be able to work on the following Operating Systems (OS): Linux,\nmacOS and Windows with documentation provided for each OS.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 19, 2023:\nSupport page-relative aliases (#3417) (7f46ec2d7)",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/system/ (text lines 9-18)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/system/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified October 19, 2023:\nSupport page-relative aliases (#3417) (7f46ec2d7)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified April 13, 2026:\ndocs(demo): add tail-based sampling example using service.criticality (#9468) (d503571bb)",
+          "ref": "https://opentelemetry.io/docs/demo/sample-configurations/ (text lines 8-17)",
+          "link": "https://opentelemetry.io/docs/demo/sample-configurations/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified April 13, 2026:\ndocs(demo): add tail-based sampling example using service.criticality (#9468) (d503571bb)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Ad Service\nThis service determines appropriate ads to serve to users based on context keys.\nThe ads will be for products available in the store.\nAd service source",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 1-4)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/",
+          "snippet": "Ad Service\nThis service determines appropriate ads to serve to users based on context keys.\nThe ads will be for products available in the store.\nAd service source",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Last modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 391-392)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/",
+          "snippet": "Last modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "current\n();\nAdding attributes to a span is accomplished using\nsetAttribute\non the span\nobject. In the\ngetAds\nfunction multiple attributes are added to the span.\nspan\n.\nsetAttribute\n(",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans (text lines 30-41)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans",
+          "snippet": "current\n();\nAdding attributes to a span is accomplished using\nsetAttribute\non the span\nobject. In the\ngetAds\nfunction multiple attributes are added to the span.\nspan\n.\nsetAttribute\n(",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Add span events\nAdding an event to a span is accomplished using\naddEvent\non the span object.\nIn the\ngetAds\nfunction an event with an attribute is added when an exception\nis caught.\nspan\n.\naddEvent\n(",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-span-events (text lines 60-71)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-span-events",
+          "snippet": "Add span events\nAdding an event to a span is accomplished using\naddEvent\non the span object.\nIn the\ngetAds\nfunction an event with an attribute is added when an exception\nis caught.\nspan\n.\naddEvent\n(",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Bridging non-OTel custom metrics (Prometheus client library)\nThe Ad service also exposes a small set of custom metrics using the\nPrometheus Java client library\nrather than the OpenTelemetry SDK. These metrics are exposed on a separate HTTP\nendpoint (\n/metrics\non\nAD_PROMETHEUS_PORT\n, default\n9465\n) a",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 233-244)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "Bridging non-OTel custom metrics (Prometheus client library)\nThe Ad service also exposes a small set of custom metrics using the\nPrometheus Java client library\nrather than the OpenTelemetry SDK. These metrics are exposed on a separate HTTP\nendpoint (\n/metrics\non\nAD_PROMETHEUS_PORT\n, default\n9465\n) and scraped by the\nOpenTelemetry Collector\u2019s",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "rewriting everything upfront. The Collector\u2019s\nprometheus\nreceiver is the\nbridge that makes this possible.\nThe Collector configuration that wires this up:\nreceivers\n:\nprometheus/ad\n:\nconfig\n:\nscrape_configs",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 297-308)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "rewriting everything upfront. The Collector\u2019s\nprometheus\nreceiver is the\nbridge that makes this possible.\nThe Collector configuration that wires this up:\nreceivers\n:\nprometheus/ad\n:\nconfig\n:\nscrape_configs",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ":\nconfig\n:\nscrape_configs\n:\n-\njob_name\n:\nad\nscrape_interval\n:\n10s",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 305-316)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": ":\nconfig\n:\nscrape_configs\n:\n-\njob_name\n:\nad\nscrape_interval\n:\n10s",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "ad\nscrape_interval\n:\n10s\nstatic_configs\n:\n-\ntargets\n:\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 313-324)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "ad\nscrape_interval\n:\n10s\nstatic_configs\n:\n-\ntargets\n:\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ":\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]\nTip\nRecommendation\n: treat this as a\ntransitional\npattern. For new custom\nmetrics, use the OpenTelemetry SDK directly. For existing Prometheus-client\nmetrics, migrate incrementally as you touch the surrounding code, or in a\nfocused refactor.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 321-332)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": ":\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]\nTip\nRecommendation\n: treat this as a\ntransitional\npattern. For new custom\nmetrics, use the OpenTelemetry SDK directly. For existing Prometheus-client\nmetrics, migrate incrementally as you touch the surrounding code, or in a\nfocused refactor.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Create new spans\nNew spans can be created and started using\nTracer.spanBuilder(\"spanName\").startSpan()\n. Newly created spans should be set\ninto context using\nSpan.makeCurrent()\n. The\ngetRandomAds\nfunction will create\na new span, set it into context, perform an operation, and finally end the span.\n//",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 104-115)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "Create new spans\nNew spans can be created and started using\nTracer.spanBuilder(\"spanName\").startSpan()\n. Newly created spans should be set\ninto context using\nSpan.makeCurrent()\n. The\ngetRandomAds\nfunction will create\na new span, set it into context, perform an operation, and finally end the span.\n// create and start a new span manually\nTracer",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "function will create\na new span, set it into context, perform an operation, and finally end the span.\n// create and start a new span manually\nTracer\ntracer\n=\nGlobalOpenTelemetry\n.\ngetTracer\n(\n\"ad\"\n);",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 112-123)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "function will create\na new span, set it into context, perform an operation, and finally end the span.\n// create and start a new span manually\nTracer\ntracer\n=\nGlobalOpenTelemetry\n.\ngetTracer\n(\n\"ad\"\n);",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "getTracer\n(\n\"ad\"\n);\nSpan\nspan\n=\ntracer\n.\nspanBuilder\n(\n\"getRandomAds\"",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 120-131)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "getTracer\n(\n\"ad\"\n);\nSpan\nspan\n=\ntracer\n.\nspanBuilder\n(\n\"getRandomAds\"",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "())\n{\nCollection\n<\nAd\n>\nallAds\n=\nadsMap\n.\nvalues\n();",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 144-155)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "())\n{\nCollection\n<\nAd\n>\nallAds\n=\nadsMap\n.\nvalues\n();",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Initializing Metrics\nSimilar to creating spans, the first step in creating metrics is initializing a\nMeter\ninstance, e.g.\nGlobalOpenTelemetry.getMeter(\"ad\")\n. From there, use the\nvarious builder methods available on the\nMeter\ninstance to create the desired\nmetric instrument, e.g.:\nmeter\n.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 209-220)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+          "snippet": "Initializing Metrics\nSimilar to creating spans, the first step in creating metrics is initializing a\nMeter\ninstance, e.g.\nGlobalOpenTelemetry.getMeter(\"ad\")\n. From there, use the\nvarious builder methods available on the\nMeter\ninstance to create the desired\nmetric instrument, e.g.:\nmeter\n.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Logs\nAd Service uses Log4J, which is automatically configured by the OTel Java agent.\nIt includes the trace context in log records, enabling log correlation with\ntraces.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#logs (text lines 379-382)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#logs",
+          "snippet": "Logs\nAd Service uses Log4J, which is automatically configured by the OTel Java agent.\nIt includes the trace context in log records, enabling log correlation with\ntraces.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source c",
+          "ref": "src/ad/README.md:L1-L12",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12",
+          "snippet": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "compile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh\n./gradlew installDist\n```\n\nIt will create an executable script\n`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:",
+          "ref": "src/ad/README.md:L9-L20",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L9-L20",
+          "snippet": "compile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh\n./gradlew installDist\n```\n\nIt will create an executable script\n`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:\n\n```sh\nexport AD_PORT=8080\nexport FEATURE_FLAG_GRPC_SERVICE_ADDR=featureflagservice:50053\n./build/install/opentelemetry-demo-ad/bin/Ad\n```\n\n### Upgrading Gradle",
+          "ref": "src/ad/README.md:L17-L28",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L17-L28",
+          "snippet": "`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:\n\n```sh\nexport AD_PORT=8080\nexport FEATURE_FLAG_GRPC_SERVICE_ADDR=featureflagservice:50053\n./build/install/opentelemetry-demo-ad/bin/Ad\n```\n\n### Upgrading Gradle\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "```\n\n## Building Docker\n\nFrom the root of `opentelemetry-demo`, run:\n\n```sh\ndocker build --file ./src/ad/Dockerfile ./\n```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry",
+          "ref": "src/ad/README.md:L33-L44",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L33-L44",
+          "snippet": "```\n\n## Building Docker\n\nFrom the root of `opentelemetry-demo`, run:\n\n```sh\ndocker build --file ./src/ad/Dockerfile ./\n```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate\n   HTTP endpoint (`AD_PROMETHEUS_PORT`, default `9465`). The OTel",
+          "ref": "src/ad/README.md:L49-L60",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L49-L60",
+          "snippet": "   and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate\n   HTTP endpoint (`AD_PROMETHEUS_PORT`, default `9465`). The OTel Collector's\n   `prometheus/ad` receiver scrapes this endpoint and forwards the metric\n   into the same metrics pipeline.\n\nThe Prometheus-client path is included to demonstrate a **common pattern\nduring OpenTelemetry adoption**: organizations frequently already own a\nsignificant amount of Prometheus instrumentation (in libraries, third-party\nexporters, or legacy services) and want to ingest those metrics into an",
+          "agent": "docs"
+        }
+      ],
+      "response": {
+        "agent": "docs",
+        "status": "ok",
+        "summary": "There is a documented feature flag named 'adFailure' in the Ad service that generates an error for GetAds requests one-tenth of the time. [3] When diagnosing intermittent request failures like ad service GetAds failures, a recommended approach is to check service latency, error rate, and resource usage metrics such as CPU and memory utilization via the provided dashboards and observability tools such as Jaeger for traces. [1] [2] [4] [5] The Ad service sets span status to indicate errors in the getAds function when exceptions are caught, which can be used to identify failed requests in tracing data. [6] Feature flags in the OpenTelemetry demo can be enabled to reproduce known fault conditions; enabling 'adFailure' flag will cause one in ten GetAds requests to fail, which can be used for diagnosis and testing. [3] [7] After enabling such a feature flag for faults, one should monitor dashboards for anomalous CPU, memory usage, latency, and error spikes and use Jaeger traces to filter failed GetAds requests and examine span details and statuses to understand failure causes. [1] [4] [5] [7]",
+        "hypotheses": [
+          "The intermittent one-in-ten failure of GetAds requests in the Ad service may be caused by the controlled error injection enabled via the 'adFailure' feature flag. [3] [7]"
+        ],
+        "evidence": [
+          {
+            "source_type": "doc",
+            "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+            "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+            "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+            "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Diagnosis\nThe first step in diagnosing a problem is to determine that a problem exists.\nOften the first stop will be a metrics dashboard provided by a tool such as\nGrafana.\nA\ndemo dashboard folder\nshould exist\nafter launching the demo with two dashboards; One is to monitor your\nOpenTelemetry Collect",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 12-23)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+            "snippet": "Diagnosis\nThe first step in diagnosing a problem is to determine that a problem exists.\nOften the first stop will be a metrics dashboard provided by a tool such as\nGrafana.\nA\ndemo dashboard folder\nshould exist\nafter launching the demo with two dashboards; One is to monitor your\nOpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Jaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include on",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 36-45)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+            "snippet": "Jaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that\ninclude requests to the recommendation service.\nBy sorting by latency, we\u2019re able to quickly find specific traces that took a\nlong time. Clicking on a trace in the right panel, we\u2019re able to view the\nwaterfall view.\nWe can see that the recommendation service is taking a long time to complete its\nwork, and viewing the details allows us to get a better idea of what\u2019s going on.",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Setting span status\nIf the result of the operation is an error, the span status should be set\naccordingly using\nsetStatus\non the span object. In the\ngetAds\nfunction the\nspan status is set when an exception is caught.\nspan\n.\nsetStatus\n(",
+            "ref": "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status (text lines 88-99)",
+            "link": "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status",
+            "snippet": "Setting span status\nIf the result of the operation is an error, the span status should be set\naccordingly using\nsetStatus\non the span object. In the\ngetAds\nfunction the\nspan status is set when an exception is caught.\nspan\n.\nsetStatus\n(",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Setup\nTo run this scenario, you will need to deploy the demo application and enable\nthe\nrecommendationCacheFailure\nfeature flag. Let the application run for about\n10 minutes or so after enabling the feature flag to allow for data to populate.",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup (text lines 6-11)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup",
+            "snippet": "Setup\nTo run this scenario, you will need to deploy the demo application and enable\nthe\nrecommendationCacheFailure\nfeature flag. Let the application run for about\n10 minutes or so after enabling the feature flag to allow for data to populate.",
+            "agent": "docs"
+          }
+        ],
+        "sources_searched": [
+          "README.md",
+          "https://opentelemetry.io/docs/demo/",
+          "https://opentelemetry.io/docs/demo/architecture/",
+          "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+          "https://opentelemetry.io/docs/demo/development/",
+          "https://opentelemetry.io/docs/demo/docker-deployment/",
+          "https://opentelemetry.io/docs/demo/feature-flags/",
+          "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "https://opentelemetry.io/docs/demo/forking/",
+          "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+          "https://opentelemetry.io/docs/demo/requirements/",
+          "https://opentelemetry.io/docs/demo/requirements/application/",
+          "https://opentelemetry.io/docs/demo/requirements/architecture/",
+          "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "https://opentelemetry.io/docs/demo/requirements/system/",
+          "https://opentelemetry.io/docs/demo/sample-configurations/",
+          "https://opentelemetry.io/docs/demo/services/ad/",
+          "src/ad/README.md"
+        ],
+        "sources_unavailable": [
+          "Official website page limit reached; coverage is incomplete"
+        ],
+        "confidence": 0.5,
+        "latency_ms": 3739,
+        "error": null
+      },
+      "error": null,
+      "shared_retrieval_seconds": 2.561,
+      "docs_sources_searched": [
+        "README.md",
+        "https://opentelemetry.io/docs/demo/",
+        "https://opentelemetry.io/docs/demo/architecture/",
+        "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+        "https://opentelemetry.io/docs/demo/development/",
+        "https://opentelemetry.io/docs/demo/docker-deployment/",
+        "https://opentelemetry.io/docs/demo/feature-flags/",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+        "https://opentelemetry.io/docs/demo/forking/",
+        "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+        "https://opentelemetry.io/docs/demo/requirements/",
+        "https://opentelemetry.io/docs/demo/requirements/application/",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/",
+        "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+        "https://opentelemetry.io/docs/demo/requirements/system/",
+        "https://opentelemetry.io/docs/demo/sample-configurations/",
+        "https://opentelemetry.io/docs/demo/services/ad/",
+        "src/ad/README.md"
+      ],
+      "docs_sources_unavailable": [
+        "Official website page limit reached; coverage is incomplete"
+      ],
+      "elapsed_seconds": 3.739,
+      "retry_request_id": "261112-154532-6becccd8-D01-all-doc-retry-261112-154911-1",
+      "retry_attempt": 1
+    },
+    {
+      "case_id": "B04",
+      "question": "Ad Service logs 'Serving empty AdResponse' with inject:ads-empty. Which documented feature flag can return an empty response while GetAds succeeds?",
+      "version": "all-doc",
+      "docs_input": [
+        {
+          "source_type": "doc",
+          "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Main Application\nThe bulk of the demo app is a self-contained microservice-based application that\ndoes some useful \u2018real-world\u2019 work, such as an eCommerce site. This application\nis composed of multiple services that communicate with each other over gRPC and\nHTTP and runs on Kubernetes (or Docker, lo",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application (text lines 23-34)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+          "snippet": "Main Application\nThe bulk of the demo app is a self-contained microservice-based application that\ndoes some useful \u2018real-world\u2019 work, such as an eCommerce site. This application\nis composed of multiple services that communicate with each other over gRPC and\nHTTP and runs on Kubernetes (or Docker, locally).\nEach service shall be instrumented with OpenTelemetry for traces, metrics, and\nlogs (as applicable/available).\nEach service should be interchangeable with a service that performs the same\nbusiness logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prom",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics (text lines 355-366)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics",
+          "snippet": "Custom metrics\nThe following custom metrics are currently available:\napp.ads.ad_requests\n(OpenTelemetry SDK): A counter of ad requests with\ndimensions describing whether the request was targeted with context keys or\nnot, and whether the response was targeted or random ads.\ndemo_ad_served_total\n(Prometheus client library, scraped by the Collector):\nA counter of ads served, labeled by\ncategory\n(e.g.\ntelescopes",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\"",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 217-228)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+          "snippet": "instance to create the desired\nmetric instrument, e.g.:\nmeter\n.\ncounterBuilder\n(\n\"app.ads.ad_requests\"\n)\n.\nsetDescription\n(\n\"Counts ad requests by request and response type\"",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feature Flag Scenarios\nHow can you solve problems with OpenTelemetry? These\nfeature flag enabled scenarios\nwalk you through some\npre-configured problems and show you how to interpret OpenTelemetry data to\nsolve them.",
+          "ref": "https://opentelemetry.io/docs/demo/#feature-flag-scenarios (text lines 84-89)",
+          "link": "https://opentelemetry.io/docs/demo/#feature-flag-scenarios",
+          "snippet": "Feature Flag Scenarios\nHow can you solve problems with OpenTelemetry? These\nfeature flag enabled scenarios\nwalk you through some\npre-configured problems and show you how to interpret OpenTelemetry data to\nsolve them.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feature Flags\nThe demo provides several feature flags that you can use to simulate different\nscenarios. These flags are managed by\nflagd\n, a simple\nfeature flag service that supports\nOpenFeature\n.\nFlag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen ru",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/ (text lines 1-12)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/",
+          "snippet": "Feature Flags\nThe demo provides several feature flags that you can use to simulate different\nscenarios. These flags are managed by\nflagd\n, a simple\nfeature flag service that supports\nOpenFeature\n.\nFlag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen running the demo. Changing the values\nthrough this user interface will be reflected in the flagd service.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Flag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen running the demo. Changing the values\nthrough this user interface will be reflected in the flagd service.\nThere are two options when it comes to changing the feature flags through the\nuser interface:",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/ (text lines 9-20)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/",
+          "snippet": "Flag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen running the demo. Changing the values\nthrough this user interface will be reflected in the flagd service.\nThere are two options when it comes to changing the feature flags through the\nuser interface:\nBasic View\n: A user friendly view in which default variants (the same\noptions that need to be changed when configuring through the raw file) can be\nselected and saved for each feature flag. Currently, the basic view does not\nsupport fractional targeting.\nAdvanced View",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "options that need to be changed when configuring through the raw file) can be\nselected and saved for each feature flag. Currently, the basic view does not\nsupport fractional targeting.\nAdvanced View\n: A view in which the raw configuration JSON file is loaded\nand can be edited within the browser. The",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/ (text lines 17-25)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/",
+          "snippet": "options that need to be changed when configuring through the raw file) can be\nselected and saved for each feature flag. Currently, the basic view does not\nsupport fractional targeting.\nAdvanced View\n: A view in which the raw configuration JSON file is loaded\nand can be edited within the browser. The view provides the flexibility that\ncomes with editing a raw JSON file, however it also provides schema checking\nto ensure that the JSON is valid and that the provided configuration values\nare correct.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feature Flag Architecture\nPlease see the\nflagd documentation\nfor more information on\nhow flagd works, and the\nOpenFeature\nwebsite for more\ninformation on how OpenFeature works, along with documentation for the\nOpenFeature API.",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#feature-flag-architecture (text lines 109-117)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#feature-flag-architecture",
+          "snippet": "Feature Flag Architecture\nPlease see the\nflagd documentation\nfor more information on\nhow flagd works, and the\nOpenFeature\nwebsite for more\ninformation on how OpenFeature works, along with documentation for the\nOpenFeature API.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 10, 2026:\ndocs(demo): fix feature flag names and service coverage drift (#11096) (10fe33751)",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/ (text lines 68-77)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified September 10, 2026:\ndocs(demo): fix feature flag names and service coverage drift (#11096) (10fe33751)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Last modified September 10, 2026:\ndocs(demo): fix feature flag names and service coverage drift (#11096) (10fe33751)",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/ (text lines 76-77)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "snippet": "Last modified September 10, 2026:\ndocs(demo): fix feature flag names and service coverage drift (#11096) (10fe33751)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Setup\nTo run this scenario, you will need to deploy the demo application and enable\nthe\nrecommendationCacheFailure\nfeature flag. Let the application run for about\n10 minutes or so after enabling the feature flag to allow for data to populate.",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup (text lines 6-11)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#setup",
+          "snippet": "Setup\nTo run this scenario, you will need to deploy the demo application and enable\nthe\nrecommendationCacheFailure\nfeature flag. Let the application run for about\n10 minutes or so after enabling the feature flag to allow for data to populate.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feature Flag Component\nFeature flagging is a crucial part of cloud native application development. The\ndemo uses OpenFeature, a CNCF incubating project, to manage feature flags.\nFeature flags can be set through the flagd configurator user interface.",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#feature-flag-component (text lines 36-39)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#feature-flag-component",
+          "snippet": "Feature Flag Component\nFeature flagging is a crucial part of cloud native application development. The\ndemo uses OpenFeature, a CNCF incubating project, to manage feature flags.\nFeature flags can be set through the flagd configurator user interface.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "business logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps\nsolve problems in distributed applicat",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application (text lines 31-35)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+          "snippet": "business logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps\nsolve problems in distributed applications.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Ad Service\nThis service determines appropriate ads to serve to users based on context keys.\nThe ads will be for products available in the store.\nAd service source",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 1-4)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/",
+          "snippet": "Ad Service\nThis service determines appropriate ads to serve to users based on context keys.\nThe ads will be for products available in the store.\nAd service source",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 225-232)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+          "snippet": ".\nsetDescription\n(\n\"Counts ad requests by request and response type\"\n)\n.\nbuild\n();",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Logs\nAd Service uses Log4J, which is automatically configured by the OTel Java agent.\nIt includes the trace context in log records, enabling log correlation with\ntraces.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#logs (text lines 379-382)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#logs",
+          "snippet": "Logs\nAd Service uses Log4J, which is automatically configured by the OTel Java agent.\nIt includes the trace context in log records, enabling log correlation with\ntraces.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source c",
+          "ref": "src/ad/README.md:L1-L12",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L1-L12",
+          "snippet": "# Ad Service\n\nThe Ad service provides advertisement based on context keys. If no context keys\nare provided then it returns random ads.\n\n## Building Locally\n\nThe Ad service requires at least JDK 21 to build and uses gradlew to\ncompile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other com",
+          "ref": "README.md:L25-L36",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L25-L36",
+          "snippet": "  demonstrate OpenTelemetry instrumentation and observability.\n- Build a base for vendors, tooling authors, and others to extend and\n  demonstrate their OpenTelemetry integrations.\n- Create a living example for OpenTelemetry contributors to use for testing new\n  versions of the API, SDK, and other components or enhancements.\n\nWe've already made [huge\nprogress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),\nand development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our",
+          "ref": "README.md:L33-L44",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L33-L44",
+          "snippet": "and development is ongoing. We hope to represent the full feature set of\nOpenTelemetry across its languages in the future.\n\nIf you'd like to help (**which we would love**), check out our [contributing\nguidance](./CONTRIBUTING.md).\n\nIf you'd like to extend this demo or maintain a fork of it, read our\n[fork guidance](https://opentelemetry.io/docs/demo/forking/).\n\n## Quick start\n\nYou can be up and running with the demo in a few minutes. Check out the docs for",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "## Documentation\n\nFor detailed documentation, see [Demo Documentation][docs]. If you're curious\nabout a specific feature, the [docs landing page][docs] can point you in the\nright direction.\n\n## Demos featuring the Astronomy Shop\n\nWe welcome any vendor to fork the project to demonstrate their service",
+          "ref": "README.md:L49-L60",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/README.md#L49-L60",
+          "snippet": "\n## Documentation\n\nFor detailed documentation, see [Demo Documentation][docs]. If you're curious\nabout a specific feature, the [docs landing page][docs] can point you in the\nright direction.\n\n## Demos featuring the Astronomy Shop\n\nWe welcome any vendor to fork the project to demonstrate their services and\nadding a link below. The community is committed to maintaining the project and\nkeeping it up to date for you.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Language Feature Reference\nWant to understand how a particular language\u2019s instrumentation works? Start\nhere.\nLanguage\nAutomatic Instrumentation\nInstrumentation Libraries\nManual Instrumentation\n.NET\nAccounting Service\nCart Service\nCart Service\nC++",
+          "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 11-22)",
+          "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+          "snippet": "Language Feature Reference\nWant to understand how a particular language\u2019s instrumentation works? Start\nhere.\nLanguage\nAutomatic Instrumentation\nInstrumentation Libraries\nManual Instrumentation\n.NET\nAccounting Service\nCart Service\nCart Service\nC++",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+          "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 27-38)",
+          "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+          "snippet": "Checkout Service\n,\nProduct Catalog Service\nCheckout Service\n,\nProduct Catalog Service\nJava\nAd Service\nAd Service\nJavaScript\nPayment Service\nPayment Service",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP",
+          "ref": "https://opentelemetry.io/docs/demo/#language-feature-reference (text lines 35-46)",
+          "link": "https://opentelemetry.io/docs/demo/#language-feature-reference",
+          "snippet": "Ad Service\nJavaScript\nPayment Service\nPayment Service\nTypeScript\nFrontend\n,\nReact Native App\nFrontend\nKotlin\nFraud Detection Service\nPHP",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Reference\nProject reference documentation, like requirements and feature matrices.\nArchitecture\nDevelopment\nFeature Flags Reference\nMetric Feature Matrix\nRequirements\nScreenshots\nServices\nSpan Attributes Reference\nTests\nTrace Feature Matrix",
+          "ref": "https://opentelemetry.io/docs/demo/#reference (text lines 90-101)",
+          "link": "https://opentelemetry.io/docs/demo/#reference",
+          "snippet": "Reference\nProject reference documentation, like requirements and feature matrices.\nArchitecture\nDevelopment\nFeature Flags Reference\nMetric Feature Matrix\nRequirements\nScreenshots\nServices\nSpan Attributes Reference\nTests\nTrace Feature Matrix",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Services\nSpan Attributes Reference\nTests\nTrace Feature Matrix",
+          "ref": "https://opentelemetry.io/docs/demo/#reference (text lines 98-101)",
+          "link": "https://opentelemetry.io/docs/demo/#reference",
+          "snippet": "Services\nSpan Attributes Reference\nTests\nTrace Feature Matrix",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator",
+          "ref": "https://opentelemetry.io/docs/demo/#service-documentation (text lines 64-75)",
+          "link": "https://opentelemetry.io/docs/demo/#service-documentation",
+          "snippet": "Service Documentation\nSpecific information about how OpenTelemetry is deployed in each service can be\nfound here:\nAccounting Service\nAd Service\nAgent Service\nCart Service\nChatbot Service\nCheckout Service\nEmail Service\nFrontend\nLoad Generator",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 1-12)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "Demo Architecture\nOpenTelemetry Demo\nis composed of microservices written in different\nprogramming languages that talk to each other over gRPC and HTTP; and a load\ngenerator which uses\nLocust\nto fake user traffic.\ngraph TD\nsubgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "subgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python\ncache[(Cache<br/>Valkey)]\ncart(Cart):::dotnet\nchatbot(Chatbot):::python\ncheckout(Checkout):::golang\ncurrency(Currency):::cpp\nemail(Email):::ruby\nflagd(Flagd):::golang\nflagd-ui(Flagd-ui):::elixir",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 9-20)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "subgraph Service Diagram\naccounting(Accounting):::dotnet\nad(Ad):::java\nagent(Agent):::python\ncache[(Cache<br/>Valkey)]\ncart(Cart):::dotnet\nchatbot(Chatbot):::python\ncheckout(Checkout):::golang\ncurrency(Currency):::cpp\nemail(Email):::ruby\nflagd(Flagd):::golang\nflagd-ui(Flagd-ui):::elixir",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "react-native-app(React Native App):::typescript\npostgresql[(astronomy-db<br/>PostgreSQL)]\nchatbot -->|HTTP| agent\nagent -.->|HTTP| frontend\nagent -.->|HTTP| mcp\nad --->|gRPC| flagd\ncheckout --->|gRPC| flagd\nproduct-catalog --->|gRPC| flagd\nemail --->|gRPC| flagd\nshipping --->|gRPC| flagd\nagent --->|",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 33-44)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "react-native-app(React Native App):::typescript\npostgresql[(astronomy-db<br/>PostgreSQL)]\nchatbot -->|HTTP| agent\nagent -.->|HTTP| frontend\nagent -.->|HTTP| mcp\nad --->|gRPC| flagd\ncheckout --->|gRPC| flagd\nproduct-catalog --->|gRPC| flagd\nemail --->|gRPC| flagd\nshipping --->|gRPC| flagd\nagent --->|gRPC| flagd\nload-generator -->|HTTP| flagd",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "checkout --->|gRPC| payment\ncheckout --->|HTTP| email\ncheckout -->|TCP| queue\ncheckout ---->|gRPC| product-catalog\ncheckout -->|HTTP| shipping\nshipping -->|HTTP| quote\nfraud-detection --->|gRPC| flagd\nfrontend -->|gRPC| ad\nfrontend ---->|gRPC| cart\nfrontend -->|gRPC| currency\nfrontend -->|gRPC| chec",
+          "ref": "https://opentelemetry.io/docs/demo/architecture/ (text lines 49-60)",
+          "link": "https://opentelemetry.io/docs/demo/architecture/",
+          "snippet": "checkout --->|gRPC| payment\ncheckout --->|HTTP| email\ncheckout -->|TCP| queue\ncheckout ---->|gRPC| product-catalog\ncheckout -->|HTTP| shipping\nshipping -->|HTTP| quote\nfraud-detection --->|gRPC| flagd\nfrontend -->|gRPC| ad\nfrontend ---->|gRPC| cart\nfrontend -->|gRPC| currency\nfrontend -->|gRPC| checkout\nfrontend -->|HTTP| shipping",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ",\nspan_metrics\n(required)\nmetrics\n:\ndebug\n,\notlp_http/prometheus\nlogs\n:\ndebug\n,",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 315-326)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": ",\nspan_metrics\n(required)\nmetrics\n:\ndebug\n,\notlp_http/prometheus\nlogs\n:\ndebug\n,",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "logs\n:\ndebug\n,\nopensearch\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require\ndifferent exporters, you may find them and their documentation available at\nopentelemetry-collector-contrib/exporter\n.\nAfter updating t",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 323-334)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "logs\n:\ndebug\n,\nopensearch\nVendor backends might require you to add additional parameters for\nauthentication, please check their documentation. Some backends require\ndifferent exporters, you may find them and their documentation available at\nopentelemetry-collector-contrib/exporter\n.\nAfter updating the\notelcol-config-extras.yml",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "opentelemetry-collector-contrib/exporter\n.\nAfter updating the\notelcol-config-extras.yml\n, start the demo by running\nmake start\n. After a while, you should see the traces flowing into your backend\nas well.\ndocker-compose\nis deprecated. For details, see\nMigrate to Compose V2\n.",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend (text lines 331-342)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#bring-your-own-backend",
+          "snippet": "opentelemetry-collector-contrib/exporter\n.\nAfter updating the\notelcol-config-extras.yml\n, start the demo by running\nmake start\n. After a while, you should see the traces flowing into your backend\nas well.\ndocker-compose\nis deprecated. For details, see\nMigrate to Compose V2\n.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Profiles are then available at\nhttp://localhost:8080/profiles/\n.\n(Optional) Run telemetry sanity tests:\nThe demo includes a suite of telemetry sanity tests that verify each\nservice is producing traces, metrics, and logs and that they reach the\nexpected backends (Jaeger, Prometheus, OpenSearch). For",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#run-with-continuous-profiling (text lines 133-144)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#run-with-continuous-profiling",
+          "snippet": "Profiles are then available at\nhttp://localhost:8080/profiles/\n.\n(Optional) Run telemetry sanity tests:\nThe demo includes a suite of telemetry sanity tests that verify each\nservice is producing traces, metrics, and logs and that they reach the\nexpected backends (Jaeger, Prometheus, OpenSearch). For details, see\ntest/telemetry/README.md\n.\nTest scope\nMake target\nStarts",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Verify the web store and Telemetry\nOnce the images are built and containers are started you can access:\nWeb store:\nhttp://localhost:8080/\nLoad Generator UI:\nhttp://localhost:8080/loadgen/\nFlagd configurator UI:\nhttp://localhost:8080/feature\nTelemetry documentation (generated by Weaver):\nhttp://local",
+          "ref": "https://opentelemetry.io/docs/demo/docker-deployment/#verify-the-web-store-and-telemetry (text lines 193-204)",
+          "link": "https://opentelemetry.io/docs/demo/docker-deployment/#verify-the-web-store-and-telemetry",
+          "snippet": "Verify the web store and Telemetry\nOnce the images are built and containers are started you can access:\nWeb store:\nhttp://localhost:8080/\nLoad Generator UI:\nhttp://localhost:8080/loadgen/\nFlagd configurator UI:\nhttp://localhost:8080/feature\nTelemetry documentation (generated by Weaver):\nhttp://localhost:8080/telemetry/\nThe following are available when the observability stack is running (i.e., not\nin",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Cart\nForce the readiness probe to fail with unhealthy status, simulating a pod \u201cNotReady\u201d condition. Applicable for Kubernetes deployments only.\nimageSlowLoad\nFrontend\nUtilizes envoy fault injection, produces a delay in loading of product images in the frontend. The variant sets the delay.\nintlShipp",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 58-69)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "Cart\nForce the readiness probe to fail with unhealthy status, simulating a pod \u201cNotReady\u201d condition. Applicable for Kubernetes deployments only.\nimageSlowLoad\nFrontend\nUtilizes envoy fault injection, produces a delay in loading of product images in the frontend. The variant sets the delay.\nintlShippingSlowdown\nShipping\nDelay non-US shipping requests by the selected number of seconds, simulating overseas shipping latency. US addresses are unaffected.\nkafkaConsumerDead\nFraud Detection\nFraud-detection leaves the orders consumer group (unsubscribes and stops polling). Checkout continues producing, so consumer group empties and lag accumulates. Reversible by toggling the flag.\nkafkaQueueProblems",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "kafkaConsumerDead\nFraud Detection\nFraud-detection leaves the orders consumer group (unsubscribes and stops polling). Checkout continues producing, so consumer group empties and lag accumulates. Reversible by toggling the flag.\nkafkaQueueProblems\nCheckout, Fraud Detection\nThrottle the fraud-detection",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 66-77)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+          "snippet": "kafkaConsumerDead\nFraud Detection\nFraud-detection leaves the orders consumer group (unsubscribes and stops polling). Checkout continues producing, so consumer group empties and lag accumulates. Reversible by toggling the flag.\nkafkaQueueProblems\nCheckout, Fraud Detection\nThrottle the fraud-detection consumer by sleeping N ms per record. Consumer drains slower than producer writes, causing lag to climb. Tune the per-record delay live from the flag.\nloadGeneratorTraffic\nLoad Generator\nEnable synthetic traffic from the load generator. Turn it off to pause all load generator scenarios.\nloadGeneratorVUs\nLoad Generator\nNumber of concurrent virtual users driving the load generator\u2019s HTTP scenario. Changing it restarts k6 on the next poll.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rat",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 20-31)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "OpenTelemetry Collector, and the other contains several queries and charts to\nanalyze latency and request rate from each service.\nThis dashboard will contain a number of charts, but a few should appear\ninteresting:\nRecommendation Service (CPU% and Memory)\nService Latency (from SpanMetrics)\nError Rate\nRecommendation Service charts are generated from OpenTelemetry Metrics exported\nto Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour",
+          "ref": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis (text lines 28-39)",
+          "link": "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/#diagnosis",
+          "snippet": "to Prometheus, while the Service Latency and Error Rate charts are generated\nthrough the OpenTelemetry Collector Span Metrics processor.\nFrom our dashboard, we can see that there seems to be anomalous behavior in the\nrecommendation service \u2013 spiky CPU utilization, as well as long tail latency in\nour p95, 99, and 99.9 histograms. We can also see that there are intermittent\nspikes in the memory utilization of this service.\nWe know that we\u2019re emitting trace data from our application as well, so let\u2019s\nthink about another way that we\u2019d be able to determine that a problem exists.\nJaeger allows us to search for traces and display the end-to-end latency of an\nentire request with visibility into each individual part of the overall request.\nPerhaps we noticed an increase in tail latency on our frontend requests. Jaeger\nallows us to then search and filter our traces to include only those that",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "http://localhost:8080/\nGrafana:\nhttp://localhost:8080/grafana/\nLoad Generator UI:\nhttp://localhost:8080/loadgen/\nJaeger UI:\nhttp://localhost:8080/jaeger/ui/\nFlagd configurator UI:\nhttp://localhost:8080/feature",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward (text lines 62-70)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward",
+          "snippet": "http://localhost:8080/\nGrafana:\nhttp://localhost:8080/grafana/\nLoad Generator UI:\nhttp://localhost:8080/loadgen/\nJaeger UI:\nhttp://localhost:8080/jaeger/ui/\nFlagd configurator UI:\nhttp://localhost:8080/feature",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "http://localhost:8080/feature",
+          "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward (text lines 70-70)",
+          "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward",
+          "snippet": "http://localhost:8080/feature",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "OpenTelemetry Requirements\nThe following requirements were decided upon to define what OpenTelemetry (OTel)\nsignals the application will produce & when support for future SDKs should be\nadded:\nThe demo must produce OTel logs, traces, & metrics out of the box for\nlanguages that have a GA SDK.\nLanguag",
+          "ref": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/ (text lines 1-12)",
+          "link": "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "snippet": "OpenTelemetry Requirements\nThe following requirements were decided upon to define what OpenTelemetry (OTel)\nsignals the application will produce & when support for future SDKs should be\nadded:\nThe demo must produce OTel logs, traces, & metrics out of the box for\nlanguages that have a GA SDK.\nLanguages that have a Beta SDK available may be included but are not required\nlike GA SDKs.\nNative OTel metrics should be produced where possible.\nBoth manual instrumentation and instrumentation libraries\n(auto-instrumentation) should be demonstrated in each language.\nAll data should be exported to the Collector first.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 383-392)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/",
+          "snippet": "Feedback\nWas this page helpful?\nYes\nNo\nThank you. Your feedback is appreciated!\nPlease let us know\nhow we can improve this page\n. Your feedback is appreciated!\nLast modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Last modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 391-392)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/",
+          "snippet": "Last modified June 26, 2026:\ndocs(demo): document Prometheus-client custom metric in ad service (#10033) (1af952913)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "current\n();\nAdding attributes to a span is accomplished using\nsetAttribute\non the span\nobject. In the\ngetAds\nfunction multiple attributes are added to the span.\nspan\n.\nsetAttribute\n(",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans (text lines 30-41)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans",
+          "snippet": "current\n();\nAdding attributes to a span is accomplished using\nsetAttribute\non the span\nobject. In the\ngetAds\nfunction multiple attributes are added to the span.\nspan\n.\nsetAttribute\n(",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "span\n.\nsetAttribute\n(\n\"app.ads.contextKeys\"\n,\nreq\n.\ngetContextKeysList\n().\ntoString\n());",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans (text lines 38-49)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans",
+          "snippet": "span\n.\nsetAttribute\n(\n\"app.ads.contextKeys\"\n,\nreq\n.\ngetContextKeysList\n().\ntoString\n());",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "getContextKeysList\n().\ntoString\n());\nspan\n.\nsetAttribute\n(\n\"app.ads.contextKeys.count\"\n,\nreq\n.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans (text lines 46-57)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans",
+          "snippet": "getContextKeysList\n().\ntoString\n());\nspan\n.\nsetAttribute\n(\n\"app.ads.contextKeys.count\"\n,\nreq\n.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "\"app.ads.contextKeys.count\"\n,\nreq\n.\ngetContextKeysCount\n());",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans (text lines 54-59)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-attributes-to-auto-instrumented-spans",
+          "snippet": "\"app.ads.contextKeys.count\"\n,\nreq\n.\ngetContextKeysCount\n());",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Add span events\nAdding an event to a span is accomplished using\naddEvent\non the span object.\nIn the\ngetAds\nfunction an event with an attribute is added when an exception\nis caught.\nspan\n.\naddEvent\n(",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#add-span-events (text lines 60-71)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#add-span-events",
+          "snippet": "Add span events\nAdding an event to a span is accomplished using\naddEvent\non the span object.\nIn the\ngetAds\nfunction an event with an attribute is added when an exception\nis caught.\nspan\n.\naddEvent\n(",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Bridging non-OTel custom metrics (Prometheus client library)\nThe Ad service also exposes a small set of custom metrics using the\nPrometheus Java client library\nrather than the OpenTelemetry SDK. These metrics are exposed on a separate HTTP\nendpoint (\n/metrics\non\nAD_PROMETHEUS_PORT\n, default\n9465\n) a",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 233-244)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "Bridging non-OTel custom metrics (Prometheus client library)\nThe Ad service also exposes a small set of custom metrics using the\nPrometheus Java client library\nrather than the OpenTelemetry SDK. These metrics are exposed on a separate HTTP\nendpoint (\n/metrics\non\nAD_PROMETHEUS_PORT\n, default\n9465\n) and scraped by the\nOpenTelemetry Collector\u2019s",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "builder\n()\n.\nname\n(\n\"demo_ad_served_total\"\n)\n.\nhelp\n(\n\"Total number of ads served, labeled by category\"\n)",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 257-268)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "builder\n()\n.\nname\n(\n\"demo_ad_served_total\"\n)\n.\nhelp\n(\n\"Total number of ads served, labeled by category\"\n)",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "help\n(\n\"Total number of ads served, labeled by category\"\n)\n.\nlabelNames\n(\n\"category\"\n)\n.\nregister\n();",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 265-276)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "help\n(\n\"Total number of ads served, labeled by category\"\n)\n.\nlabelNames\n(\n\"category\"\n)\n.\nregister\n();",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "rewriting everything upfront. The Collector\u2019s\nprometheus\nreceiver is the\nbridge that makes this possible.\nThe Collector configuration that wires this up:\nreceivers\n:\nprometheus/ad\n:\nconfig\n:\nscrape_configs",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 297-308)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "rewriting everything upfront. The Collector\u2019s\nprometheus\nreceiver is the\nbridge that makes this possible.\nThe Collector configuration that wires this up:\nreceivers\n:\nprometheus/ad\n:\nconfig\n:\nscrape_configs",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ":\nconfig\n:\nscrape_configs\n:\n-\njob_name\n:\nad\nscrape_interval\n:\n10s",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 305-316)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": ":\nconfig\n:\nscrape_configs\n:\n-\njob_name\n:\nad\nscrape_interval\n:\n10s",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "ad\nscrape_interval\n:\n10s\nstatic_configs\n:\n-\ntargets\n:\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 313-324)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": "ad\nscrape_interval\n:\n10s\nstatic_configs\n:\n-\ntargets\n:\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": ":\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]\nTip\nRecommendation\n: treat this as a\ntransitional\npattern. For new custom\nmetrics, use the OpenTelemetry SDK directly. For existing Prometheus-client\nmetrics, migrate incrementally as you touch the surrounding code, or in a\nfocused refactor.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library (text lines 321-332)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#bridging-non-otel-custom-metrics-prometheus-client-library",
+          "snippet": ":\n[\n'ad:${env:AD_PROMETHEUS_PORT}'\n]\nTip\nRecommendation\n: treat this as a\ntransitional\npattern. For new custom\nmetrics, use the OpenTelemetry SDK directly. For existing Prometheus-client\nmetrics, migrate incrementally as you touch the surrounding code, or in a\nfocused refactor.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "function will create\na new span, set it into context, perform an operation, and finally end the span.\n// create and start a new span manually\nTracer\ntracer\n=\nGlobalOpenTelemetry\n.\ngetTracer\n(\n\"ad\"\n);",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 112-123)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "function will create\na new span, set it into context, perform an operation, and finally end the span.\n// create and start a new span manually\nTracer\ntracer\n=\nGlobalOpenTelemetry\n.\ngetTracer\n(\n\"ad\"\n);",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "getTracer\n(\n\"ad\"\n);\nSpan\nspan\n=\ntracer\n.\nspanBuilder\n(\n\"getRandomAds\"",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 120-131)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "getTracer\n(\n\"ad\"\n);\nSpan\nspan\n=\ntracer\n.\nspanBuilder\n(\n\"getRandomAds\"",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "())\n{\nCollection\n<\nAd\n>\nallAds\n=\nadsMap\n.\nvalues\n();",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 144-155)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "())\n{\nCollection\n<\nAd\n>\nallAds\n=\nadsMap\n.\nvalues\n();",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "++\n)\n{\nads\n.\nadd\n(\nIterables\n.\nget\n(\nallAds",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 168-179)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "++\n)\n{\nads\n.\nadd\n(\nIterables\n.\nget\n(\nallAds",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "(\nallAds\n.\nsize\n())));\n}\nspan\n.\nsetAttribute\n(\n\"app.ads.count\"\n,",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 184-195)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "(\nallAds\n.\nsize\n())));\n}\nspan\n.\nsetAttribute\n(\n\"app.ads.count\"\n,",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "setAttribute\n(\n\"app.ads.count\"\n,\nads\n.\nsize\n());\n}\nfinally\n{\nspan",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans (text lines 192-203)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#create-new-spans",
+          "snippet": "setAttribute\n(\n\"app.ads.count\"\n,\nads\n.\nsize\n());\n}\nfinally\n{\nspan",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "A counter of ads served, labeled by\ncategory\n(e.g.\ntelescopes\n,\nbinoculars\n,\nrandom\n). See\nBridging non-OTel custom metrics\nabove.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics (text lines 363-373)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#custom-metrics",
+          "snippet": "A counter of ads served, labeled by\ncategory\n(e.g.\ntelescopes\n,\nbinoculars\n,\nrandom\n). See\nBridging non-OTel custom metrics\nabove.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Initializing Metrics\nSimilar to creating spans, the first step in creating metrics is initializing a\nMeter\ninstance, e.g.\nGlobalOpenTelemetry.getMeter(\"ad\")\n. From there, use the\nvarious builder methods available on the\nMeter\ninstance to create the desired\nmetric instrument, e.g.:\nmeter\n.",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics (text lines 209-220)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#initializing-metrics",
+          "snippet": "Initializing Metrics\nSimilar to creating spans, the first step in creating metrics is initializing a\nMeter\ninstance, e.g.\nGlobalOpenTelemetry.getMeter(\"ad\")\n. From there, use the\nvarious builder methods available on the\nMeter\ninstance to create the desired\nmetric instrument, e.g.:\nmeter\n.",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "Setting span status\nIf the result of the operation is an error, the span status should be set\naccordingly using\nsetStatus\non the span object. In the\ngetAds\nfunction the\nspan status is set when an exception is caught.\nspan\n.\nsetStatus\n(",
+          "ref": "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status (text lines 88-99)",
+          "link": "https://opentelemetry.io/docs/demo/services/ad/#setting-span-status",
+          "snippet": "Setting span status\nIf the result of the operation is an error, the span status should be set\naccordingly using\nsetStatus\non the span object. In the\ngetAds\nfunction the\nspan status is set when an exception is caught.\nspan\n.\nsetStatus\n(",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "compile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh\n./gradlew installDist\n```\n\nIt will create an executable script\n`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:",
+          "ref": "src/ad/README.md:L9-L20",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L9-L20",
+          "snippet": "compile/install/distribute. Gradle wrapper is already part of the source code.\nTo build Ad Service, run:\n\n```sh\n./gradlew installDist\n```\n\nIt will create an executable script\n`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:\n\n```sh\nexport AD_PORT=8080\nexport FEATURE_FLAG_GRPC_SERVICE_ADDR=featureflagservice:50053\n./build/install/opentelemetry-demo-ad/bin/Ad\n```\n\n### Upgrading Gradle",
+          "ref": "src/ad/README.md:L17-L28",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L17-L28",
+          "snippet": "`src/ad/build/install/oteldemo/bin/Ad`.\n\nTo run the Ad Service:\n\n```sh\nexport AD_PORT=8080\nexport FEATURE_FLAG_GRPC_SERVICE_ADDR=featureflagservice:50053\n./build/install/opentelemetry-demo-ad/bin/Ad\n```\n\n### Upgrading Gradle\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "```\n\n## Building Docker\n\nFrom the root of `opentelemetry-demo`, run:\n\n```sh\ndocker build --file ./src/ad/Dockerfile ./\n```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry",
+          "ref": "src/ad/README.md:L33-L44",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L33-L44",
+          "snippet": "```\n\n## Building Docker\n\nFrom the root of `opentelemetry-demo`, run:\n\n```sh\ndocker build --file ./src/ad/Dockerfile ./\n```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n\nThe Ad service intentionally emits custom metrics in **two different ways**:\n\n1. **OpenTelemetry SDK** (recommended): `adRequestsCounter`\n   (`demo.ad.requests`) is created via `GlobalOpenTelemetry.getMeter(...)`\n   and exported to the OT",
+          "ref": "src/ad/README.md:L41-L52",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L41-L52",
+          "snippet": "```\n\n## Custom metrics: bridging Prometheus to OpenTelemetry\n\nThe Ad service intentionally emits custom metrics in **two different ways**:\n\n1. **OpenTelemetry SDK** (recommended): `adRequestsCounter`\n   (`demo.ad.requests`) is created via `GlobalOpenTelemetry.getMeter(...)`\n   and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate",
+          "agent": "docs"
+        },
+        {
+          "source_type": "doc",
+          "summary": "and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate\n   HTTP endpoint (`AD_PROMETHEUS_PORT`, default `9465`). The OTel",
+          "ref": "src/ad/README.md:L49-L60",
+          "link": "https://github.com/open-telemetry/opentelemetry-demo/blob/main/src/ad/README.md#L49-L60",
+          "snippet": "   and exported to the OTel Collector over OTLP.\n2. **Prometheus client library**: `adsServedCounter`\n   (`demo_ad_served_total{category}`) is created with the\n   `io.prometheus:prometheus-metrics-core` library and exposed on a separate\n   HTTP endpoint (`AD_PROMETHEUS_PORT`, default `9465`). The OTel Collector's\n   `prometheus/ad` receiver scrapes this endpoint and forwards the metric\n   into the same metrics pipeline.\n\nThe Prometheus-client path is included to demonstrate a **common pattern\nduring OpenTelemetry adoption**: organizations frequently already own a\nsignificant amount of Prometheus instrumentation (in libraries, third-party\nexporters, or legacy services) and want to ingest those metrics into an",
+          "agent": "docs"
+        }
+      ],
+      "response": {
+        "agent": "docs",
+        "status": "ok",
+        "summary": "The adFailure feature flag in the Ad service can generate an error for GetAds 1/10th of the time, which may simulate empty or error responses. [1] [7] The Ad service communicates with the feature flag service to enable or disable faults that can illustrate problem scenarios in telemetry, including possibly returning empty ad responses. [2] [5] [6] Feature flags are managed by flagd and can be changed via a user interface (http://localhost:8080/feature) during the demo run, enabling toggling of different fault or behavior simulations including the Ad service. [3] [4] [8]",
+        "hypotheses": [
+          "The 'adFailure' feature flag is a plausible candidate to cause 'Serving empty AdResponse' with an inject:ads-empty log since it intentionally generates errors/faults in GetAds, which may include empty results. [1] [7]"
+        ],
+        "evidence": [
+          {
+            "source_type": "doc",
+            "summary": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 26-37)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+            "snippet": "Implemented feature flags\nFeature Flag\nService(s)\nDescription\nadFailure\nAd\nGenerate an error for\nGetAds\n1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Main Application\nThe bulk of the demo app is a self-contained microservice-based application that\ndoes some useful \u2018real-world\u2019 work, such as an eCommerce site. This application\nis composed of multiple services that communicate with each other over gRPC and\nHTTP and runs on Kubernetes (or Docker, lo",
+            "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application (text lines 23-34)",
+            "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+            "snippet": "Main Application\nThe bulk of the demo app is a self-contained microservice-based application that\ndoes some useful \u2018real-world\u2019 work, such as an eCommerce site. This application\nis composed of multiple services that communicate with each other over gRPC and\nHTTP and runs on Kubernetes (or Docker, locally).\nEach service shall be instrumented with OpenTelemetry for traces, metrics, and\nlogs (as applicable/available).\nEach service should be interchangeable with a service that performs the same\nbusiness logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Feature Flags\nThe demo provides several feature flags that you can use to simulate different\nscenarios. These flags are managed by\nflagd\n, a simple\nfeature flag service that supports\nOpenFeature\n.\nFlag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen ru",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/ (text lines 1-12)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/",
+            "snippet": "Feature Flags\nThe demo provides several feature flags that you can use to simulate different\nscenarios. These flags are managed by\nflagd\n, a simple\nfeature flag service that supports\nOpenFeature\n.\nFlag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen running the demo. Changing the values\nthrough this user interface will be reflected in the flagd service.",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Flag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen running the demo. Changing the values\nthrough this user interface will be reflected in the flagd service.\nThere are two options when it comes to changing the feature flags through the\nuser interface:",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/ (text lines 9-20)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/",
+            "snippet": "Flag values can be changed through the user interface provided at\nhttp://localhost:8080/feature\nwhen running the demo. Changing the values\nthrough this user interface will be reflected in the flagd service.\nThere are two options when it comes to changing the feature flags through the\nuser interface:\nBasic View\n: A user friendly view in which default variants (the same\noptions that need to be changed when configuring through the raw file) can be\nselected and saved for each feature flag. Currently, the basic view does not\nsupport fractional targeting.\nAdvanced View",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "business logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps\nsolve problems in distributed applicat",
+            "ref": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application (text lines 31-35)",
+            "link": "https://opentelemetry.io/docs/demo/requirements/architecture/#main-application",
+            "snippet": "business logic, implementing the same gRPC endpoints, but written in a different\nlanguage/implementation.\nEach service should be able to communicate with a feature flag service in order\nto enable/disable faults that can be used to illustrate how telemetry helps\nsolve problems in distributed applications.",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "Ad Service\nThis service determines appropriate ads to serve to users based on context keys.\nThe ads will be for products available in the store.\nAd service source",
+            "ref": "https://opentelemetry.io/docs/demo/services/ad/ (text lines 1-4)",
+            "link": "https://opentelemetry.io/docs/demo/services/ad/",
+            "snippet": "Ad Service\nThis service determines appropriate ads to serve to users based on context keys.\nThe ads will be for products available in the store.\nAd service source",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a",
+            "ref": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags (text lines 34-45)",
+            "link": "https://opentelemetry.io/docs/demo/feature-flags/#implemented-feature-flags",
+            "snippet": "1/10th of the time\nadHighCpu\nAd\nTrigger high cpu load in the ad service. If you want to demo cpu throttling, set cpu resource limits\nadManualGc\nAd\nTrigger full manual garbage collections in the ad service\naiRunawayAgent\nAgent\nNudges the agent to keep calling tools instead of finishing, simulating a runaway/looping agent.\naiSlowResponse\nAgent",
+            "agent": "docs"
+          },
+          {
+            "source_type": "doc",
+            "summary": "http://localhost:8080/feature",
+            "ref": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward (text lines 70-70)",
+            "link": "https://opentelemetry.io/docs/demo/kubernetes-deployment/#expose-services-using-kubectl-port-forward",
+            "snippet": "http://localhost:8080/feature",
+            "agent": "docs"
+          }
+        ],
+        "sources_searched": [
+          "README.md",
+          "https://opentelemetry.io/docs/demo/",
+          "https://opentelemetry.io/docs/demo/architecture/",
+          "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+          "https://opentelemetry.io/docs/demo/development/",
+          "https://opentelemetry.io/docs/demo/docker-deployment/",
+          "https://opentelemetry.io/docs/demo/feature-flags/",
+          "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+          "https://opentelemetry.io/docs/demo/forking/",
+          "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+          "https://opentelemetry.io/docs/demo/requirements/",
+          "https://opentelemetry.io/docs/demo/requirements/application/",
+          "https://opentelemetry.io/docs/demo/requirements/architecture/",
+          "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+          "https://opentelemetry.io/docs/demo/requirements/system/",
+          "https://opentelemetry.io/docs/demo/sample-configurations/",
+          "https://opentelemetry.io/docs/demo/services/ad/",
+          "src/ad/README.md"
+        ],
+        "sources_unavailable": [
+          "Official website page limit reached; coverage is incomplete"
+        ],
+        "confidence": 0.5,
+        "latency_ms": 3005,
+        "error": null
+      },
+      "error": null,
+      "shared_retrieval_seconds": 2.053,
+      "docs_sources_searched": [
+        "README.md",
+        "https://opentelemetry.io/docs/demo/",
+        "https://opentelemetry.io/docs/demo/architecture/",
+        "https://opentelemetry.io/docs/demo/collector-data-flow-dashboard/",
+        "https://opentelemetry.io/docs/demo/development/",
+        "https://opentelemetry.io/docs/demo/docker-deployment/",
+        "https://opentelemetry.io/docs/demo/feature-flags/",
+        "https://opentelemetry.io/docs/demo/feature-flags/recommendation-cache/",
+        "https://opentelemetry.io/docs/demo/forking/",
+        "https://opentelemetry.io/docs/demo/kubernetes-deployment/",
+        "https://opentelemetry.io/docs/demo/requirements/",
+        "https://opentelemetry.io/docs/demo/requirements/application/",
+        "https://opentelemetry.io/docs/demo/requirements/architecture/",
+        "https://opentelemetry.io/docs/demo/requirements/opentelemetry/",
+        "https://opentelemetry.io/docs/demo/requirements/system/",
+        "https://opentelemetry.io/docs/demo/sample-configurations/",
+        "https://opentelemetry.io/docs/demo/services/ad/",
+        "src/ad/README.md"
+      ],
+      "docs_sources_unavailable": [
+        "Official website page limit reached; coverage is incomplete"
+      ],
+      "elapsed_seconds": 3.005,
+      "retry_request_id": "261112-154532-6becccd8-B04-all-doc-retry-261112-154911-1",
+      "retry_attempt": 1
+    }
+  ]
+}

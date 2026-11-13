@@ -62,6 +62,7 @@ def parse_page(html, url):
 
 
 async def discover(settings, question, client, terms):
+    """Fetch relevant GitHub and official web documents within configured limits."""
     documents, searched, errors = [], [], []
     semaphore = asyncio.Semaphore(6)
     query = terms(question)
@@ -77,6 +78,7 @@ async def discover(settings, question, client, terms):
                         raise ValueError('Source too large')
                 return raw.decode('utf-8')
 
+    # Fetch paths and URLs with more question-term matches earlier in the crawl.
     def priority(value):
         return (-len(query & terms(value.replace('-', ' ').replace('/', ' '))), value)
 

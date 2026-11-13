@@ -1,0 +1,34 @@
+[
+  {
+    "id": "D01",
+    "question": "GetAds requests in the Ad Service fail intermittently, about one in ten requests. What documented behavior should we check?"
+  },
+  {
+    "id": "D02",
+    "question": "The Ad Service has unexpectedly high CPU load. Which documented feature flag could explain this behavior?"
+  },
+  {
+    "id": "D03",
+    "question": "The Ad Service repeatedly performs full manual garbage collections. Which documented configuration should we investigate?"
+  },
+  {
+    "id": "D04",
+    "question": "A developer cannot build the Ad Service locally using JDK 17. What documented Java requirement and build command should they check?"
+  },
+  {
+    "id": "B01",
+    "question": "Ad Service GetAds requests fail with UNAVAILABLE and the inject:ads-unavailable marker. What documented feature flag could cause GetAds errors?"
+  },
+  {
+    "id": "B02",
+    "question": "Ad Service GetAds returns UNAVAILABLE for targeted requests, with the inject:ads-targeted marker. Which documented feature flag specifically causes targeted requests to fail?"
+  },
+  {
+    "id": "B03",
+    "question": "Ad Service has high CPU load and logs 'High CPU-Load problempattern enabled' with inject:ads-cpu. Which documented feature flag could trigger the CPU load?"
+  },
+  {
+    "id": "B04",
+    "question": "Ad Service logs 'Serving empty AdResponse' with inject:ads-empty. Which documented feature flag can return an empty response while GetAds succeeds?"
+  }
+]

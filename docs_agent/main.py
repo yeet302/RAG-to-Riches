@@ -27,6 +27,7 @@ STOP_WORDS = set('a an and are as at be by can could do does for from how i in i
 
 
 def terms(text):
+    # Lowercase and tokenize the text, then remove short words and stop words.
     return {word for word in re.findall(r'[a-z0-9_]+', text.lower())
             if len(word) > 1 and word not in STOP_WORDS}
 
@@ -102,16 +103,23 @@ async def model_headers(auth_mode: str, api_key: str) -> dict[str, str]:
 
 
 class DocsAgent:
-    def __init__(self, settings=None, *, docs_transport=None, llm_transport=None):
+    def __init__(self, settings=None, *, docs_transport=None, llm_transport=None, on_usage=None):
         self.settings = settings or Settings.from_env()
         self.docs_transport = docs_transport
         self.llm_transport = llm_transport
+        self.on_usage = on_usage
 
     async def retrieve(self, question):
+        evidence, searched, unavailable = await self.retrieve_ranked(question)
+        return evidence[:5], searched, unavailable
+
+    async def retrieve_ranked(self, question):
+        """Fetch sources and return all matching excerpts in rank order."""
         settings = self.settings
         async with httpx.AsyncClient(timeout=settings.fetch_timeout, follow_redirects=False,
                                      trust_env=False, transport=self.docs_transport) as client:
             documents, searched, unavailable = await discover(settings, question, client, terms)
+        # Rank excerpts locally by counting the distinct words they share with the question.
         query = terms(question)
         hits = []
         for document in documents:
@@ -132,9 +140,10 @@ class DocsAgent:
                 hits.append((score, Evidence(summary=excerpt.strip()[:300], ref=ref,
                                              link=link, snippet=excerpt)))
         hits.sort(key=lambda hit: -hit[0])
-        return [hit[1] for hit in hits[:5]], searched, unavailable
+        return [hit[1] for hit in hits], searched, unavailable
 
-    async def complete(self, question, evidence, request=None, repair_reason=None):
+    async def request_completion(self, messages, *, structured=False):
+        """Send messages to the configured Azure deployment and return the completed text."""
         settings = self.settings
         params = {}
         if settings.api_version:
@@ -142,26 +151,18 @@ class DocsAgent:
         elif settings.api_style == 'inference':
             params['api-version'] = '2024-05-01-preview'
         headers = await model_headers(settings.auth_mode, settings.api_key)
+        payload = {'model': settings.model, 'messages': messages}
+        if structured:
+            payload['response_format'] = {'type': 'json_object'}
         async with httpx.AsyncClient(timeout=settings.llm_timeout, follow_redirects=False,
                                      trust_env=False, transport=self.llm_transport) as client:
-            response = await client.post(settings.completion_url, params=params,
-                headers=headers, json={
-                    'model': settings.model,
-                    'messages': [
-                        {'role': 'system', 'content': SYSTEM_PROMPT + '\nRequired JSON schema: ' + json.dumps(Answer.model_json_schema()) +
-                            ('\nThe previous attempt failed validation (' + repair_reason + '). Generate a fresh answer from the same sources; use empty claims and hypotheses for no_evidence.' if repair_reason else '')},
-                        {'role': 'user', 'content': json.dumps({
-                            'question': question,
-                            'original_question': request.original_question if request else question,
-                            'task': request.task if request else '',
-                            'upstream_context': request.evidence_bundle if request else {},
-                            'sources': [{'id': i, 'ref': item.ref, 'excerpt': item.snippet}
-                                        for i, item in enumerate(evidence, 1)]})}],
-                    'response_format': {'type': 'json_object'},
-                })
+            response = await client.post(settings.completion_url, params=params, headers=headers, json=payload)
             response.raise_for_status()
             try:
-                choice = response.json()['choices'][0]
+                data = response.json()
+                if self.on_usage is not None:
+                    self.on_usage(data.get('usage'))
+                choice = data['choices'][0]
                 message = choice['message']
                 if message.get('refusal') or choice.get('finish_reason') == 'content_filter':
                     raise ModelContentError('MODEL_REFUSED', 'The docs model declined to answer.', retryable=False)
@@ -170,13 +171,37 @@ class DocsAgent:
                 content = message.get('content')
                 if not isinstance(content, str) or not content.strip():
                     raise ModelContentError('MODEL_EMPTY', 'The docs model returned no answer text.')
-                answer = Answer.model_validate_json(content)
+                return content
             except ModelContentError:
                 raise
-            except ValidationError as exc:
-                raise ModelContentError('MODEL_SCHEMA_INVALID', 'The docs model answer did not match the required JSON schema.') from exc
             except (ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
                 raise ModelContentError('MODEL_ENVELOPE_INVALID', 'The docs model returned an invalid response envelope.') from exc
+
+    async def complete(self, question, evidence, request=None, repair_reason=None):
+        """Send the selected excerpts to Azure and validate the cited answer."""
+        instructions = SYSTEM_PROMPT + '\nRequired JSON schema: ' + json.dumps(Answer.model_json_schema())
+        if repair_reason:
+            instructions += (
+                f'\nThe previous attempt failed validation ({repair_reason}). '
+                'Generate a fresh answer from the same sources; use empty claims and hypotheses for no_evidence.'
+            )
+        messages = [
+            {'role': 'system', 'content': instructions},
+            {'role': 'user', 'content': json.dumps({
+                'question': question,
+                'original_question': request.original_question if request else question,
+                'task': request.task if request else '',
+                'upstream_context': request.evidence_bundle if request else {},
+                'sources': [{'id': i, 'ref': item.ref, 'excerpt': item.snippet}
+                            for i, item in enumerate(evidence, 1)],
+            })},
+        ]
+        content = await self.request_completion(messages, structured=True)
+        try:
+            answer = Answer.model_validate_json(content)
+        except ValidationError as exc:
+            raise ModelContentError('MODEL_SCHEMA_INVALID', 'The docs model answer did not match the required JSON schema.') from exc
+        # Validate the structured answer and check that citations refer to supplied excerpts.
         if answer.status == 'no_evidence':
             if answer.claims or answer.hypotheses:
                 raise ModelContentError('MODEL_ABSTENTION_INVALID', 'The docs model mixed abstention with claims.')

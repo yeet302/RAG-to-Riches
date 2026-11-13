@@ -1,5 +1,7 @@
 # Online Answer Evaluation — 2026-11-03
 
+Run: `20261103T194937Z-8fb54840` (online documentation, gpt-4.1-mini).
+
 **4/6 passed (66.7%)**. D01 and D04 failed; D02, D03, D05 and D06 passed.
 
 ## D01 — GetAds intermittent failures

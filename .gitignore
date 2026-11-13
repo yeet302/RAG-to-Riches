@@ -5,6 +5,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+.vscode/
 .env
 .env.*
 !.env.example
@@ -16,6 +17,3 @@ orchestrator/results/*.sqlite3*
 
 # Investigation exports contain local answers and logs; share them separately.
 orchestrator/results/*accuracy_results.csv
-
-# Personal editor settings
-.vscode/
