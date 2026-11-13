@@ -47,7 +47,6 @@ Investigation process:
 Return ONLY one JSON object, not markdown, with keys:
 summary (string),
 hypotheses (array of strings),
-suggested_fix (string or null),
 confidence (number between 0 and 1),
 evidence (array of {path, commit, start_line, end_line, summary}),
 upstream_refs_used (array of reference strings from supplied upstream evidence),
@@ -57,6 +56,65 @@ Every code citation must include its exact retrieved commit SHA and lines read v
 Do not mix evidence from different commits as if it represents one source version.
 When no verified evidence exists, say so and give low confidence.
 """
+
+
+class CodeCitation(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    path: str = Field(min_length=1)
+    commit: str = Field(min_length=1)
+    start_line: int = Field(ge=1)
+    end_line: int = Field(ge=1)
+    summary: str = Field(min_length=1)
+
+
+class CodeModelResult(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    summary: str = Field(min_length=1)
+    hypotheses: list[str]
+    confidence: float = Field(ge=0, le=1)
+    evidence: list[CodeCitation]
+    upstream_refs_used: list[str]
+    limitations: list[str]
+
+
+MODEL_FORMAT = {'type': 'json_schema', 'name': 'code_investigation', 'strict': True,
+                'schema': CodeModelResult.model_json_schema()}
+
+
+class CodeModelOutputError(ValueError):
+    def __init__(self, reason, *, output_chars=0, json_offset=None):
+        super().__init__(reason)
+        self.reason = reason
+        self.output_chars = output_chars
+        self.json_offset = json_offset
+
+
+def parse_model_result(raw):
+    if not isinstance(raw, str) or not raw.strip():
+        raise CodeModelOutputError('empty_output')
+    cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', raw.strip(), flags=re.I)
+    try:
+        decoded = json.loads(cleaned)
+    except json.JSONDecodeError as exc:
+        raise CodeModelOutputError('invalid_json', output_chars=len(raw), json_offset=exc.pos) from exc
+    try:
+        return CodeModelResult.model_validate(decoded).model_dump()
+    except ValidationError as exc:
+        raise CodeModelOutputError('schema_mismatch', output_chars=len(raw)) from exc
+
+
+def final_output_text(response):
+    """Read the final assistant message, not concatenated intermediate answers."""
+    messages = [item for item in response.output if item.type == 'message'
+                and getattr(item, 'role', 'assistant') == 'assistant']
+    if not messages:
+        return response.output_text
+    final = messages[-1]
+    if getattr(final, 'status', None) not in (None, 'completed'):
+        raise CodeModelOutputError('incomplete_response')
+    if any(getattr(part, 'type', None) == 'refusal' for part in final.content):
+        raise CodeModelOutputError('refusal')
+    return ''.join(part.text for part in final.content if getattr(part, 'type', None) == 'output_text')
 
 def tool_definitions():
     return [
@@ -136,23 +194,11 @@ class CodeAgent:
         if self._version is None:
             self._version = self.project.agents.create_version(
                 agent_name=self.settings.agent_name,
-<<<<<<< HEAD
                 definition=PromptAgentDefinition(model=self.settings.model_deployment,
                                                   instructions=INSTRUCTIONS, tools=tool_definitions(),
                     text=PromptAgentDefinitionTextOptions(format=TextResponseFormatJsonSchema(
                         name=MODEL_FORMAT['name'], schema=MODEL_FORMAT['schema'], strict=True))))
         return {'agent_reference': {'name': self._version.name, 'version': self._version.version, 'type': 'agent_reference'}}
-=======
-                definition=PromptAgentDefinition(
-                    model=self.settings.model_deployment,
-                    instructions=INSTRUCTIONS,
-                    tools=tool_definitions(),
-                ),
-            )
-        return {
-            "agent_reference": {"name": self._version.name, "type": "agent_reference"}
-        }
->>>>>>> main
 
     def _investigate(self, question, context):
         ref = self._agent_reference()
@@ -210,7 +256,6 @@ class CodeAgent:
                     else:
                         result = {"error": "Unknown tool"}
                 except Exception as exc:
-<<<<<<< HEAD
                     result = {'error': str(exc)}
                 outputs.append(FunctionCallOutput(type='function_call_output', call_id=call.call_id,
                                                   output=json.dumps(result, default=str)))
@@ -226,23 +271,6 @@ class CodeAgent:
         log.info('request_id=%s model_messages=%s final_output_chars=%s', context.get('request_id', '-'),
                  sum(item.type == 'message' for item in response.output), len(text or ''))
         return text, verified, searched, bundle
-=======
-                    result = {"error": str(exc)}
-                outputs.append(
-                    FunctionCallOutput(
-                        type="function_call_output",
-                        call_id=call.call_id,
-                        output=json.dumps(result, default=str),
-                    )
-                )
-            response = self.client.responses.create(
-                input=outputs,
-                conversation=conversation.id,
-                extra_body=ref,
-                tool_choice="none" if _ == 9 else "auto",
-            )
-        return response.output_text, verified, searched, bundle
->>>>>>> main
 
     async def run(self, question: str, context: dict):
         # Import inside run to keep this module compatible with teammates' Python layout.
@@ -251,19 +279,9 @@ class CodeAgent:
         start = time.perf_counter()
         phase = "source"
         try:
-<<<<<<< HEAD
             raw, verified, searched, bundle = await asyncio.to_thread(self._investigate, question, context)
             phase = 'model_output'
             result = parse_model_result(raw)
-=======
-            raw, verified, searched, bundle = await asyncio.to_thread(
-                self._investigate, question, context
-            )
-            phase = "model_output"
-            # Accept JSON even if the model wraps it in a fenced block.
-            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.I)
-            result = json.loads(raw)
->>>>>>> main
             evidence = []
             for item in result.get("evidence", []):
                 path = item.get("path", "")
@@ -316,7 +334,6 @@ class CodeAgent:
                 latency_ms=int((time.perf_counter() - start) * 1000),
             )
         except Exception as exc:
-<<<<<<< HEAD
             if isinstance(exc, CodeModelOutputError):
                 phase = 'model_output'
                 log.warning('request_id=%s model_output_reason=%s output_chars=%s json_offset=%s',
@@ -324,13 +341,6 @@ class CodeAgent:
             response = getattr(exc, 'response', None)
             status = getattr(exc, 'status_code', None) or getattr(response, 'status_code', None)
             url = str(getattr(getattr(response, 'request', None), 'url', ''))
-=======
-            response = getattr(exc, "response", None)
-            status = getattr(exc, "status_code", None) or getattr(
-                response, "status_code", None
-            )
-            url = str(getattr(getattr(response, "request", None), "url", ""))
->>>>>>> main
             host = urlsplit(url).hostname
             source = (
                 "Code model output" if phase == "model_output" else "Code agent source"
@@ -344,7 +354,6 @@ class CodeAgent:
             elif host in {"api.github.com", "raw.githubusercontent.com"}:
                 source = "GitHub"
             denied = isinstance(exc, ClientAuthenticationError) or status in (401, 403)
-<<<<<<< HEAD
             reason = f'{source} access denied' if denied else f'{source} failed'
             output_messages = {
                 'empty_output': 'Code model returned no answer text',
@@ -356,9 +365,6 @@ class CodeAgent:
             }
             if isinstance(exc, CodeModelOutputError):
                 reason = output_messages[exc.reason]
-=======
-            reason = f"{source} access denied" if denied else f"{source} failed"
->>>>>>> main
             if status:
                 reason += f" (HTTP {status})"
             log.warning(
@@ -377,7 +383,6 @@ class CodeAgent:
                 "Code model output": "CODE_MODEL_RESPONSE",
             }.get(source, "CODE_SOURCE")
             resolution = {
-<<<<<<< HEAD
                 'Azure Foundry': ('Ask the Foundry project owner to grant your signed-in account Foundry User access.' if denied
                                   else 'Check the Foundry deployment, agent definition, and supported response parameters using the request ID.'),
                 'Azure AI Search': 'Ask the Search resource owner to grant access to query the configured index.',
@@ -393,36 +398,3 @@ class CodeAgent:
                                     http_status=status, message=reason + '.', resolution=resolution,
                                     retryable=status == 429 or (status is not None and status >= 500)),
                                 latency_ms=int((time.perf_counter()-start)*1000))
-=======
-                "Azure Foundry": "Ask the Foundry project owner to grant your signed-in account Foundry User access.",
-                "Azure AI Search": "Ask the Search resource owner to grant access to query the configured index.",
-                "GitHub": "Check repository access, API rate limits, and the configured GitHub credential.",
-                "Azure identity": "Run az login in WSL with the account that has access to the code resources.",
-                "Code model output": "Inspect model JSON and citation validation using the request ID.",
-            }.get(
-                source,
-                "Check code-agent source configuration and service logs using the request ID.",
-            )
-            return AgentFinding(
-                agent="code",
-                status="no_access" if denied else "error",
-                summary=reason + ".",
-                sources_unavailable=[reason],
-                error=PipelineError(
-                    code=prefix + ("_ACCESS_DENIED" if denied else "_FAILED"),
-                    agent="code",
-                    stage="validation"
-                    if phase == "model_output"
-                    else (
-                        "model"
-                        if source in {"Azure Foundry", "Azure identity"}
-                        else "retrieval"
-                    ),
-                    http_status=status,
-                    message=reason + ".",
-                    resolution=resolution,
-                    retryable=status == 429 or (status is not None and status >= 500),
-                ),
-                latency_ms=int((time.perf_counter() - start) * 1000),
-            )
->>>>>>> main

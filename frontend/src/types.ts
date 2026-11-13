@@ -134,7 +134,7 @@ export interface Incident {
 
 export type Message =
   | { id: string; role: 'user'; text: string; incident?: Incident }
-  | { id: string; role: 'assistant'; status: 'loading'; question: string }
+  | { id: string; role: 'assistant'; status: 'loading'; question: string; progress?: InvestigationProgress[] }
   | { id: string; role: 'assistant'; status: 'done'; response: CopilotResponse }
   | { id: string; role: 'assistant'; status: 'error'; error: string; question: string };
 
@@ -151,4 +151,11 @@ export interface AccuracyResult extends AccuracyReview {
   created_at: string;
   run_type: string;
   response: CopilotResponse;
+}
+
+export interface InvestigationProgress {
+  phase: 'planning' | 'collecting' | 'agent' | 'synthesis';
+  agents?: AgentName[];
+  agent?: AgentName;
+  status?: 'running' | 'ok' | 'error' | 'no_access' | 'no_evidence';
 }

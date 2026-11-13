@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from typing import Callable
 from uuid import uuid4
 
 import httpx
@@ -138,7 +139,10 @@ async def investigate(question: str, *, incident_id: str | None = None,
                       conversation_id: str | None = None, agents: dict[str, Agent] | None = None,
                       settings: Settings | None = None,
                       routing_mode: RoutingMode | None = None,
-                      answer_mode: AnswerMode | None = None) -> CopilotResponse:
+                      answer_mode: AnswerMode | None = None,
+                      on_progress: Callable[[dict], None] | None = None) -> CopilotResponse:
+    emit = on_progress or (lambda event: None)
+    emit({"phase": "planning"})
     request_started = time.perf_counter()
     timings = []
     question = question.strip()
@@ -153,6 +157,7 @@ async def investigate(question: str, *, incident_id: str | None = None,
     routing_ms = (time.perf_counter() - routing_started) * 1000
     timings.append(StepTiming(name="routing", latency_ms=routing_ms))
     plan = RoutePlan(analysis.intent, analysis.stage1, analysis.stage2, analysis.reason)
+    emit({"phase": "collecting", "agents": plan.stage1 + plan.stage2})
     assignments = {assignment.agent: assignment for assignment in analysis.assignments}
     context = {"request_id": str(uuid4()), "intent": plan.intent,
                "original_question": question,
@@ -164,11 +169,13 @@ async def investigate(question: str, *, incident_id: str | None = None,
     findings = []
 
     async def dispatch(name: str, parallel: bool) -> AgentFinding:
+        emit({"phase": "agent", "agent": name, "status": "running"})
         agent_started = time.perf_counter()
         finding = await call_agent(name, registry, assignments[name].question,
             {**context, "task": assignments[name].task}, settings.timeout_for(name))
         timings.append(StepTiming(name=f"agent:{name}",
             latency_ms=(time.perf_counter() - agent_started) * 1000, parallel=parallel))
+        emit({"phase": "agent", "agent": name, "status": finding.status})
         return finding
 
     for stage, names in ((1, plan.stage1), (2, plan.stage2)):
@@ -184,6 +191,7 @@ async def investigate(question: str, *, incident_id: str | None = None,
         findings.extend(results)
         trace.extend(TraceEvent(stage=stage, agent=f.agent, action=f.summary,
                                 parallel=len(names) > 1, latency_ms=f.latency_ms) for f in results)
+    emit({"phase": "synthesis"})
     combine_started = time.perf_counter()
     response = synthesize(question, plan, findings, trace, context)
     response.analysis = analysis

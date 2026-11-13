@@ -35,9 +35,10 @@ def main():
         ]):
             page.goto(args.url)
             page.get_by_text("Offline walkthrough:", exact=False).wait_for()
-            with page.expect_response(lambda r: r.url.endswith("/api/ask") and r.request.method == "POST") as pending:
+            with page.expect_response(lambda r: r.url.endswith("/api/ask/stream") and r.request.method == "POST") as pending:
                 page.get_by_role("button", name=question, exact=True).click()
-            response = pending.value.json()
+            response = next(event["response"] for line in pending.value.text().splitlines()
+                            if (event := json.loads(line)).get("type") == "result")
             assert response["agents_used"] == agents
             assert response["accuracy_recorded"]
             assert response["evidence"] and response["performance"]["steps"]

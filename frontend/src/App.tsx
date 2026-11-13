@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import type { AnswerMode, HealthResponse, Incident, Message, RoutingMode } from './types';
+import type { HealthResponse, Incident, Message } from './types';
 import Composer from './components/Composer';
 import IncidentList from './components/IncidentList';
 import Thread from './components/Thread';
@@ -8,17 +8,26 @@ import AccuracyResults from './components/AccuracyResults';
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+const starterQuestions = [
+  { topic: 'Documentation', question: 'Show documentation for building the OpenTelemetry Demo Ad Service locally.' },
+  { topic: 'Source code', question: 'Where is GetAds implemented in the OpenTelemetry Demo Ad Service?' },
+  { topic: 'Logs', question: 'Show Ad Service warning logs from the last hour.' },
+  { topic: 'Full investigation', question: 'Investigate why Ad Service GetAds requests return UNAVAILABLE using logs, documentation, and source code.' },
+];
+
 export default function App() {
   const [view, setView] = useState<'investigate' | 'accuracy'>('investigate');
   const [sourceNote, setSourceNote] = useState('');
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [incidentsError, setIncidentsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [followups, setFollowups] = useState<string[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsUnavailable, setSuggestionsUnavailable] = useState(false);
+  const suggestionVersion = useRef(0);
+  const recentQuestions = useRef<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<HealthResponse['mode'] | null>(null);
-  const [routingMode, setRoutingMode] = useState<RoutingMode>('keyword');
-  const [llmConfigured, setLlmConfigured] = useState(false);
-  const [answerMode, setAnswerMode] = useState<AnswerMode>('evidence');
   const conversationId = useRef(uid());
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -27,9 +36,6 @@ export default function App() {
     api.health().then((health) => {
       setMode(health.mode);
       setSourceNote(health.source_note ?? '');
-      setLlmConfigured(health.llm_configured);
-      setAnswerMode(health.answer_mode ?? (health.llm_configured ? 'llm' : 'evidence'));
-      setRoutingMode(!health.llm_configured ? 'keyword' : health.routing_mode ?? 'keyword');
     }).catch(() => setMode(null));
   }, []);
 
@@ -42,6 +48,10 @@ export default function App() {
       const q = question.trim();
       if (!q || busy) return;
       const pendingId = uid();
+      const version = ++suggestionVersion.current;
+      setFollowups([]);
+      setSuggestionsUnavailable(false);
+      setSuggestionsLoading(false);
       setBusy(true);
       setMessages((m) => [
         ...m,
@@ -49,10 +59,26 @@ export default function App() {
         { id: pendingId, role: 'assistant', status: 'loading', question: q },
       ]);
       try {
-        const response = await api.ask(q, incident?.id, conversationId.current,
-          mode === 'local' ? routingMode : undefined,
-          mode === 'local' ? answerMode : undefined);
+        const response = await api.askStream(q, incident?.id, conversationId.current, (event) => {
+          setMessages((messages) => messages.map((message) =>
+            message.id === pendingId && message.role === 'assistant' && message.status === 'loading'
+              ? { ...message, progress: [...(message.progress ?? []), event] } : message));
+        });
         setMessages((m) => m.map((x) => (x.id === pendingId ? { id: pendingId, role: 'assistant', status: 'done', response } : x)));
+        if (suggestionVersion.current === version) {
+          const previous = recentQuestions.current;
+          recentQuestions.current = [...previous, q].slice(-3);
+          setSuggestionsLoading(true);
+          void api.followups(response, previous).then((result) => {
+            if (suggestionVersion.current !== version) return;
+            setFollowups(result.questions);
+            setSuggestionsUnavailable(result.source !== 'llm' || !result.questions.length);
+          }).catch(() => {
+            if (suggestionVersion.current === version) setSuggestionsUnavailable(true);
+          }).finally(() => {
+            if (suggestionVersion.current === version) setSuggestionsLoading(false);
+          });
+        }
       } catch (e) {
         const error = e instanceof Error ? e.message : String(e);
         setMessages((m) => m.map((x) => (x.id === pendingId ? { id: pendingId, role: 'assistant', status: 'error', error, question: q } : x)));
@@ -60,10 +86,15 @@ export default function App() {
         setBusy(false);
       }
     },
-    [busy, mode, routingMode, answerMode],
+    [busy],
   );
 
   const goHome = () => {
+    ++suggestionVersion.current;
+    recentQuestions.current = [];
+    setFollowups([]);
+    setSuggestionsLoading(false);
+    setSuggestionsUnavailable(false);
     setView('investigate');
     setMessages([]);
     conversationId.current = uid();
@@ -106,44 +137,24 @@ export default function App() {
         {view === 'accuracy' ? <AccuracyResults /> : <>
         {sourceNote && <p className="source-notice">{sourceNote}</p>}
         {!inChat && <h1 className="hero">What's going on?</h1>}
-        {mode === 'local' && !sourceNote.startsWith('Offline walkthrough') && <>
-        <div className="analysis-controls">
-          <label htmlFor="routing-mode">Question analysis</label>
-          <select
-            id="routing-mode"
-            value={routingMode}
-            onChange={(event) => setRoutingMode(event.target.value as RoutingMode)}
-            disabled={busy}
-          >
-            <option value="keyword">Keywords</option>
-            <option value="llm" disabled={!llmConfigured}>Azure AI{!llmConfigured ? ' (not configured)' : ''}</option>
-          </select>
-          <span className="muted small">
-            {routingMode === 'llm' ? 'AI plans specialist questions and tasks.' : 'Rules select the route.'}
-          </span>
+        <div className={`query-workspace${inChat ? ' compact' : ''}`}>
+          <Composer onSubmit={(q) => ask(q)} busy={busy} compact={inChat} />
+          <section className="query-suggestions" aria-label={inChat ? 'Follow-up questions' : 'Example investigations'}>
+            <div className="query-suggestions-heading">
+              <span>{inChat ? 'Keep investigating' : 'Choose a starting point'}</span>
+              {followups.length > 0 && <span className="suggestion-ai">✦ AI follow-ups</span>}
+            </div>
+            {!inChat ? <div className="query-starters">
+              {starterQuestions.map(({ topic, question }) => <button type="button" className="query-starter" key={topic} disabled={busy} onClick={() => ask(question)}>
+                <span>{topic} <span aria-hidden="true">↗</span></span><small>{question}</small>
+              </button>)}
+            </div> : <>
+              <p className="muted small" role="status">{busy ? 'Follow-up ideas will appear here when the investigation finishes.' : suggestionsLoading ? 'Thinking of useful next questions…' : suggestionsUnavailable ? 'AI suggestions are unavailable. Ask your own follow-up above.' : !followups.length ? 'Ask another question to continue investigating.' : ''}</p>
+              {followups.length > 0 && <div className="query-followups">{followups.map((question) =>
+                <button type="button" className="query-followup" key={question} disabled={busy} onClick={() => ask(question)}><span aria-hidden="true">↳</span>{question}</button>)}</div>}
+            </>}
+          </section>
         </div>
-        <div className="analysis-controls">
-          <label htmlFor="answer-mode">Answer generation</label>
-          <select
-            id="answer-mode"
-            value={answerMode}
-            onChange={(event) => setAnswerMode(event.target.value as AnswerMode)}
-            disabled={busy}
-          >
-            <option value="llm" disabled={!llmConfigured}>AI explanation{!llmConfigured ? ' (not configured)' : ''}</option>
-            <option value="evidence">Evidence list</option>
-          </select>
-          <span className="muted small">
-            {answerMode === 'llm' ? 'Azure explains the collected evidence with citations.' : 'Show matching excerpts without AI answer generation.'}
-          </span>
-        </div>
-        </>}
-        {!inChat && <div className="example-questions" aria-label="Example investigations">
-          <p className="muted small">Try a plain-language question</p>
-          {['Where is the investigate function defined?', 'How does the orchestrator route requests?', 'Show ad service warning logs', 'The ad service is returning errors. Why?'].map((question) =>
-            <button className="chip" key={question} disabled={busy} onClick={() => ask(question)}>{question}</button>)}
-        </div>}
-        <Composer onSubmit={(q) => ask(q)} busy={busy} compact={inChat} />
 
         {inChat ? (
           <>

@@ -3,6 +3,7 @@ import AnswerCard from './AnswerCard';
 import DiagnosisCard from './DiagnosisCard';
 import Trace from './Trace';
 import Performance from './Performance';
+import InvestigationProgress from './InvestigationProgress';
 
 interface Props {
   messages: Message[];
@@ -29,13 +30,7 @@ export default function Thread({ messages, onAsk, conversationId }: Props) {
         }
         if (m.status === 'loading') {
           return (
-            <div key={m.id} className="card investigating">
-              <span className="spinner" aria-hidden />
-              <div>
-                <p className="strong">Investigating…</p>
-                <p className="muted small">Gathering relevant evidence and preparing your answer.</p>
-              </div>
-            </div>
+            <InvestigationProgress key={m.id} events={m.progress ?? []} />
           );
         }
         if (m.status === 'error') {
