@@ -54,9 +54,13 @@ sides only repeat "GetAds UNAVAILABLE", they haven't agreed on anything.
 
 | Agent | Who | Current entries | Status |
 |---|---|---|---|
-| docs | Lantian | D01–D06 accuracy test: 4/6. Planted bugs, expected doc in top 5: 2/2 | **70%** |
-| logs | Kalyan | (match rate on planted bugs) | Not measured yet, counts as 50% |
-| code | Navya | (match rate on planted bugs) | Not measured yet, counts as 50% |
+| docs | Lantian | D01–D06 accuracy test: 4/6. Planted bugs B-01..B-04, right doc in Top 5: 3/4 | **67%** |
+| logs | Kalyan | Planted bugs B-01..B-04, right cause: 4/4 | **83%** |
+| code | Navya | Planted bugs B-01..B-04, right cause: 4/4 | **83%** |
+
+The planted-bug numbers come from the team's Accuracy Results sheet (Results tab, tested 2026-11-09).
+Add each new round (for example Navya's Round 2 cases) as a new entry. Note that a 4/4 baseline counts
+as 83%, not 100%: four cases are not enough to trust an agent completely.
 
 To add a result, append an entry like this to the agent's list and restart the orchestrator:
 
@@ -89,6 +93,8 @@ and new (v2) definitions:
 ```bash
 cd orchestrator
 python compare_confidence.py run --cases eval/planted_bugs.json   # app must be running
+#  add --only B-01,B-02 to ask a few, and --csv results/orchestrator_tests.csv for each answer,
+#  its score and its "How N% is calculated" reason in the Orchestrator tests tab's columns
 #  -> in the app: Accuracy results -> set Correct? for each B-0x / C-0x answer
 python compare_confidence.py compare                              # writes results/CONFIDENCE_COMPARISON.md
 ```
@@ -100,7 +106,8 @@ The new score is **better** if, on the reviewed answers:
 
 The command exits with status 0 only when all three hold.
 
-The cases are the five planted bugs:
+The cases are the five planted bugs. B-01..B-04 use the exact questions and expected fixes from
+Navya's Round 1 in the Orchestrator tests tab:
 
 | Case | Flag | What it does |
 |---|---|---|

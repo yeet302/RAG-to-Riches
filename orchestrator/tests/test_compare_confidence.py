@@ -148,13 +148,53 @@ def test_run_asks_each_question_and_labels_the_recorded_answer(tmp_path, monkeyp
     assert seen[1][2]["bug"] == "B-01" and seen[1][2]["correct"] == "Not reviewed"
 
 
+def test_run_can_ask_only_some_cases_and_write_the_orchestrator_tests_sheet(tmp_path, monkeypatch):
+    """`run --only B-01 --csv ...` asks just B-01 and writes one row in the Orchestrator tests tab's
+    columns: the answer (likely cause + steps with commands), the confidence, its band, and the
+    "How N% is calculated" reason.
+    """
+    cases = tmp_path / "cases.json"
+    cases.write_text(json.dumps([
+        {"bug": "B-01", "round": 1, "question": "q1?", "expected_cause": "c", "expected_fix": "flag off"},
+        {"bug": "B-02", "round": 1, "question": "q2?", "expected_cause": "c", "expected_fix": "flag off"}]))
+    asked = []
+
+    def handler(request: httpx.Request):
+        if request.method == "POST":
+            asked.append(json.loads(request.content)["question"])
+            return httpx.Response(200, json={
+                "request_id": "abc12345xyz", "pipeline_status": "ok", "confidence": 83, "confidence_band": "high",
+                "likely_cause": "adFailure is on", "answer": "a",
+                "steps": [{"title": "Turn off adFailure", "command": "flagd-cli set adFailure off"}],
+                "confidence_reasons": ["How 83% is calculated: ... = 83%.", "Logs-code agreement 100%: ..."],
+                "confidence_components": {"agreement": 1.0}})
+        return httpx.Response(200, json={})
+
+    real_client = httpx.Client
+    monkeypatch.setattr(httpx, "Client", lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw))
+    out = tmp_path / "orchestrator_tests.csv"
+    assert cc.main(["run", "--cases", str(cases), "--only", "B-01", "--csv", str(out)]) == 0
+    assert asked == ["q1?"]
+    import csv as csv_module
+    header, row = list(csv_module.reader(out.open(encoding="utf-8")))
+    assert header == cc.SHEET_COLUMNS
+    assert row[0] == "B-01" and row[3] == "flag off" and row[5] == "83" and row[6] == "high"
+    assert "Likely cause: adFailure is on" in row[4]
+    assert "Step 1: Turn off adFailure [flagd-cli set adFailure off]" in row[4]
+    assert row[7] == "How 83% is calculated: ... = 83%." and row[8] == "100%"
+
+
 def test_shipped_planted_bug_cases_cover_all_five_bugs_and_controls():
-    """eval/planted_bugs.json lists B-01..B-05 first, has a C- control, and every case has its four keys."""
+    """eval/planted_bugs.json lists B-01..B-05 first, has a C- control, every case has its four keys,
+    and B-01..B-04 are Navya's Round 1 orchestrator tests with their expected fixes."""
     from pathlib import Path
     cases = json.loads((Path(cc.__file__).parent / "eval" / "planted_bugs.json").read_text())
     names = [c["bug"] for c in cases]
     assert names[:5] == ["B-01", "B-02", "B-03", "B-04", "B-05"] and any(n.startswith("C-") for n in names)
     assert all({"bug", "question", "expected_cause", "expected_agents"} <= set(c) for c in cases)
+    round_1 = [c for c in cases if c.get("round") == 1]       # Navya's Orchestrator tests, Round 1
+    assert [c["bug"] for c in round_1] == ["B-01", "B-02", "B-03", "B-04"]
+    assert all(c["expected_fix"] and "demo.flagd.json" in c["expected_fix"] for c in round_1)
 
 
 @pytest.mark.parametrize("bad", [0, -1])

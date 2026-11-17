@@ -2,6 +2,8 @@
 
 Step 1: ask the running app each planted-bug question (it records every answer):
     python compare_confidence.py run --cases eval/planted_bugs.json
+    (add --only B-01,B-02 to ask a few, and --csv results/orchestrator_tests.csv to get each answer,
+    its confidence and the "How N% is calculated" reason in the Orchestrator tests tab's columns)
 Step 2: in the app, open "Accuracy results" and mark each answer Correct? Yes / No / Partly.
 Step 3: score every reviewed answer with both versions and write the comparison:
     python compare_confidence.py compare
@@ -173,10 +175,38 @@ def write_csv(cases: list[Case], path: Path):
 
 # --------------------------------------------------------------------------- run questions
 
-def run_cases(base_url: str, cases_path: Path, repeat: int) -> int:
+SHEET_COLUMNS = ["Test ID", "Round", "Question to ask the orchestrator", "Expected code fix",
+                 "Orchestrator's answer", "Confidence", "Band", "How the score is calculated",
+                 "Logs-code agreement", "Pipeline status", "Request ID", "Tested on (date)"]
+
+
+def sheet_row(case: dict, body: dict, tested_on: str) -> list:
+    """One row for the Orchestrator tests tab: the answer John reviews, plus its confidence and reason."""
+    lines = []
+    if body.get("likely_cause"):
+        lines.append(f"Likely cause: {body['likely_cause']}")
+    for number, step in enumerate(body.get("steps") or [], 1):
+        command = f" [{step['command']}]" if step.get("command") else ""
+        lines.append(f"Step {number}: {step.get('title', '')}{command}")
+    if not lines:
+        lines.append((body.get("answer") or "")[:500])
+    reasons = body.get("confidence_reasons") or [""]
+    agreement = (body.get("confidence_components") or {}).get("agreement")
+    return [case["bug"], case.get("round", ""), case["question"], case.get("expected_fix", ""),
+            "\n".join(lines), body.get("confidence"), body.get("confidence_band"), reasons[0],
+            "" if agreement is None else f"{agreement:.0%}", body.get("pipeline_status"),
+            body.get("request_id"), tested_on]
+
+
+def run_cases(base_url: str, cases_path: Path, repeat: int, only: tuple[str, ...] = (),
+              csv_path: Path | None = None) -> int:
     import httpx
+    from datetime import date
     cases = json.loads(cases_path.read_text(encoding="utf-8"))
+    if only:
+        cases = [case for case in cases if case["bug"] in only]
     failures = 0
+    sheet = []
     with httpx.Client(base_url=base_url.rstrip("/"), timeout=400) as client:
         for case in cases:
             for trial in range(repeat):
@@ -190,9 +220,18 @@ def run_cases(base_url: str, cases_path: Path, repeat: int) -> int:
                         "notes": f"compare_confidence run, trial {trial + 1}"}).raise_for_status()
                     print(f"{case['bug']} trial {trial + 1}: {body['pipeline_status']}, "
                           f"confidence {body.get('confidence')}% - recorded as {body['request_id'][:8]}")
+                    sheet.append(sheet_row(case, body, date.today().isoformat()))
                 except httpx.HTTPError as exc:
                     failures += 1
                     print(f"{case['bug']} trial {trial + 1}: FAILED ({type(exc).__name__}: {exc})")
+    if csv_path:
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
+        with csv_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(SHEET_COLUMNS)
+            writer.writerows(sheet)
+        print(f"\nWrote {csv_path}: paste the rows into the Orchestrator tests tab, "
+              "then fill 'Matches expected fix?'.")
     print("\nNext: open the app -> Accuracy results, set Correct? for each case, then run "
           "`python compare_confidence.py compare`.")
     return 1 if failures else 0
@@ -205,6 +244,10 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--base-url", default="http://127.0.0.1:8000")
     run.add_argument("--cases", type=Path, default=ROOT / "eval" / "planted_bugs.json")
     run.add_argument("--repeat", type=int, default=1)
+    run.add_argument("--only", default="", help="comma-separated case IDs to ask, e.g. B-01,B-02")
+    run.add_argument("--csv", type=Path, default=None,
+                     help="also write each answer, its confidence and the reason to this CSV "
+                          "(columns match the Orchestrator tests tab)")
     cmp = sub.add_parser("compare", help="score reviewed answers with the old and new definitions")
     cmp.add_argument("--source", default=str(DEFAULT_DB),
                      help="app URL, accuracy.sqlite3 path, or a JSON export of /api/accuracy")
@@ -215,7 +258,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         if args.repeat < 1:
             parser.error("--repeat must be at least 1")
-        return run_cases(args.base_url, args.cases, args.repeat)
+        only = tuple(c.strip() for c in args.only.split(",") if c.strip())
+        return run_cases(args.base_url, args.cases, args.repeat, only, args.csv)
 
     cases = score_rows(load_rows(args.source), tuple(p for p in args.cases.split(",") if p))
     if not cases:

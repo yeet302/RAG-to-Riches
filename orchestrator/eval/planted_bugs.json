@@ -1,44 +1,87 @@
 [
   {
     "bug": "B-01",
-    "question": "Why are GetAds requests failing with UNAVAILABLE errors in the Ad Service?",
+    "round": 1,
+    "question": "Why do some GetAds requests fail with UNAVAILABLE errors in the Ad Service?",
     "expected_cause": "adFailure flag: AdService throws StatusRuntimeException(UNAVAILABLE, \"inject:ads-unavailable\") on GetAds lanes 0/1.",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_fix": "Set adFailure defaultVariant to \"off\" in src/flagd/demo.flagd.json (and disable runtime override if enabled). For a permanent code fix, remove or guard the lane-0 Status.UNAVAILABLE injection and generic-failure fallback in AdService.java.",
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Accuracy Results sheet, Orchestrator tests tab (Navya, Round 1)"
   },
   {
     "bug": "B-02",
-    "question": "Why are targeted ad requests failing in the Ad Service, especially requests for binoculars?",
+    "round": 1,
+    "question": "Why do targeted ad requests sometimes fail with UNAVAILABLE while other requests succeed?",
     "expected_cause": "adTargetedFailure flag: targeted GetAds requests on lane 1 throw UNAVAILABLE (\"inject:ads-targeted\").",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_fix": "Set adTargetedFailure defaultVariant to \"off\" in src/flagd/demo.flagd.json (and disable runtime override if enabled). Alternatively remove or guard the lane-1 targeted-failure exception in AdService.java.",
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Accuracy Results sheet, Orchestrator tests tab (Navya, Round 1)"
   },
   {
     "bug": "B-03",
-    "question": "What could cause unusually high CPU usage in the Ad Service?",
+    "round": 1,
+    "question": "What is causing unusually high CPU utilization in the Ad Service?",
     "expected_cause": "adHighCpu flag: CPULoad.execute runs on every GetAds request while the flag is on.",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_fix": "Set adHighCpu defaultVariant to \"off\" in src/flagd/demo.flagd.json and turn off any live override to stop CPU-load injection. If unwanted permanently, remove or guard the CPULoad.execute() invocation in AdService.java.",
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Accuracy Results sheet, Orchestrator tests tab (Navya, Round 1)"
   },
   {
     "bug": "B-04",
-    "question": "Why is the Ad Service returning an empty AdResponse instead of advertisements?",
+    "round": 1,
+    "question": "Why do some GetAds requests complete successfully but return empty ad responses?",
     "expected_cause": "adEmptyResponse flag: GetAds lane 3 returns an empty AdResponse (\"inject:ads-empty\").",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_fix": "Set adEmptyResponse defaultVariant to \"off\" in src/flagd/demo.flagd.json (and disable runtime override if enabled). Alternatively remove or guard the lane-3 empty-response early-return branch so normal ad responses are returned.",
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Accuracy Results sheet, Orchestrator tests tab (Navya, Round 1)"
   },
   {
     "bug": "B-05",
     "question": "Why does the Ad Service have occasional long pauses during GetAds calls?",
     "expected_cause": "adManualGc flag: GetAds lane 2 triggers a manual full garbage collection (\"inject:ads-gc\").",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Planted in opentelemetry-demo 4a70112 (Kalyan); not yet in the Accuracy Results sheet"
   },
   {
     "bug": "C-01",
     "question": "Why is the checkout service failing to place orders?",
     "expected_cause": "Control: no bug was planted in checkout. A correct answer says the evidence doesn't show a checkout cause; it must not blame an Ad Service flag.",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Control case: the right answer is that the evidence doesn't show this"
   },
   {
     "bug": "C-02",
     "question": "Which engineer deployed the change that made GetAds return UNAVAILABLE?",
     "expected_cause": "Control: nothing in logs, docs or code identifies an engineer. A correct answer says so and does not name anyone.",
-    "expected_agents": ["logs", "docs", "code"]
+    "expected_agents": [
+      "logs",
+      "docs",
+      "code"
+    ],
+    "source": "Control case: the right answer is that the evidence doesn't show this"
   }
 ]

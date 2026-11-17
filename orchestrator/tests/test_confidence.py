@@ -249,10 +249,13 @@ def test_invalid_calibration_files_are_rejected(tmp_path, bad):
         Calibration.from_file(path)
 
 
-def test_shipped_calibration_file_is_valid_and_has_the_docs_results():
-    """The real confidence_calibration.json loads and gives docs 70%."""
+def test_shipped_calibration_file_has_the_teams_measured_results():
+    """The real confidence_calibration.json loads the team's numbers: docs 4/6 + 3/4 -> (7+1)/(10+2) = 67%;
+    logs and code 4/4 each on the planted bugs -> (4+1)/(4+2) = 83%.
+    """
     cal = Calibration.from_file(DEFAULT_CALIBRATION_PATH)
-    assert cal.reliability("docs") == pytest.approx(0.7)
+    assert cal.reliability("docs") == pytest.approx(8 / 12)
+    assert cal.reliability("logs") == pytest.approx(5 / 6) and cal.reliability("code") == pytest.approx(5 / 6)
 
 
 # ---- grounding, penalties, caps ----------------------------------------------------------------

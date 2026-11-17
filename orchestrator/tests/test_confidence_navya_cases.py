@@ -1,4 +1,8 @@
-"""Confidence v2 checked on Navya's code-agent test cases (code_agent/accuracy_tests).
+"""Confidence v2 checked on Navya's code-agent fixture cases (code_agent/accuracy_tests).
+
+These are her offline code-agent cases (BUG-01..03). Her orchestrator test cases (Round 1: B-01..B-04
+in the Orchestrator tests tab) need the live services; ask them with
+`python compare_confidence.py run --only B-01,B-02,B-03,B-04 --csv results/orchestrator_tests.csv`.
 
 Each recorded output in code_agent/accuracy_tests/outputs/BUG-XX.json is a real AgentFinding that the
 code agent returned for that case's question. These tests score it the way investigate() would
