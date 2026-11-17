@@ -1,19 +1,17 @@
 """The old-vs-new confidence comparison on reviewed planted-bug answers.
- 
+
 Tests compare_confidence.py: which answers are scored, the ranking / Brier metrics, the verdict,
 the Markdown + CSV report, reading the app's SQLite database, and the `run` command.
- 
+
 How these tests work:
   * stored(...) builds an answer the way /api/ask saves it (logs, docs and code findings plus a
     validated AI answer). Only the code agent's finding and its link to the logs change.
   * rows() gives six reviewed rows: r1/r2 right (B-01), r3/r4 wrong (B-04, C-01),
     r5 not reviewed, r6 not a planted-bug case. Both scores are recomputed from these.
   * Network calls are replaced with httpx.MockTransport, so nothing needs the app running.
- 
+
 Run: python -m pytest tests/test_compare_confidence.py -v     (from the orchestrator folder)
 """
-
-"""The old-vs-new confidence comparison on reviewed planted-bug answers."""
 from __future__ import annotations
 
 import json
@@ -66,11 +64,15 @@ def rows():
 
 
 def test_only_reviewed_planted_bug_and_control_cases_are_scored():
+    """Unreviewed answers (r5) and non-planted-bug cases (r6) are skipped; only r1-r4 are scored."""
     cases = cc.score_rows(rows(), ("B-", "C-"))
     assert [c.request_id for c in cases] == ["r1", "r2", "r3", "r4"]
 
 
 def test_new_score_separates_right_from_wrong_where_the_old_one_could_not():
+    """On the same four answers, v1 gives all of them 95 (ranking 0.5, a coin flip) while v2 ranks every right
+    answer above every wrong one (1.0), has lower Brier error and fewer High-but-wrong.
+    """
     cases = cc.score_rows(rows(), ("B-", "C-"))
     assert {c.old for c in cases} == {95}                     # old: every answer looks the same
     old, new = cc.summarize(cases, "old"), cc.summarize(cases, "new")
@@ -80,6 +82,9 @@ def test_new_score_separates_right_from_wrong_where_the_old_one_could_not():
 
 
 def test_ranking_and_brier_math():
+    """The metric math on small inputs: ranking 1.0 / 0.0 / 0.5 for right / reversed / tied order, None when
+    there is no right-wrong pair; Brier 0.0 for perfect scores and 0.25 for 50 on a right answer.
+    """
     assert cc.ranking([90, 10], [1.0, 0.0]) == 1.0
     assert cc.ranking([10, 90], [1.0, 0.0]) == 0.0
     assert cc.ranking([50, 50], [1.0, 0.0]) == 0.5
@@ -89,6 +94,9 @@ def test_ranking_and_brier_math():
 
 
 def test_compare_writes_markdown_and_csv_from_a_json_export(tmp_path, capsys):
+    """`compare` on a JSON export writes the Markdown report (with the verdict and the B-04 row) and the CSV.
+
+    """
     export = tmp_path / "accuracy.json"
     export.write_text(json.dumps(rows()))
     out = tmp_path / "CONFIDENCE_COMPARISON.md"
@@ -99,6 +107,7 @@ def test_compare_writes_markdown_and_csv_from_a_json_export(tmp_path, capsys):
 
 
 def test_compare_reads_the_apps_own_accuracy_database(tmp_path):
+    """`compare` can read reviewed answers straight from the app's SQLite accuracy database."""
     store = AccuracyStore(tmp_path / "accuracy.sqlite3")
     for row in rows()[:4]:
         response = CopilotResponse.model_validate(row["response"])
@@ -110,6 +119,7 @@ def test_compare_reads_the_apps_own_accuracy_database(tmp_path):
 
 
 def test_compare_with_nothing_reviewed_says_what_to_do(tmp_path, capsys):
+    """With nothing reviewed, `compare` exits with code 2 and tells you to mark Correct? in the app."""
     export = tmp_path / "accuracy.json"
     export.write_text(json.dumps(rows()[4:5]))
     assert cc.main(["compare", "--source", str(export), "--out", str(tmp_path / "x.md")]) == 2
@@ -117,6 +127,9 @@ def test_compare_with_nothing_reviewed_says_what_to_do(tmp_path, capsys):
 
 
 def test_run_asks_each_question_and_labels_the_recorded_answer(tmp_path, monkeypatch, capsys):
+    """`run` (against a fake server, --repeat 2) posts each question to /api/ask, then labels the recorded
+    answer with the bug name and 'Not reviewed' via PATCH /api/accuracy.
+    """
     cases = tmp_path / "cases.json"
     cases.write_text(json.dumps([{"bug": "B-01", "question": "q?", "expected_cause": "adFailure"}]))
     seen = []
@@ -136,6 +149,7 @@ def test_run_asks_each_question_and_labels_the_recorded_answer(tmp_path, monkeyp
 
 
 def test_shipped_planted_bug_cases_cover_all_five_bugs_and_controls():
+    """eval/planted_bugs.json lists B-01..B-05 first, has a C- control, and every case has its four keys."""
     from pathlib import Path
     cases = json.loads((Path(cc.__file__).parent / "eval" / "planted_bugs.json").read_text())
     names = [c["bug"] for c in cases]
@@ -145,5 +159,6 @@ def test_shipped_planted_bug_cases_cover_all_five_bugs_and_controls():
 
 @pytest.mark.parametrize("bad", [0, -1])
 def test_repeat_must_be_positive(bad):
+    """`run --repeat` refuses 0 and negative values."""
     with pytest.raises(SystemExit):
         cc.main(["run", "--repeat", str(bad)])
