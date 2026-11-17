@@ -1,3 +1,18 @@
+"""The old-vs-new confidence comparison on reviewed planted-bug answers.
+ 
+Tests compare_confidence.py: which answers are scored, the ranking / Brier metrics, the verdict,
+the Markdown + CSV report, reading the app's SQLite database, and the `run` command.
+ 
+How these tests work:
+  * stored(...) builds an answer the way /api/ask saves it (logs, docs and code findings plus a
+    validated AI answer). Only the code agent's finding and its link to the logs change.
+  * rows() gives six reviewed rows: r1/r2 right (B-01), r3/r4 wrong (B-04, C-01),
+    r5 not reviewed, r6 not a planted-bug case. Both scores are recomputed from these.
+  * Network calls are replaced with httpx.MockTransport, so nothing needs the app running.
+ 
+Run: python -m pytest tests/test_compare_confidence.py -v     (from the orchestrator folder)
+"""
+
 """The old-vs-new confidence comparison on reviewed planted-bug answers."""
 from __future__ import annotations
 

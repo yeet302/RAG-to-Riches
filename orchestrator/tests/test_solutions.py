@@ -1,3 +1,18 @@
+"""Suggested solutions (likely cause + steps) must be grounded in the collected evidence.
+
+Tests answer_synthesis.validate_solutions, which runs inside generate_answer after the AI replies.
+
+How these tests work:
+  * diagnosis() builds a response with three pieces of evidence. The orchestrator numbers them
+    E1 = LOG (log line), E2 = DOC (runbook that contains "flagd-cli set adFailure off"),
+    E3 = CODE (the code line).
+  * model_says(...) is a fake AI: httpx.MockTransport returns the JSON the test chooses instead
+    of calling Azure, so the tests are fast, offline and give the same result every run.
+  * run(...) calls the real generate_answer, so John's citation check and validate_solutions
+    both run exactly as they do in the app.
+
+Run: python -m pytest tests/test_solutions.py -v      (from the orchestrator folder)
+"""
 """Suggested solutions (likely cause + steps) must be grounded in the collected evidence."""
 from __future__ import annotations
 

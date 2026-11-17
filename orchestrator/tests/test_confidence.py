@@ -1,3 +1,21 @@
+"""Confidence score v2 (CONFIDENCE_DEFINITION.md): built only from what the sub-agents returned.
+ 
+Tests confidence.py: the five parts (logs-code agreement, docs relevance, sub-agent context,
+measured accuracy, grounding), how they combine, the caps, and the policy/calibration files.
+ 
+How these tests work:
+  * finding(...) builds one agent's result (ok / error / no evidence, its relevance rating,
+    coverage gaps, and the code agent's "Upstream: <log ref>" link).
+  * incident(...) wraps findings into a CopilotResponse the way investigate() builds one.
+  * agreeing() = logs, docs and code all point to inject:ads-unavailable, and the code agent
+    links to the log event. disagreeing() = the code points to an unrelated CPULoad file.
+  * score(...) uses the default weights (POLICY) and UNMEASURED calibration (every agent 50%),
+    so editing the JSON files can't change these results; tests pass their own Calibration
+    when they need measured numbers.
+ 
+Run: python -m pytest tests/test_confidence.py -v     (from the orchestrator folder)
+"""
+
 """Confidence score v2 (CONFIDENCE_DEFINITION.md): built only from what the sub-agents returned."""
 from __future__ import annotations
 
