@@ -25,6 +25,7 @@ Orchestrator integration (HTTP `AgentRequest` → `AgentFinding`, URLs, tokens, 
 
 ## Run the integrated app locally
 
+- [Short setup checklist](SETUP.md): the steps to run `main` with all four services, and `orchestrator/check_setup.py`, which catches "Code Agent is not configured" before you start.
 - [Integration setup](orchestrator/INTEGRATION.md): configure and launch the orchestrator plus all three specialist services.
 - [Frontend setup](frontend/README.md): launch the React interface at http://localhost:5173.
 - [Model configuration](orchestrator/LLM_ROUTING.md): Azure model endpoints, API-key or keyless sign-in, planning, and synthesis.
