@@ -91,7 +91,7 @@ def test_logs_and_code_that_agree_score_high_and_explain_why():
     """
     r = score(agreeing())
     assert r.components["agreement"] == 1.0 and r.band == "high"
-    assert "tied its code to 1 log event" in r.reasons[0] and "inject:ads-unavailable" in r.reasons[0]
+    assert "tied its code to 1 log event" in r.reasons[1] and "inject:ads-unavailable" in r.reasons[1]
 
 
 def test_logs_and_code_that_disagree_are_held_below_high_even_if_everything_else_looks_good():
@@ -139,7 +139,7 @@ def test_agreement_is_zero_when_one_side_has_no_evidence():
     """Code returned no evidence: agreement is 0 and the reason names the code agent."""
     r = score(incident(finding("logs", LOG_LINE), None, finding("code", status="no_evidence")))
     assert r.components["agreement"] == 0.0
-    assert "code returned no usable evidence" in r.reasons[0]
+    assert "code returned no usable evidence" in r.reasons[1]
 
 
 def test_agreement_does_not_apply_when_logs_and_code_were_not_both_asked():
@@ -232,7 +232,7 @@ def test_step_sources_count_as_reliance():
     """
     r = agreeing(cited=[LOG_REF], steps=[Step(title="t", why="w",
                                              evidence_refs=["https://opentelemetry.io/docs/demo/feature-flags/"])])
-    assert "docs" in score(r).reasons[3] and "logs" in score(r).reasons[3]
+    assert "docs" in score(r).reasons[4] and "logs" in score(r).reasons[4]
 
 
 @pytest.mark.parametrize("bad", [
@@ -296,6 +296,30 @@ def test_disagreement_cap_holds_even_if_the_team_reweights_the_score():
     perfect = Calibration({a: (Measurement("m", 1000, 1000),) for a in ("logs", "docs", "code")})
     r = score_confidence(disagreeing(), light, perfect)
     assert r.score == light.disagreement_cap and r.band == "medium"
+
+
+def test_first_reason_shows_how_the_score_is_calculated():
+    """The first reason is the arithmetic: each part's value x its weight, adding up to the score."""
+    r = score(agreeing())
+    assert r.reasons[0] == ("How 83% is calculated: logs-code agreement 100% x 30% + docs relevance 50% x 10% "
+                            "+ sub-agent context 92% x 20% + measured accuracy 50% x 20% + grounding 100% x 20% "
+                            "= 83%.")
+
+
+def test_calculation_shows_redistributed_weights_and_caps():
+    """When parts don't apply, the shown weights are re-scaled to 100% (docs-only: 14% / 29%); a cap or the
+    keyword-routing penalty is spelled out after the sum.
+    """
+    docs_only = score(incident(None, finding("docs", DOC_MATCH), None))
+    assert docs_only.reasons[0].startswith(f"How {docs_only.score}% is calculated: docs relevance")
+    assert "x 14%" in docs_only.reasons[0] and "x 29%" in docs_only.reasons[0]   # 0.10/0.70 and 0.20/0.70
+    perfect = Calibration({a: (Measurement("m", 1000, 1000),) for a in ("logs", "docs", "code")})
+    light = ConfidencePolicy(weights={"agreement": 0.05, "docs_relevance": 0.05, "agent_context": 0.3,
+                                      "measured_accuracy": 0.3, "grounding": 0.3})
+    capped = score_confidence(disagreeing(), light, perfect)
+    assert capped.reasons[0].endswith("capped at 74% (see below).")
+    fallback = score(agreeing(planning="keyword_fallback"))
+    assert f"x0.95 for keyword routing = {fallback.score}%" in fallback.reasons[0]
 
 
 def test_apply_confidence_fills_every_response_field():

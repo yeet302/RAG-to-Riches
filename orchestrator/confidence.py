@@ -378,6 +378,23 @@ def _pct(value: float) -> str:
     return f"{round(value * 100)}%"
 
 
+def _calculation(score: int, uncapped: int, weighted: float, planning_fallback: bool,
+                 applicable: dict[str, Part], weights: dict[str, float], total_weight: float) -> str:
+    """First reason: the arithmetic behind the number, e.g. "How 83% is calculated: ...".
+
+    Shows each applicable part's value times its effective weight (weights of parts that don't
+    apply are redistributed, so the shown weights always add up to 100%), then any penalty or cap.
+    """
+    terms = " + ".join(f"{LABELS[name].lower()} {_pct(part.value)} x {_pct(weights[name] / total_weight)}"
+                       for name, part in applicable.items())
+    text = f"How {score}% is calculated: {terms} = {_pct(weighted)}"
+    if planning_fallback:
+        text += f", x0.95 for keyword routing = {uncapped}%"
+    if score < uncapped:
+        text += f", capped at {score}% (see below)"
+    return text + "."
+
+
 def score_confidence(response: CopilotResponse, policy: ConfidencePolicy | None = None,
                      calibration: Calibration | None = None) -> ConfidenceResult:
     policy = policy or load_policy()
@@ -403,11 +420,12 @@ def score_confidence(response: CopilotResponse, policy: ConfidencePolicy | None 
     weight = sum(policy.weights[name] for name in applicable)
     raw = sum(policy.weights[name] * part.value for name, part in applicable.items()) / weight
 
+    weighted = raw
     caps = []
     planning_fallback = bool(response.analysis and response.analysis.source == "keyword_fallback")
     if planning_fallback:
         raw *= PLANNING_FALLBACK_FACTOR
-    score = round(raw * 100)
+    score = uncapped = round(raw * 100)
     agreement = parts["agreement"].value
     if agreement is not None and agreement < 0.5:
         score = min(score, policy.disagreement_cap)
@@ -417,7 +435,8 @@ def score_confidence(response: CopilotResponse, policy: ConfidencePolicy | None 
         score = policy.max_score
         caps.append(f"Capped at {policy.max_score}%: automated checks can't rule out every alternative.")
 
-    reasons = [part.reason for part in applicable.values()]
+    reasons = [_calculation(score, uncapped, weighted, planning_fallback, applicable, policy.weights, weight)]
+    reasons += [part.reason for part in applicable.values()]
     reasons += [part.reason for part in parts.values() if part.value is None]
     if planning_fallback:
         reasons.append("AI planning was unavailable, so keyword routing chose the agents (x0.95).")
