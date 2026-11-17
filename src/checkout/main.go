@@ -353,6 +353,9 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 		Nanos:        0,
 	}
 	total = money.Must(money.Sum(total, prep.shippingCostLocalized))
+	// Round 2 B-05: erroneous second shipping charge.
+	logger.Warn("Checkout shipping cost added twice [inject:r2-double-shipping]")
+	total = money.Must(money.Sum(total, prep.shippingCostLocalized))
 	for _, it := range prep.orderItems {
 		multPrice := money.MultiplySlow(it.Cost, uint32(it.GetItem().GetQuantity()))
 		total = money.Must(money.Sum(total, multPrice))

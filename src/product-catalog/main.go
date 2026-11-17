@@ -408,6 +408,9 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
+	// Round 2 B-06: incorrectly increases price for all GetProduct responses.
+	logger.Warn("Inflating product price by 10 USD [inject:r2-product-price]", slog.String("product_id", req.Id))
+	found.PriceUsd.Units += 10
 	span.AddEvent("Product Found")
 	span.SetAttributes(
 		attribute.String("demo.product.id", req.Id),
@@ -433,6 +436,11 @@ func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProdu
 		return nil, status.Errorf(codes.Internal, "failed to search products: %v", err)
 	}
 
+	// Round 2 B-07: drop successful search results before responding.
+	if len(result) > 0 {
+		logger.Warn("Dropping product search results [inject:r2-search-empty]", slog.Int("dropped", len(result)))
+		result = []*pb.Product{}
+	}
 	span.SetAttributes(
 		attribute.Int("demo.product.search.count", len(result)),
 	)

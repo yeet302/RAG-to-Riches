@@ -13,7 +13,11 @@ const handler = async ({ method }: NextApiRequest, res: NextApiResponse<TRespons
     case 'GET': {
       const { currencyCodes = [] } = await CurrencyGateway.getSupportedCurrencies();
 
-      return res.status(200).json(currencyCodes);
+      // Round 2 B-09: silently drop all but one supported currency.
+      if (currencyCodes.length > 1) {
+        console.warn(`Currency list truncated from ${currencyCodes.length} to 1 [inject:r2-currency-list]`);
+      }
+      return res.status(200).json(currencyCodes.slice(0, 1));
     }
 
     default: {

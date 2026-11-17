@@ -251,7 +251,8 @@ public final class AdService {
             ffClient.getBooleanValue(AD_EMPTY_RESPONSE, false, evaluationContext);
 
         // Lanes 0-3 cover scenarios 1,2,4,5. Scenario 3 (CPU) runs above on every request.
-        int lane = Math.floorMod(INJECT_LANE.getAndIncrement(), 4);
+        // Round 2 B-08: fifth lane causes wrong-category targeted responses.
+        int lane = Math.floorMod(INJECT_LANE.getAndIncrement(), 5);
         span.setAttribute("demo.ad.inject_lane", lane);
 
         if (lane == 0 && flagFailure) {
@@ -289,6 +290,15 @@ public final class AdService {
           span.setAttribute("demo.ad.count", 0);
           span.setAttribute("demo.ad.response_type", "EMPTY");
           responseObserver.onNext(AdResponse.newBuilder().build());
+          responseObserver.onCompleted();
+          return;
+        }
+
+        // Round 2 B-08: replace targeted ads with random ads on lane 4.
+        if (lane == 4 && adRequestType == AdRequestType.TARGETED) {
+          logger.warn("Targeted ads replaced with random ads [inject:r2-ad-category]");
+          responseObserver.onNext(
+              AdResponse.newBuilder().addAllAds(service.getRandomAds()).build());
           responseObserver.onCompleted();
           return;
         }
