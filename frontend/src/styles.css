@@ -144,7 +144,7 @@ h1, h2, h3 { margin: 0; }
 .steps { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 10px; }
 .step { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
 .step.active { border: 1.5px solid var(--ink); }
-.step.failed { opacity: 0.7; }
+.step.failed:not(.active) { opacity: 0.7; }
 .step.worked { border-color: #86d3a3; background: #f3fcf6; }
 .step-head { display: flex; align-items: center; gap: 12px; }
 .num { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--ink-2); display: grid; place-items: center; font-size: 14px; font-weight: 600; flex: none; }
