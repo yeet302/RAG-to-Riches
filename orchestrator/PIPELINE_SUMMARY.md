@@ -165,7 +165,9 @@ runs in a worker thread rather than blocking the API event loop.
 
 This is lexical retrieval of current files, not vector search, git-history
 analysis, whole-function extraction, or diagnosis. Relevance scores are not
-root-cause probabilities; live likely_cause and diagnosis confidence remain unset.
+root-cause probabilities. A likely_cause appears only from a validated AI answer that
+cites the evidence, and the answer's confidence is computed by confidence.py from the
+findings (see CONFIDENCE_DEFINITION.md).
 
 ## 6. Request state and observability
 

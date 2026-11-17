@@ -133,8 +133,11 @@ refusals, malformed responses, and timeouts retain the evidence-list fallback.
 
 Citation checks validate source identity and format. They do not establish the
 truth of every claim or guarantee that retrieved instructions cannot influence a
-model. Readers can inspect the source excerpts. Root-cause confidence fields and
-likely_cause are not populated from unverified narrative.
+model. Readers can inspect the source excerpts. A likely cause and suggested steps
+are kept only when they cite the collected evidence (commands only if copied from
+that step's cited evidence); the model's free-text narrative never sets them. The
+confidence score is computed afterwards by confidence.py and is never written by the
+model (see CONFIDENCE_DEFINITION.md).
 
 If sources are unavailable, Python preserves the coverage notice even if the model
 omits it. With no supporting evidence, no model answer is generated.

@@ -8,7 +8,7 @@ The agent dynamically calls `search_code`, `read_source`, and optionally `get_is
 1. Provision a **Microsoft Foundry** project and deploy a tool-calling model. Provision **Azure AI Search** (Basic or higher as required by your setup). Grant your signed-in developer identity **Foundry User** on the project and **Search Index Data Contributor** plus **Search Service Contributor** (or appropriately scoped index-management permissions) on the search resource. Azure role assignments may take time to propagate.
 2. Install Python 3.11+, Azure CLI. Run `az login`.
 3. From repository root: `python -m pip install -r requirements.txt` (this is the artifact's requirements; after copy, use `code_agent/requirements.txt` if you move it there).
-4. Copy `.env.example` to `.env`; fill in the actual Azure project, deployed model and Search endpoint. **Do not commit `.env`.**
+4. Copy `code_agent/.env.example` to `code_agent/.env`; fill in the actual Azure project, deployed model and Search endpoint, and set `CODE_REF` to the commit the index was built from. **Do not commit `.env`.** Check it with `python orchestrator/check_setup.py --deep` (see [SETUP.md](../SETUP.md)).
 5. **Index code:** `python -m code_agent.index_repo` (the first ingest can require significant time and GitHub API quota; use `GITHUB_TOKEN` if needed).
 6. **Ask a real question:** `python -m code_agent.cli "Why does GetAds sometimes fail with UNAVAILABLE?"`
 7. Test more questions, such as `"Where is the Ad Service high CPU load generated?"` and `"How does forced garbage collection affect the Ad Service?"`.
@@ -28,7 +28,7 @@ Start each service and the orchestrator as described in `orchestrator/INTEGRATIO
 The orchestrator passes validated upstream evidence to code and synthesizes the
 answer only from successful specialist evidence. Unavailable sources remain explicit.
 
-**Important:** the branch `logs_agent` currently works over **OpenStack** sample logs, not the OpenTelemetry Ad Service. Fix the shared dataset before claiming real log-to-code conclusions. Current orchestrator's chosen Git revision is `e5552ee25bcede2900d89188f076c464cd73c074`; keep all 3 agents aligned on it. The agent distinguishes a potentially executable failure code path from evidence that the flag actually is enabled.
+**Shared revision:** the agents investigate the bug-injected OpenTelemetry demo in `yeet302/RAG-to-Riches` (branch `opentelemetry-demo`). The planted Ad Service bugs B-01..B-05 are at commit `4a701124503f86431f52a000c01d2d73322d39e0`; set `CODE_REF` to the commit the search index was built from and keep the logs and docs evidence aligned with it. The agent distinguishes a potentially executable failure code path from evidence that the flag actually is enabled.
 
 ## Design and guardrails
 
@@ -54,7 +54,7 @@ Do not put secrets, tokens or confidential repositories in prompts, logs, test f
 
 ## Repository scope and Git history
 
-The agent is **hard-restricted to `open-telemetry/opentelemetry-demo`**, but it is **not restricted to one commit**. Empty `CODE_REF` follows the current default branch; set `CODE_REF` to a branch, tag or SHA to index and query that revision. The LLM may choose `ref` per tool call. All source citations use the *resolved immutable SHA* so citations remain accurate after new GitHub commits.
+The agent is **hard-restricted to `yeet302/RAG-to-Riches`** (`APPROVED_REPOSITORY` in `config.py`; any other `CODE_REPO` is refused), but it is **not restricted to one commit**. Empty `CODE_REF` follows the current default branch; set `CODE_REF` to a branch, tag or SHA to index and query that revision. The LLM may choose `ref` per tool call. All source citations use the *resolved immutable SHA* so citations remain accurate after new GitHub commits.
 
 **Index freshness:** after a branch changes, rerun `python -m code_agent.index_repo` to update that branch's code in Azure AI Search. Searching a revision that has not been indexed returns no indexed hits; the agent can still discover files and read GitHub directly. For a single incident, all code findings should ideally use the same revision as the incident's logs and documentation.
 

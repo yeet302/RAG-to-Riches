@@ -1,6 +1,7 @@
 # Keyword and Azure routing flow
 
-[Open the standalone diagram](ORCHESTRATOR_FLOW.svg).
+[Open the standalone diagram](ORCHESTRATOR_FLOW.svg) (older: it doesn't show the
+confidence and suggested-solution steps; the diagram below is current).
 
 This shows the current implementation. Azure can generate question-specific JSON
 assignments; Python validates and executes them. Answer generation is independent.
@@ -35,11 +36,12 @@ flowchart TD
     Code --> Combine["synthesize()<br/>Deduplicate evidence and prepare formatter fallback"]
     NeedCode -->|No| Combine
     Combine --> AnswerMode{"Answer generation"}
-    AnswerMode -->|Evidence list| Return["Return response<br/>main.py: JSON to frontend<br/>chat.py: print to terminal"]
-    AnswerMode -->|AI and supporting evidence| AnswerModel["answer_synthesis.py<br/>Azure writes from evidence; Python validates citations"]
-    AnswerModel -->|Valid answer| Return
+    AnswerMode -->|Evidence list| Score["confidence.py: apply_confidence()<br/>Score from agent findings, with reasons"]
+    AnswerMode -->|AI and supporting evidence| AnswerModel["answer_synthesis.py<br/>Azure writes from evidence; Python validates citations<br/>validate_solutions(): keep only cited cause and steps"]
+    AnswerModel -->|Valid answer| Score
     AnswerModel -->|Unavailable or invalid| Formatter["Evidence-list fallback with visible warning"]
-    Formatter --> Return
+    Formatter --> Score
+    Score --> Return["Return response<br/>main.py: JSON to frontend<br/>chat.py: print to terminal"]
 ```
 
 ## Keyword routes and fallback

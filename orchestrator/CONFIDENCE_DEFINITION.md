@@ -41,7 +41,8 @@ sides only repeat "GetAds UNAVAILABLE", they haven't agreed on anything.
      so the score shouldn't look certain.
    - **Never above 95%.** Automated checks can't rule out every alternative.
 4. **Bands:** High is 75% or more, Medium is 50–74%, Low is under 50%.
-5. **Reasons ("Why N%?"):** the first line is the calculation itself, for example
+5. **Reasons ("Why N%?"):** the first line is the calculation itself, for example (all agents agreeing,
+   before any accuracy was measured)
    `How 83% is calculated: logs-code agreement 100% x 30% + docs relevance 50% x 10% + sub-agent context
    92% x 20% + measured accuracy 50% x 20% + grounding 100% x 20% = 83%.` The weights shown are after
    re-weighting, so they always add up to 100%; a cap or the keyword-routing penalty is spelled out at the

@@ -102,7 +102,8 @@ Return HTTP 200 with the finding object itself (no `result`/`data` envelope):
 - Evidence requires `source_type` (`log`, `metric`, `doc`, `incident`, `code`), a
   human-readable `summary`, and an exact `ref`; link/snippet are optional.
 - `confidence` is a finite number from 0 to 1. The orchestrator does not convert
-  retrieval relevance into a diagnosis probability.
+  retrieval relevance into a diagnosis probability. The answer's own confidence score
+  uses it only as one input (see CONFIDENCE_DEFINITION.md).
 - `latency_ms` is non-negative. The orchestrator replaces it with observed total
   latency so all adapters have comparable timings.
 - Optional lists default to empty. `summary`, `agent`, and required evidence

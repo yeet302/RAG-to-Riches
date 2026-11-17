@@ -6,6 +6,10 @@ question-specific JSON assignments for the selected specialist roles and generat
 a cited answer from their returned evidence. Without Azure, keyword routing and an
 evidence list are used. Planning and answer generation are independent controls.
 
+Every answer also carries a confidence score with the reasons behind it, and incident
+answers can include a likely cause and suggested steps that must cite the collected
+evidence (see [Confidence score and suggested solutions](#confidence-score-and-suggested-solutions)).
+
 ## Documentation
 
 | Guide | Use it for |
@@ -20,7 +24,9 @@ evidence list are used. Planning and answer generation are independent controls.
 
 ## Quick start
 
-From the orchestrator directory in WSL (Python 3.10+):
+To run `main` with all four services (including on Windows), follow the short
+[setup checklist](../SETUP.md) and run `python orchestrator/check_setup.py --deep` first.
+To run only the orchestrator, from the orchestrator directory in WSL (Python 3.10+):
 
 ```bash
 python3 -m venv .venv
@@ -112,6 +118,27 @@ identity; it does not prove that every generated claim is supported.
 
 Retrieved content is data and is never executed. Retrieval confidence does not
 establish a root cause. The API is intended for local development.
+
+## Confidence score and suggested solutions
+
+- **Confidence** (`confidence.py`, called last in `investigate()`): how strongly the
+  evidence the agents returned supports the answer, 0-95%. It is computed in Python
+  from logs-code agreement, docs relevance, each agent's result, the agents' measured
+  accuracy (`confidence_calibration.json`) and citation grounding; the model never
+  writes it. The response carries `confidence`, `confidence_band`,
+  `confidence_reasons` (the first reason is the calculation, e.g. "How 83% is
+  calculated: ...") and `confidence_components`; the UI shows them under "Why N%?".
+  Definition, weights and the team's numbers: [CONFIDENCE_DEFINITION.md](CONFIDENCE_DEFINITION.md).
+- **Suggested solutions** (`answer_synthesis.validate_solutions`): the AI may propose a
+  likely cause (incident questions only), up to 5 steps and a "not ruled out"
+  alternative. Items that don't cite collected evidence are removed, and a command is
+  kept only if it appears word for word in that step's own cited evidence.
+- **Checking it on the planted bugs**: `python compare_confidence.py run --only B-01,B-02
+  --csv results/orchestrator_tests.csv` asks the running app Navya's Round 1 questions
+  and writes each answer with its score and reason; `compare_confidence.py compare`
+  rescores reviewed answers with the old and new definitions.
+- Tests: `tests/test_confidence.py`, `tests/test_solutions.py`,
+  `tests/test_compare_confidence.py`, `tests/test_confidence_navya_cases.py`.
 
 
 ## Keyless model authentication
