@@ -237,6 +237,44 @@ def main():
                 expect(page.locator('.selected-source .snippet')).to_have_text('Controlled excerpt 4')
                 assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
                 checks.append(f'{response_kind}: seven actions rendered without truncation or reordering; recurring groups, optional fields, high risk and hidden source reveal work')
+            edits=fixture()
+            edits['steps']=edits['steps'][:1]
+            edits['evidence']=[dict(source_type='code',summary=f'Configuration evidence {i}',
+                ref=f'config/flags-{i}.yaml:L10',snippet='adFailure: true') for i in range(1,5)]
+            edits['steps'][0]['changes']=[dict(target='adFailure',current_value='true',recommended_value='false',
+                location='config/flags-4.yaml:L10',evidence_excerpt='Set adFailure to false to disable the injected errors.',
+                evidence_refs=['config/flags-4.yaml:L10']),
+                dict(target='service.configuration.retryLimit',current_value=None,recommended_value='3',location=None,
+                evidence_excerpt='Set service.configuration.retryLimit to 3.',evidence_refs=['config/flags-1.yaml:L10'])]
+            for width in [1280,390]:
+                page.set_viewport_size({'width':width,'height':1000 if width>600 else 844})
+                show(edits)
+                comparison=page.get_by_role('group',name='Recommended variable and attribute changes',exact=True)
+                expect(comparison.locator('.value-change')).to_have_count(2)
+                expect(comparison.locator('.value-change-target code').first).to_have_text('adFailure')
+                expect(comparison.locator('.value-before code').first).to_have_text('true')
+                expect(comparison.locator('.value-after code').first).to_have_text('false')
+                expect(comparison.get_by_text('Not confirmed',exact=True)).to_be_visible()
+                expect(comparison.get_by_text('Edit location not confirmed',exact=True)).to_be_visible()
+                expect(comparison.locator('.value-after code').nth(1)).to_have_text('3')
+                comparison.get_by_text('Why this value?',exact=True).first.click()
+                expect(comparison.locator('blockquote').first).to_have_text(edits['steps'][0]['changes'][0]['evidence_excerpt'])
+                assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+                assert not comparison.locator('code').evaluate_all('elements=>elements.filter(element=>element.scrollWidth>element.clientWidth+2).map(element=>element.textContent)')
+                comparison.screenshot(path=str(args.artifacts/f'variable-changes-{width}.png'))
+                comparison.get_by_role('button',name='Show edit location for adFailure',exact=True).click()
+                expect(page.locator('.evidence-row')).to_have_count(4)
+                expect(page.locator('.selected-source .ref')).to_have_text('config/flags-4.yaml:L10')
+                comparison.locator('.solution-sources').first.get_by_role('button',name='Source 4',exact=False).click()
+                expect(page.locator('.selected-source .snippet')).to_have_text('adFailure: true')
+                checks.append(f'Exact variable edits at {width}px: before/after values, explicit unknowns, multiple edits, verbatim support and hidden file/source navigation')
+            long_edits=deepcopy(edits)
+            long_edits['steps'][0]['changes'][0].update(target='nested.attribute_'*30,
+                current_value='old_value_'*40,recommended_value='new_value_'*40,
+                location='config/flags-4.yaml:L10')
+            show(long_edits)
+            assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+            checks.append('Long variable names and literal values wrap within mobile comparison cards')
             page.emulate_media(reduced_motion='reduce')
             show(expanded)
             panel=page.get_by_role('region',name='Suggested fixes',exact=True)

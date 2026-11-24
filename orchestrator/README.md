@@ -259,3 +259,25 @@ saved under `diagnostics/routing-benchmark/`. Reported savings measure routing o
 they are not claims about full live investigation latency. Complex incident controls
 are retained to verify the model is still used when the fast path is ineligible.
 Restart the orchestrator or launcher to load the implementation.
+
+## Exact variable and attribute recommendations
+
+Suggested steps can include `changes`: the exact `target`, `current_value` (or
+null), `recommended_value`, a confirmed code `location` (or null), supporting
+`evidence_refs`, and a verbatim `evidence_excerpt`. The synthesis model is asked
+for these when the retrieved evidence supports a concrete setting edit.
+
+The validator keeps an edit only when a single quoted source contains its exact
+target and recommended literal, with citations limited to its parent step. Name
+and value matching preserves case, string whitespace, and token boundaries.
+Source values require their own supporting quote; unconfirmed values stay null.
+Locations resolve to real cited code references, never model-written file paths.
+These checks establish literal source support, not semantic proof that an edit
+will fix a live system. The prompt also requires the quote to support the remedy
+and forbids treating defaults as observed configuration. Values represent retrieved
+source snapshots, not verified live runtime state. No changes are executed.
+
+Older responses remain valid with an empty changes list. Run
+`python -m pytest tests/test_value_changes.py tests/test_solutions.py` to check
+supported edits, unknown values, fabricated quotes, wrong locations, unrelated
+citations, and backward compatibility without calling a model.

@@ -13,7 +13,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from azure_client import complete_json
-from schemas import AnswerMode, AnswerSynthesis, CopilotResponse, Step, TraceEvent
+from schemas import AnswerMode, AnswerSynthesis, CopilotResponse, Step, TraceEvent, ValueChange
 from settings import Settings
 
 log = logging.getLogger("orchestrator")
@@ -56,6 +56,22 @@ SOLUTIONS - include them only when the evidence supports them:
     risk     "low", "medium", "high", or "other_team"
     kind     "mitigation", "fix", "verify" (checks a hypothesis), or "escalate" (use risk
              "other_team" when the evidence points to another team's component)
+    changes  concrete variable/attribute edits, when supported; otherwise []. For each edit:
+      target: the exact variable, attribute, feature flag or config key from the evidence.
+      recommended_value: an exact literal value supported as a remedy by cited evidence.
+      evidence_excerpt: a verbatim excerpt from ONE cited source that contains the target
+        and recommended value and supports making that change. Do not join unrelated tokens,
+        infer a remedy from a default argument alone, or invent a replacement value.
+      current_value: the value explicitly assigned to that target in retrieved evidence;
+        otherwise null. Defaults, examples, comparisons and fallback arguments do NOT establish
+        its current value. Static source values do NOT prove live runtime configuration.
+      current_value_excerpt: a verbatim excerpt from ONE cited source showing that target's
+        assignment to current_value; otherwise null.
+      evidence_ids: this edit's supporting sources, chosen only from the step's evidence_ids.
+      location_evidence_id: a cited CODE/config source that names the target to edit; otherwise
+        null. The application uses that source's real reference as the file/line location.
+      Prefer explicit edits over vague advice when supported. Never fabricate a value, file,
+      line number, or exact edit when the evidence only supports further investigation.
   If the evidence supports no concrete step, return an empty list.
 - not_ruled_out: for intent "incident" only, one sentence on the main alternative the evidence does
   not exclude, or a source gap that prevents excluding it; otherwise null. Put any evidence IDs it
@@ -74,10 +90,21 @@ Return ONLY a JSON object with these keys (the solution keys may be null or empt
  "evidence_ids": ["E1"],
  "likely_cause": null, "likely_cause_evidence_ids": [],
  "steps": [{"title": "...", "why": "...", "command": null, "expect": null,
-            "risk": "low", "kind": "verify", "evidence_ids": ["E1"]}],
+            "risk": "low", "kind": "verify", "evidence_ids": ["E1"], "changes": []}],
  "not_ruled_out": null, "not_ruled_out_evidence_ids": []}
 Keep the answer focused on the question; use short paragraphs and plain text.
 """
+
+
+class ModelValueChange(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    target: str = Field(min_length=1, max_length=160)
+    current_value: Optional[str] = Field(default=None, min_length=1, max_length=400)
+    recommended_value: str = Field(min_length=1, max_length=400)
+    evidence_excerpt: str = Field(min_length=1, max_length=1200)
+    current_value_excerpt: Optional[str] = Field(default=None, max_length=1200)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=MAX_EVIDENCE)
+    location_evidence_id: Optional[str] = None
 
 
 class ModelStep(BaseModel):
@@ -89,6 +116,7 @@ class ModelStep(BaseModel):
     risk: Literal["low", "medium", "high", "other_team"] = "low"
     kind: Literal["mitigation", "fix", "verify", "escalate"] = "verify"
     evidence_ids: list[str] = Field(default_factory=list, max_length=MAX_EVIDENCE)
+    changes: list[ModelValueChange] = Field(default_factory=list, max_length=6)
 
 
 class ModelAnswer(BaseModel):
@@ -199,8 +227,23 @@ def _normalise(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip().strip("`").strip()).lower()
 
 
+def _literal_present(value: str, text: str) -> bool:
+    """Match exact literals, including case, without borrowing part of another name/value."""
+    return bool(re.search(r"(?<!\w)" + re.escape(value) + r"(?!\w)", text))
+
+
+def _quoted_setting(excerpt: Optional[str], target: str, value: str,
+                    ids: list[str], evidence_text: dict) -> bool:
+    if not excerpt or not _literal_present(target, excerpt) or not _literal_present(value, excerpt):
+        return False
+    # Quotes must come from a single source. Preserve literal casing and whitespace so a
+    # quoted setting cannot be silently rewritten (for example TRUE -> true or "a  b" -> "a b").
+    return any(excerpt in evidence_text.get(identifier, "") for identifier in ids)
+
+
 def validate_solutions(generated: ModelAnswer, references: dict, evidence_text: dict,
-                       diagnosis: bool) -> tuple[Optional[str], list[Step], Optional[str], list[str]]:
+                       diagnosis: bool, *, code_ids: set[str] | None = None
+                       ) -> tuple[Optional[str], list[Step], Optional[str], list[str]]:
     """Keep only solutions grounded in the supplied evidence. Returns (cause, steps, not_ruled_out, notes).
 
     Ungrounded items are dropped individually instead of rejecting the whole answer:
@@ -225,7 +268,7 @@ def validate_solutions(generated: ModelAnswer, references: dict, evidence_text: 
             cause = _clean(generated.likely_cause)
 
     steps: list[Step] = []
-    removed_steps = removed_commands = 0
+    removed_steps = removed_commands = removed_changes = unconfirmed_values = unconfirmed_locations = 0
     for proposal in generated.steps:
         ids = valid_ids(proposal.evidence_ids)
         if not ids:
@@ -239,16 +282,48 @@ def validate_solutions(generated: ModelAnswer, references: dict, evidence_text: 
             if _normalise(command) not in cited_text:
                 command = None
                 removed_commands += 1
+        changes: list[ValueChange] = []
+        for change in proposal.changes:
+            change_ids = [identifier for identifier in valid_ids(change.evidence_ids) if identifier in ids]
+            if not _quoted_setting(change.evidence_excerpt, change.target, change.recommended_value,
+                                   change_ids, evidence_text):
+                removed_changes += 1
+                continue
+            current = change.current_value
+            if current is not None and not _quoted_setting(
+                    change.current_value_excerpt, change.target, current, change_ids, evidence_text):
+                current = None
+                unconfirmed_values += 1
+            location_id = change.location_evidence_id
+            location = None
+            if (location_id in change_ids and location_id in (code_ids or set())
+                    and _literal_present(change.target, evidence_text.get(location_id, ""))):
+                location = references[location_id]
+            elif location_id is not None:
+                unconfirmed_locations += 1
+            changes.append(ValueChange(
+                target=change.target, current_value=current, recommended_value=change.recommended_value,
+                location=location, evidence_excerpt=change.evidence_excerpt,
+                evidence_refs=list(dict.fromkeys(references[identifier] for identifier in change_ids)),
+            ))
         steps.append(Step(
             title=_clean(proposal.title) or proposal.title, why=_clean(proposal.why) or proposal.why,
             command=command, expect=_clean(proposal.expect), risk=proposal.risk, kind=proposal.kind,
             evidence_refs=list(dict.fromkeys(references[i] for i in ids)),
+            changes=changes,
         ))
     if removed_steps:
         notes.append(f"{removed_steps} suggested step(s) were removed because they did not cite the evidence.")
     if removed_commands:
         notes.append(f"{removed_commands} suggested command(s) were removed because the cited sources "
                      "don't contain them.")
+    if removed_changes:
+        notes.append(f"{removed_changes} proposed value change(s) were removed because their exact target, "
+                     "replacement value and quoted support could not be found in the cited sources.")
+    if unconfirmed_values:
+        notes.append(f"{unconfirmed_values} source value(s) could not be confirmed and were left unknown.")
+    if unconfirmed_locations:
+        notes.append(f"{unconfirmed_locations} edit location(s) could not be confirmed from cited code.")
 
     not_ruled_out = None
     if generated.not_ruled_out and diagnosis:
@@ -303,7 +378,8 @@ async def generate_answer(response: CopilotResponse, settings: Settings,
             response.answer = text
             failure_stage = "solutions"
             cause, steps, not_ruled_out, notes = validate_solutions(
-                generated, references, evidence_text, diagnosis=response.kind == "diagnosis")
+                generated, references, evidence_text, diagnosis=response.kind == "diagnosis",
+                code_ids={record["id"] for record in payload["evidence"] if record["source_type"] == "code"})
             response.likely_cause, response.steps, response.not_ruled_out = cause, steps, not_ruled_out
             warnings = (["Answer context was limited; additional evidence remains available below."]
                         if truncated else []) + notes

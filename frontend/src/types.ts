@@ -54,6 +54,15 @@ export interface Evidence {
   agent?: AgentName | null;
 }
 
+export interface ValueChange {
+  target: string;
+  current_value?: string | null;   // retrieved source snapshot, not verified live state
+  recommended_value: string;
+  location?: string | null;
+  evidence_excerpt: string;
+  evidence_refs: string[];
+}
+
 export interface Step {
   title: string;
   why: string;
@@ -63,6 +72,7 @@ export interface Step {
   kind: 'mitigation' | 'fix' | 'verify' | 'escalate';
   link?: string | null;
   evidence_refs: string[];          // sources this step is grounded in
+  changes?: ValueChange[];          // optional for stored responses from earlier versions
 }
 
 export interface TraceEvent {

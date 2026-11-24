@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { api } from '../api';
 import type { Evidence, Step } from '../types';
+import ValueChanges from './ValueChanges';
 
 const RISK: Record<Step['risk'], string> = {
   low: 'Low risk',
@@ -121,6 +122,7 @@ export default function StepList({ steps, question, conversationId, evidence, on
                       <span className={`risk ${step.risk}`}>{RISK[step.risk]}</span>
                     </div>
                     <div className="solution-action-body">
+                      {!!step.changes?.length && <ValueChanges changes={step.changes} evidence={evidence} onSource={onSource} />}
                       <div className="solution-reason"><span className="solution-label">Why this helps</span><p>{step.why}</p></div>
                       {step.command && (
                         <div className="solution-change">
