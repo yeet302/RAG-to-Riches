@@ -108,11 +108,15 @@ python -m pytest -q -m integration tests/integration/test_azure_integration.py
 
 # Live Azure + Foundry agent smoke test (invokes the model; may incur cost)
 python -m pytest -q -m integration_agent tests/integration/test_azure_agent_smoke.py
+
+# Live cart-inject stress eval (requires OTelLogs with inject:cart-items-dropped)
+python stress_eval_cart_injected.py
 ```
 
 - Unit tests are mocked and offline.
 - `integration` tests query the real Azure workspace.
 - `integration_agent` also calls the Foundry model.
+- `stress_eval_cart_injected.py` scores the agent against frontend cart-drop inject logs.
 
 ## Production assumptions
 
