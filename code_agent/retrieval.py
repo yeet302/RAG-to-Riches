@@ -36,12 +36,15 @@ class CodeRetriever:
 
     def _get(self, endpoint, **kwargs):
         params = kwargs.get("params") or {}
+        # Only commit-pinned trees and contents are stable enough to reuse.
+        # Branch resolution, issues and other mutable responses stay uncached.
         immutable = (endpoint.startswith("git/trees/") and re.fullmatch(r"[0-9a-fA-F]{40}", endpoint.rsplit("/", 1)[-1])) or (
             endpoint.startswith("contents/") and re.fullmatch(r"[0-9a-fA-F]{40}", params.get("ref", "")))
         key = (endpoint, tuple(sorted(params.items())))
         if immutable:
             with self._cache_lock:
                 if key in self._immutable_cache:
+                    # Refresh recency, not freshness: this commit cannot change.
                     self._immutable_cache.move_to_end(key)
                     return self._immutable_cache[key]
         url = f"https://api.github.com/repos/{APPROVED_REPOSITORY}/{endpoint}".rstrip(
@@ -54,6 +57,7 @@ class CodeRetriever:
         if immutable:
             with self._cache_lock:
                 self._immutable_cache[key] = result
+                # Bound process memory while sharing verified immutable reads.
                 if len(self._immutable_cache) > 64:
                     self._immutable_cache.popitem(last=False)
         return result
@@ -70,6 +74,8 @@ class CodeRetriever:
         ):
             raise ValueError("Invalid Git ref")
         if re.fullmatch(r"[0-9a-fA-F]{40}", chosen):
+            # Tool calls already receive the investigation's pinned SHA. Their
+            # actual GitHub reads verify it without another commits API request.
             return chosen.lower()
         return self._get("commits/" + chosen)["sha"]
 

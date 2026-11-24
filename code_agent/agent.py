@@ -213,6 +213,8 @@ class CodeAgent:
     def _model_call(self, resource, **kwargs):
         client = self.client
         if hasattr(client, 'with_options'):
+            # Recompute for every model round; a fresh full timeout would let
+            # later rounds exceed the investigation's remaining budget.
             client = client.with_options(timeout=network_timeout(
                 getattr(self.settings, 'request_timeout_seconds', 30)), max_retries=0)
         return getattr(client, resource).create(**kwargs)
@@ -300,6 +302,8 @@ class CodeAgent:
         context = {**context, '_budget': budget}
         phase = "source"
         try:
+            # Bound the async response as well as individual synchronous calls.
+            # wait_for cannot kill a thread; the handlers below signal its budget.
             raw, verified, searched, bundle = await asyncio.wait_for(
                 asyncio.to_thread(self._investigate, question, context),
                 timeout=getattr(self.settings, 'investigation_timeout_seconds', 120))
@@ -357,10 +361,13 @@ class CodeAgent:
                 latency_ms=int((time.perf_counter() - start) * 1000),
             )
         except asyncio.CancelledError:
+            # Stop new worker operations after its current bounded call exits.
             budget.cancelled.set()
             log.warning('request_id=%s stage=%s event=cancelled', budget.request_id, budget.stage)
             raise
         except (CodeDeadlineExceeded, asyncio.TimeoutError) as exc:
+            # Return a stage-specific error before the longer HTTP deadline, and
+            # prevent an expired worker from continuing its model/tool loop.
             budget.cancelled.set()
             stage = getattr(exc, 'stage', budget.stage)
             log.warning('request_id=%s stage=%s event=deadline_exceeded', budget.request_id, stage)

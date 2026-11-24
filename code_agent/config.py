@@ -16,6 +16,7 @@ class Settings:
     repo: str
     agent_name: str
     default_ref: str = ""  # Empty means the repository's current default branch.
+    # Keep the investigation budget below orchestrator's code transport deadline.
     investigation_timeout_seconds: float = 120
     request_timeout_seconds: float = 30
 
