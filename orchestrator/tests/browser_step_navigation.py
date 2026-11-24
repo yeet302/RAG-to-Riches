@@ -1,4 +1,4 @@
-"""Browser-only fixtures verify step review and routing diagrams; no models called."""
+"""Browser-only fixtures verify grouped fixes, source links, feedback and routing; no models called."""
 import argparse
 from copy import deepcopy
 from functools import partial
@@ -19,7 +19,8 @@ def fixture(stage1=None, stage2=None, fast=False):
     roles = stage1 + stage2
     steps = [dict(title=f"Check fixture step {i}", why=f"Reason for fixture step {i}",
                   command=f"echo fixture-{i}", expect=f"Expected fixture result {i}",
-                  risk="low",kind="verify",evidence_refs=["fixture.log:L1"]) for i in range(1,4)]
+                  risk="low",kind=kind,evidence_refs=["fixture.log:L1"])
+             for i,kind in enumerate(["mitigation", "fix", "verify"], 1)]
     return dict(kind="diagnosis",question="Inspect the fixture incident",answer="Controlled browser fixture; no actual agent or remediation was run.",
         confidence=None,confidence_reasons=[],evidence=[dict(agent="logs",source_type="log",summary="Fixture evidence",ref="fixture.log:L1")],
         sources_unavailable=[],steps=steps,agents_used=roles,trace=[],suggestions=[],errors=[],pipeline_status="ok",demo=False,
@@ -42,6 +43,7 @@ class QuietHandler(SimpleHTTPRequestHandler):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifacts",type=Path,default=ROOT/"diagnostics/step-navigation")
+    parser.add_argument("--browser-executable",type=Path,help="Optional existing Chromium executable")
     args=parser.parse_args()
     args.artifacts.mkdir(parents=True,exist_ok=True)
     server=ThreadingHTTPServer(("127.0.0.1",0),partial(QuietHandler,directory=str(ROOT/"frontend/dist")))
@@ -51,11 +53,12 @@ def main():
     started=time.perf_counter()
     try:
         with sync_playwright() as runtime:
-            browser=runtime.chromium.launch(headless=True)
-            page=browser.new_page(viewport={"width":1280,"height":1000})
+            browser=runtime.chromium.launch(headless=True,executable_path=str(args.browser_executable) if args.browser_executable else None)
+            page=browser.new_page(viewport={"width":1280,"height":1000}, permissions=["clipboard-read", "clipboard-write"])
             page.on("pageerror",lambda error: errors.append(str(error)))
             page.route("**/api/health",lambda route:route.fulfill(json=dict(status="ok",mode="remote",agents={},routing_mode="llm",llm_configured=True,answer_mode="evidence",source_note="Browser test fixtures; no live agents.")))
             page.route("**/api/incidents",lambda route:route.fulfill(json=[]))
+            page.route("**/api/suggestions",lambda route:route.fulfill(json=dict(questions=[],source="unavailable")))
             def record_feedback(route):
                 feedback.append(route.request.post_data_json)
                 route.fulfill(json={"recorded":True})
@@ -82,53 +85,61 @@ def main():
                 diagram.screenshot(path=str(args.artifacts / f'routing-scored-{mode}.png'))
                 checks.append(f"{mode}: server-selected modes, routing diagram, and evidence confidence score")
             show(fixture())
-            panel=page.get_by_role("region",name="What to try",exact=True)
-            previous=panel.get_by_role("button",name="Previous step",exact=True)
-            next_step=panel.get_by_role("button",name="Next step",exact=True)
-            expect(previous).to_be_disabled()
-            expect(panel.get_by_text("Step 1 of 3",exact=True)).to_be_visible()
-            next_step.click()
-            expect(panel.get_by_text("Reason for fixture step 2",exact=False)).to_be_visible()
-            previous.click()
-            expect(panel.get_by_text("Reason for fixture step 1",exact=False)).to_be_visible()
+            panel=page.get_by_role("region",name="Suggested fixes",exact=True)
+            actions=panel.locator("li.solution-action")
+            expect(actions).to_have_count(3)
+            for index in range(3):
+                expect(actions.nth(index).locator('.solution-number')).to_have_text(f'#{index+1}')
+                expect(actions.nth(index).get_by_text(f'Reason for fixture step {index+1}',exact=True)).to_be_visible()
+            assert panel.locator('.solution-group h3').all_text_contents()==['Stabilize the service','Apply the fix','Check the result']
+            assert panel.evaluate("element => Boolean(element.compareDocumentPosition(document.querySelector('.card.diagnosis')) & Node.DOCUMENT_POSITION_FOLLOWING)")
+            page.wait_for_timeout(600)
+            assert panel.bounding_box()['y'] >= 0
+            assert panel.bounding_box()['y'] < 400
+            page.screenshot(path=str(args.artifacts/'action-plan-first-view-desktop.png'))
+            panel.get_by_role('button',name='Go to action 3:',exact=False).click()
+            expect(actions.nth(2)).to_have_class('solution-action active')
+            panel.get_by_role('button',name='Go to action 1:',exact=False).click()
+            expect(actions.nth(0)).to_have_class('solution-action active')
             assert not feedback
-            checks.append("Previous/Next review without recording outcomes; first boundary disabled")
+            checks.append('All numbered actions visible above the explanation, grouped in original order; jump navigation sends no feedback')
+            panel.get_by_role('button',name='Copy command for action 1',exact=True).click()
+            expect(panel.get_by_role('button',name='Copy command for action 1',exact=True)).to_have_text('✓ Copied')
+            assert page.evaluate('navigator.clipboard.readText()')=='echo fixture-1'
+            checks.append('Copy command writes the exact suggested command to the clipboard')
             with page.expect_response(lambda response:response.url.endswith("/api/feedback")):
-                panel.get_by_role("button",name="No, next step",exact=True).click()
-            expect(panel.get_by_text("Step 2 of 3",exact=True)).to_be_visible()
-            previous.click()
-            expect(panel.locator("li.step").nth(0)).to_have_class("step active failed")
+                actions.nth(0).get_by_role("button",name="Didn't work",exact=True).click()
+            expect(actions.nth(1)).to_have_class('solution-action active')
+            panel.get_by_role('button',name='Go to action 1:',exact=False).click()
+            expect(actions.nth(0)).to_have_class('solution-action active failed')
             assert len(feedback)==1 and feedback[0]["step_index"]==0 and feedback[0]["worked"] is False
-            next_step.click()
-            next_step.click()
-            expect(next_step).to_be_disabled()
             with page.expect_response(lambda response:response.url.endswith("/api/feedback")):
-                panel.get_by_role("button",name="Yes",exact=True).click()
-            expect(panel.get_by_text("A step was marked as worked.",exact=False)).to_be_visible()
-            previous.click()
-            expect(panel.get_by_text("Step 2 of 3",exact=True)).to_be_visible()
-            expect(panel.locator("li.step").nth(2)).to_have_class("step worked")
-            assert len(feedback)==2
-            checks.append("Recorded failures and success survive backward navigation; last boundary disabled")
+                actions.nth(2).get_by_role("button",name="✓ Worked",exact=True).click()
+            expect(panel.get_by_text('You marked an action as worked.',exact=False)).to_be_visible()
+            panel.get_by_role('button',name='Go to action 2:',exact=False).click()
+            expect(actions.nth(2)).to_have_class('solution-action worked')
+            expect(panel.get_by_text('2 of 3 reviewed',exact=True)).to_be_visible()
+            assert len(feedback)==2 and feedback[1]['step_index']==2 and feedback[1]['worked'] is True
+            checks.append('Feedback retains original indices and outcomes during navigation, with an accurate review count')
             diagram=page.get_by_role("region",name="Agent routing",exact=True)
             assert diagram.get_by_role("group",name="Stage 1: parallel",exact=True).locator(".route-agent").count()==2
             assert diagram.get_by_role("group",name="Stage 2: one agent",exact=True).locator(".route-agent").count()==1
             expect(diagram.get_by_text("Stage 2 receives Stage 1 findings before it starts.",exact=True)).to_be_visible()
             page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
             diagram.screenshot(path=str(args.artifacts/"routing-staged-desktop.png"))
-            panel.screenshot(path=str(args.artifacts/"previous-step-desktop.png"))
+            panel.screenshot(path=str(args.artifacts/"action-plan-desktop.png"))
             checks.append("Routing diagram preserves parallel Stage 1 and dependent Stage 2")
             show(fixture())
-            panel=page.get_by_role("region",name="What to try",exact=True)
+            panel=page.get_by_role("region",name="Suggested fixes",exact=True)
             for index in range(3):
                 with page.expect_response(lambda response:response.url.endswith("/api/feedback")):
-                    panel.get_by_role("button",name="No, next step" if index<2 else "No",exact=True).click()
-            expect(panel.get_by_text("All steps were marked as not working.",exact=False)).to_be_visible()
-            panel.get_by_role("button",name="Previous step",exact=True).click()
-            expect(panel.get_by_text("Reason for fixture step 2",exact=False)).to_be_visible()
-            expect(panel.get_by_text("All steps were marked as not working.",exact=False)).to_be_visible()
+                    panel.locator('li.solution-action').nth(index).get_by_role("button",name="Didn't work",exact=True).click()
+            expect(panel.get_by_text('None of these actions worked.',exact=False)).to_be_visible()
+            panel.get_by_role('button',name='Go to action 1:',exact=False).click()
+            expect(panel.get_by_text('Reason for fixture step 1',exact=True)).to_be_visible()
+            expect(panel.get_by_text('None of these actions worked.',exact=False)).to_be_visible()
             assert len(feedback)==5
-            checks.append("Previous works after all steps fail and retains outcome history")
+            checks.append('All-failed state retains history and every action remains reviewable')
             show(fixture(["logs","docs","code"],[]))
             diagram=page.get_by_role("region",name="Agent routing",exact=True)
             assert diagram.get_by_role("group",name="Stage 1: parallel",exact=True).locator(".route-agent").count()==3
@@ -138,9 +149,15 @@ def main():
             checks.append("Three truly parallel agents appear together in Stage 1")
             page.set_viewport_size({"width":390,"height":844})
             diagram.screenshot(path=str(args.artifacts/"routing-parallel-mobile.png"))
-            page.get_by_role("region",name="What to try",exact=True).screenshot(path=str(args.artifacts/"previous-step-mobile.png"))
+            page.get_by_role("region",name="Suggested fixes",exact=True).screenshot(path=str(args.artifacts/"action-plan-mobile.png"))
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
             checks.append("Mobile routing and navigation fit viewport")
+            show(fixture())
+            page.wait_for_timeout(600)
+            panel=page.get_by_role('region',name='Suggested fixes',exact=True)
+            assert panel.bounding_box()['y'] >= page.locator('.topbar').bounding_box()['height']
+            assert panel.bounding_box()['y'] < 300
+            page.screenshot(path=str(args.artifacts/'action-plan-first-view-mobile.png'))
             show(fixture(["logs"],[],True))
             diagram=page.get_by_role("region",name="Agent routing",exact=True)
             expect(diagram.get_by_text("Fast path",exact=True)).to_be_visible()
@@ -197,6 +214,52 @@ def main():
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
                 page.locator(".card.diagnosis").screenshot(path=str(args.artifacts/f"compact-citations-{width}.png"))
                 checks.append(f"Numbered citations reveal original hidden sources and preserve literal labels at {width}px")
+            expanded=fixture()
+            expanded['evidence']=[dict(source_type='code',summary=f'Controlled evidence {i}',ref=f'src/example-{i}.py:L1',snippet=f'Controlled excerpt {i}') for i in range(1,5)]
+            expanded['steps']=[dict(title=f'Action {i+1}',why=f'Evidence supports action {i+1}',
+                command='echo exact-command' if i==0 else None,expect=None if i==1 else f'Expected result {i+1}',
+                risk='high' if i==0 else 'low',kind=kind,evidence_refs=['src/example-4.py:L1'])
+                for i,kind in enumerate(['verify','fix','fix','mitigation','fix','escalate','verify'])]
+            for response_kind in ['answer','diagnosis']:
+                expanded['kind']=response_kind
+                show(expanded)
+                panel=page.get_by_role('region',name='Suggested fixes',exact=True)
+                expect(panel.locator('li.solution-action')).to_have_count(7)
+                assert panel.locator('.solution-number').all_text_contents()==[f'#{i}' for i in range(1,8)]
+                assert panel.locator('.solution-group h3').all_text_contents()==['Check the result','Apply the fix','Stabilize the service','Apply the fix','Bring in the right team','Check the result']
+                expect(panel.get_by_text('High risk',exact=True)).to_be_visible()
+                expect(panel.locator('.solution-change')).to_have_count(1)
+                expect(panel.locator('.solution-expect')).to_have_count(6)
+                expect(page.locator('.evidence-row')).to_have_count(3)
+                panel.locator('.solution-sources').first.get_by_role('button',name='Source 4',exact=False).click()
+                expect(page.locator('.evidence-row')).to_have_count(4)
+                expect(page.locator('.selected-source .ref')).to_have_text('src/example-4.py:L1')
+                expect(page.locator('.selected-source .snippet')).to_have_text('Controlled excerpt 4')
+                assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+                checks.append(f'{response_kind}: seven actions rendered without truncation or reordering; recurring groups, optional fields, high risk and hidden source reveal work')
+            page.emulate_media(reduced_motion='reduce')
+            show(expanded)
+            panel=page.get_by_role('region',name='Suggested fixes',exact=True)
+            assert panel.evaluate("element=>getComputedStyle(element).animationName")=='none'
+            panel.get_by_role('button',name='Go to action 7:',exact=False).click()
+            expect(panel.locator('li.solution-action').nth(6)).to_have_class('solution-action active')
+            assert page.evaluate('document.activeElement.classList.contains("solution-action")')
+            checks.append('Reduced-motion preference disables entry effects and navigation focuses the selected action')
+            page.evaluate("Object.defineProperty(navigator,'clipboard',{value:{writeText:()=>Promise.reject(new Error('Clipboard denied'))},configurable:true})")
+            panel.get_by_role('button',name='Copy command for action 1',exact=True).click()
+            expect(panel.get_by_text('Copy unavailable.',exact=False)).to_be_visible()
+            checks.append('Denied clipboard access displays a manual-copy fallback')
+            page.unroute('**/api/feedback')
+            page.route('**/api/feedback',lambda route:route.fulfill(status=503,json={'detail':'Controlled feedback failure'}))
+            panel.locator('li.solution-action').first.get_by_role('button',name='✓ Worked',exact=True).click()
+            expect(panel.get_by_text('Your review is shown on this page,',exact=False)).to_be_visible()
+            checks.append('Failed feedback save is visible while the local review is retained')
+            empty=fixture()
+            empty['steps']=[]
+            show(empty)
+            expect(page.get_by_role('region',name='Suggested fixes',exact=True)).to_have_count(0)
+            expect(page.locator('.cited-answer')).to_be_visible()
+            checks.append('Responses without grounded steps keep the answer visible without inventing fixes')
             assert not errors,errors
             browser.close()
     finally:

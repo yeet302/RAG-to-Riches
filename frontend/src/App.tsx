@@ -40,7 +40,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const latest = messages[messages.length - 1];
+    const plan = latest?.role === 'assistant' && latest.status === 'done' && latest.response.steps.length > 0
+      ? document.querySelector('.thread > .msg.assistant:last-child .solutions-plan') : null;
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+    if (plan) plan.scrollIntoView({ behavior, block: 'start' });
+    else bottomRef.current?.scrollIntoView({ behavior, block: 'end' });
   }, [messages]);
 
   const ask = useCallback(
