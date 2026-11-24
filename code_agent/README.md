@@ -83,6 +83,27 @@ orchestrator/.venv/bin/python -m uvicorn code_agent.service:app --env-file code_
 ```
 
 Stop the existing process in its own terminal with Ctrl+C before restarting.
+
+## Investigation deadlines and timings
+
+Use `CODE_AGENT_TIMEOUT_SECONDS=180` in orchestrator/.env. The code service uses
+`CODE_INVESTIGATION_TIMEOUT_SECONDS=120` and `CODE_REQUEST_TIMEOUT_SECONDS=30`
+in code_agent/.env (both default to these values). The outer deadline allows the
+specialist to complete its bounded, multi-round investigation and return an error
+before the transport gives up. Restart both services after changing their settings.
+
+Every investigation shares one deadline across model and source calls. Network
+timeouts shrink to the remaining budget; automatic SDK retries are disabled.
+On cancellation or expiry, the worker stops before starting another operation;
+an in-flight synchronous network call exits according to its bounded timeout.
+Deadline errors include the last stage and request ID for diagnosis. Stage logs
+include elapsed milliseconds, without questions, credentials, or source contents.
+
+GitHub trees and file contents at immutable commits are cached with a 64-entry
+limit. Already pinned SHAs avoid redundant commit-resolution HTTP calls. Mutable
+branch names are still resolved afresh for each investigation. Source verification
+continues to require actual lines read at the pinned commit.
+
 The regression suite runs from the repository root:
 
 ```bash

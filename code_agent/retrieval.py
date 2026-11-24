@@ -6,9 +6,12 @@ All GitHub code references are resolved to immutable commit SHAs for attribution
 import base64
 import re
 import requests
+from collections import OrderedDict
+import threading
 from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from .config import Settings, APPROVED_REPOSITORY
+from .budget import azure_options, network_timeout, perform
 
 
 class CodeRetriever:
@@ -16,6 +19,8 @@ class CodeRetriever:
         if settings.repo != APPROVED_REPOSITORY:
             raise ValueError("Repository not approved")
         self.settings = settings
+        self._immutable_cache = OrderedDict()
+        self._cache_lock = threading.Lock()
         self.session = requests.Session()
         self.session.headers.update(
             {
@@ -30,12 +35,28 @@ class CodeRetriever:
         )
 
     def _get(self, endpoint, **kwargs):
+        params = kwargs.get("params") or {}
+        immutable = (endpoint.startswith("git/trees/") and re.fullmatch(r"[0-9a-fA-F]{40}", endpoint.rsplit("/", 1)[-1])) or (
+            endpoint.startswith("contents/") and re.fullmatch(r"[0-9a-fA-F]{40}", params.get("ref", "")))
+        key = (endpoint, tuple(sorted(params.items())))
+        if immutable:
+            with self._cache_lock:
+                if key in self._immutable_cache:
+                    self._immutable_cache.move_to_end(key)
+                    return self._immutable_cache[key]
         url = f"https://api.github.com/repos/{APPROVED_REPOSITORY}/{endpoint}".rstrip(
             "/"
         )
-        r = self.session.get(url, timeout=30, **kwargs)
+        r = perform("github.request", self.session.get, url,
+                    timeout=network_timeout(self.settings.request_timeout_seconds), **kwargs)
         r.raise_for_status()
-        return r.json()
+        result = r.json()
+        if immutable:
+            with self._cache_lock:
+                self._immutable_cache[key] = result
+                if len(self._immutable_cache) > 64:
+                    self._immutable_cache.popitem(last=False)
+        return result
 
     def resolve_commit(self, ref=None):
         """Resolve branch, tag, or SHA to an immutable commit for a consistent investigation."""
@@ -48,6 +69,8 @@ class CodeRetriever:
             or chosen.startswith(("/", "-"))
         ):
             raise ValueError("Invalid Git ref")
+        if re.fullmatch(r"[0-9a-fA-F]{40}", chosen):
+            return chosen.lower()
         return self._get("commits/" + chosen)["sha"]
 
     def list_repository_files(self, path_prefix="", limit=150, ref=None):
@@ -81,6 +104,7 @@ class CodeRetriever:
             top=top,
             filter=f"commit eq '{sha}'",
             select=["path", "start_line", "end_line", "content", "commit"],
+            **azure_options(self.settings.request_timeout_seconds),
         )
         return [
             {
