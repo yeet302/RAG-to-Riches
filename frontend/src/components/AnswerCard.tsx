@@ -16,6 +16,8 @@ export default function AnswerCard({ response: r, onAsk, conversationId }: Props
   const [selectedSource, setSelectedSource] = useState<{ ref: string } | null>(null);
   return (
     <>
+      {r.steps.length > 0 && <StepList steps={r.steps} question={r.question} conversationId={conversationId}
+        evidence={r.evidence} onSource={(ref) => setSelectedSource({ ref })} />}
       <section className="card answer">
         <div className="diag-head">
           <div>
@@ -39,7 +41,6 @@ export default function AnswerCard({ response: r, onAsk, conversationId }: Props
           </div>
         )}
       </section>
-      {r.steps.length > 0 && <StepList steps={r.steps} question={r.question} conversationId={conversationId} />}
     </>
   );
 }

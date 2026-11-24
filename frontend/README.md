@@ -39,12 +39,22 @@ To build the frontend, run npm run build in this directory. After restarting,
 the orchestrator can serve that build directly at http://127.0.0.1:8000.
 
 
-## Step review and routing display
+## Suggested fixes and routing display
 
-The What to try panel has Previous step and Next step buttons for reviewing the
-source-backed suggestions. Navigation does not submit feedback or change recorded
-outcomes. Yes/No remains a separate action; recorded results are retained when
-moving backward, including after success or after all steps fail.
+The Suggested fixes action plan appears before the answer and sources, and new
+results scroll to it. All source-backed actions are expanded and numbered #1
+through the number returned by the backend. Consecutive mitigation, fix,
+verification, and escalation actions form labeled groups. The original order and
+feedback indices are preserved, including when a group appears again later.
+
+Each action highlights its change, risk, supporting sources, any source-backed
+command, and the expected result when provided. Copy command copies the exact text
+without executing it; denied clipboard access shows a manual-copy message.
+Source buttons reveal and focus the corresponding evidence, including hidden
+sources. Numbered jump buttons select an action without recording feedback.
+Worked / Didn't work records the outcome separately; reviews stay visible while
+navigating, including after success or after every action fails. Entry and hover
+effects respect reduced-motion preferences. The layout adapts to mobile screens.
 
 The performance panel shows an Agent routing diagram from the response's actual
 stage assignments. Agents within one stage are grouped as parallel; Stage 2 is
@@ -59,8 +69,9 @@ cd orchestrator
 .venv/bin/python tests/browser_step_navigation.py
 ```
 
-This uses controlled API fixtures, checks navigation/outcome preservation and
-staged/parallel/single-agent layouts, and saves desktop/mobile screenshots under
+This uses controlled API fixtures, checks grouping, ordering, copying, source
+navigation, outcomes, reduced motion, and staged/parallel/single-agent layouts.
+It saves desktop/mobile screenshots under
 `diagnostics/step-navigation/`. It makes no model calls or real feedback updates.
 
 
@@ -90,8 +101,8 @@ results. Completed investigation responses and reviews persist in the backend
 SQLite file, normally orchestrator/results/accuracy.sqlite3; ACCURACY_DB_PATH can
 override its location. Restarting the server preserves that file. The tab shows
 the latest 100 runs and Download CSV exports all stored runs. Exports are separate
-downloaded files. Step Yes/No feedback is currently in server memory and is lost
-on restart; use the saved Accuracy review for a durable fix outcome.
+downloaded files. Step Worked / Didn't work feedback is currently in server memory
+and is lost on restart; use the saved Accuracy review for a durable fix outcome.
 
 ### Live investigation progress
 
