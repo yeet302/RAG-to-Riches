@@ -53,9 +53,7 @@ class Settings:
             APPROVED_REPOSITORY,
             os.getenv("FOUNDRY_CODE_AGENT_NAME", "rag-to-riches-code-agent"),
             os.getenv("CODE_REF", "").strip(),
-<<<<<<< HEAD
+            os.getenv("CODE_REF", "").strip(),
             float(os.getenv("CODE_INVESTIGATION_TIMEOUT_SECONDS", "120")),
             float(os.getenv("CODE_REQUEST_TIMEOUT_SECONDS", "30")),
-=======
->>>>>>> e6b048e (Redirecting code agent to source from test-Opentelemetry branch)
         )
