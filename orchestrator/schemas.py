@@ -22,6 +22,16 @@ if _REPO_ROOT not in sys.path:
 from agent_contracts import AgentName, SourceType, Evidence, AgentFinding, AgentRequest, PipelineError
 
 
+class ValueChange(BaseModel):
+    """A proposed setting edit supported by quoted evidence, never an applied change."""
+    target: str
+    current_value: Optional[str] = None   # retrieved source value, not a live-state assertion
+    recommended_value: str
+    location: Optional[str] = None       # exact code/config evidence reference when available
+    evidence_excerpt: str
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
 class Step(BaseModel):
     title: str
     why: str                                      # rationale, shown next to the step
@@ -31,6 +41,7 @@ class Step(BaseModel):
     kind: Literal["mitigation", "fix", "verify", "escalate"] = "mitigation"
     link: Optional[str] = None
     evidence_refs: list[str] = Field(default_factory=list)   # sources this step is grounded in
+    changes: list[ValueChange] = Field(default_factory=list)
 
 
 class TraceEvent(BaseModel):
