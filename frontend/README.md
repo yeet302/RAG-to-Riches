@@ -56,6 +56,14 @@ Worked / Didn't work records the outcome separately; reviews stay visible while
 navigating, including after success or after every action fails. Entry and hover
 effects respect reduced-motion preferences. The layout adapts to mobile screens.
 
+When the investigation supports a precise setting edit, an action also shows a
+What to change comparison: the variable/attribute, its value in the retrieved
+source, the recommended replacement, and the confirmed file/line location when
+available. Unknown source values and locations are labeled Not confirmed. The
+Why this value? disclosure shows the exact supporting quote and source links.
+Values are source snapshots, not claims about the live runtime. Older saved
+responses without structured changes continue to show their existing steps.
+
 The performance panel shows an Agent routing diagram from the response's actual
 stage assignments. Agents within one stage are grouped as parallel; Stage 2 is
 shown after Stage 1 only when the plan includes it. Nodes show measured durations,
