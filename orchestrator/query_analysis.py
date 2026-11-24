@@ -4,13 +4,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from agents import TASKS
 from azure_client import complete_json, completion_url
-from router import classify, fast_route
+from router import RoutePlan, classify, fast_route, matched_words, question_terms
 from schemas import AgentAssignment, QueryAnalysis, QueryIntent, RoutingMode
 from settings import Settings
 
@@ -88,14 +89,7 @@ async def analyze_question(question: str, settings: Settings,
     quick_plan = (fast_route(question) if selected == "llm" and mode is None
                   and settings.routing_fast_path and settings.llm_configured else None)
     fallback = quick_plan or classify(question)
-    result = QueryAnalysis(
-        source="keyword", fast_path=quick_plan is not None,
-        intent=fallback.intent, summary=question, reason=fallback.reason,
-        stage1=fallback.stage1, stage2=fallback.stage2,
-        assignments=[AgentAssignment(agent=name, stage=stage, question=question, task=TASKS[name])
-                     for stage, names in ((1, fallback.stage1), (2, fallback.stage2))
-                     for name in names],
-    )
+    result = keyword_analysis(question, fallback, fast_path=quick_plan is not None)
     if selected == "keyword" or quick_plan is not None:
         return result
     if not settings.llm_configured:
@@ -103,6 +97,7 @@ async def analyze_question(question: str, settings: Settings,
             "source": "keyword_fallback",
             "warning": "Azure planning is not configured; keyword routing was used.",
         })
+    started = time.perf_counter()
     try:
         finding = await asyncio.wait_for(
             _model_analysis(question, settings, transport),
@@ -116,8 +111,60 @@ async def analyze_question(question: str, settings: Settings,
         )
     except Exception as exc:
         # Never expose credentials, URLs, provider bodies, or raw exception messages.
-        log.warning("query_analysis_failure_type=%s", type(exc).__name__)
+        elapsed = time.perf_counter() - started
+        log.warning("query_analysis_failure_type=%s elapsed_s=%.1f limit_s=%g",
+                    type(exc).__name__, elapsed, settings.llm_timeout_seconds)
         return result.model_copy(update={
-            "source": "keyword_fallback",
-            "warning": "Azure planning failed or timed out; keyword routing was used.",
-        })
+            "source": "keyword_fallback", "warning": fallback_warning(exc, settings)})
+
+
+def fallback_warning(exc: Exception, settings: Settings) -> str:
+    """Say which failure happened, without provider bodies, URLs or secrets."""
+    if isinstance(exc, (asyncio.TimeoutError, httpx.TimeoutException)):
+        return (f"Azure planning did not finish within LLM_TIMEOUT_SECONDS={settings.llm_timeout_seconds:g} s, "
+                "so keyword routing was used with the question's own terms.")
+    if isinstance(exc, httpx.HTTPStatusError):
+        return (f"Azure planning returned HTTP {exc.response.status_code}, "
+                "so keyword routing was used with the question's own terms.")
+    return (f"Azure planning failed ({type(exc).__name__}), "
+            "so keyword routing was used with the question's own terms.")
+
+
+def keyword_analysis(question: str, plan: RoutePlan, *, fast_path: bool = False) -> QueryAnalysis:
+    """A plan without the model: classify()'s roles, with assignments built from the question's terms."""
+    terms = question_terms(question)
+    matched = matched_words(question)
+    reason = plan.reason
+    if matched:
+        reason += " Routing words: " + ", ".join(matched) + "."
+    if terms:
+        reason += " Search terms from the question: " + ", ".join(terms) + "."
+    return QueryAnalysis(
+        source="keyword", fast_path=fast_path, intent=plan.intent, summary=question,
+        reason=reason, stage1=plan.stage1, stage2=plan.stage2,
+        assignments=[keyword_assignment(name, stage, question, terms)
+                     for stage, names in ((1, plan.stage1), (2, plan.stage2)) for name in names],
+    )
+
+
+def keyword_assignment(agent: str, stage: int, question: str, terms: list[str]) -> AgentAssignment:
+    """The user's question plus a task for one agent that names the terms the user typed.
+
+    The question stays verbatim: local search and the agents' own query building read it, and
+    explicit lookups must not be reworded. The task tells each agent what to look for.
+    """
+    if not terms:
+        return AgentAssignment(agent=agent, stage=stage, question=question, task=TASKS[agent])
+    services = [t for t in terms if t.lower().endswith("service")]
+    focus = ", ".join([t for t in terms if t not in services] or terms)
+    scope = f" in the {services[0]}" if services else ""
+    if agent == "logs":
+        task = (f"Search logs and traces{scope} for {focus}. Report the exact error messages, status "
+                "codes, counts, and first and last timestamps of matching events. Cite exact sources.")
+    elif agent == "docs":
+        task = (f"Search documentation and runbooks for {focus}{scope}: documented behavior, "
+                "configuration, feature flags, and known causes or fixes. Cite exact sources.")
+    else:
+        task = (f"Using the earlier evidence, locate the code paths and configuration{scope} that handle "
+                f"{focus}, and anything that could cause what the question describes. Cite exact files and lines.")
+    return AgentAssignment(agent=agent, stage=stage, question=question, task=task[:2000])

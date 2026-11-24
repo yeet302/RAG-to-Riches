@@ -1,0 +1,77 @@
+{
+  "_comment": "Known Ad Service incidents: the planted bugs documented in src/flagd/demo.flagd.json (yeet302/RAG-to-Riches @ 4a70112) and the team's planted-bug tests. The home page lists these; live status comes from Log Analytics (each bug logs its own inject:* tag). Edit this file to add or change incidents.",
+  "incidents": [
+    {
+      "id": "B-01",
+      "title": "GetAds requests fail with UNAVAILABLE",
+      "severity": "SEV2",
+      "service": "ad",
+      "flag": "adFailure",
+      "tag": "inject:ads-unavailable",
+      "symptom": "GetAds returns gRPC UNAVAILABLE, so ads fail to load and the frontend proxy returns HTTP 500.",
+      "question": "Why are GetAds requests failing with UNAVAILABLE errors in the Ad Service?",
+      "documented_in": [
+        {"label": "Flag definition (demo.flagd.json)", "url": "https://github.com/yeet302/RAG-to-Riches/blob/4a701124503f86431f52a000c01d2d73322d39e0/src/flagd/demo.flagd.json"},
+        {"label": "OpenTelemetry Demo feature flags", "url": "https://opentelemetry.io/docs/demo/feature-flags/"},
+        {"label": "Planted bug test", "url": "https://github.com/yeet302/RAG-to-Riches/blob/main/docs_agent/accuracy_tests/261109-Planted%20Bug%20Test.md"}
+      ]
+    },
+    {
+      "id": "B-02",
+      "title": "Targeted ad requests fail",
+      "severity": "SEV3",
+      "service": "ad",
+      "flag": "adTargetedFailure",
+      "tag": "inject:ads-targeted",
+      "symptom": "GetAds requests with context keys (for example binoculars or travel) fail with UNAVAILABLE, while untargeted ads still load.",
+      "question": "Why are targeted ad requests failing in the Ad Service, especially requests for binoculars?",
+      "documented_in": [
+        {"label": "Flag definition (demo.flagd.json)", "url": "https://github.com/yeet302/RAG-to-Riches/blob/4a701124503f86431f52a000c01d2d73322d39e0/src/flagd/demo.flagd.json"},
+        {"label": "Planted bug test", "url": "https://github.com/yeet302/RAG-to-Riches/blob/main/docs_agent/accuracy_tests/261109-Planted%20Bug%20Test.md"}
+      ]
+    },
+    {
+      "id": "B-03",
+      "title": "High CPU in the Ad Service",
+      "severity": "SEV2",
+      "service": "ad",
+      "flag": "adHighCpu",
+      "tag": "inject:ads-cpu",
+      "symptom": "Extra CPU load runs on every GetAds request while the flag is on, raising CPU use and ad latency.",
+      "question": "What could cause unusually high CPU usage in the Ad Service?",
+      "documented_in": [
+        {"label": "Flag definition (demo.flagd.json)", "url": "https://github.com/yeet302/RAG-to-Riches/blob/4a701124503f86431f52a000c01d2d73322d39e0/src/flagd/demo.flagd.json"},
+        {"label": "OpenTelemetry Demo feature flags", "url": "https://opentelemetry.io/docs/demo/feature-flags/"},
+        {"label": "Planted bug test", "url": "https://github.com/yeet302/RAG-to-Riches/blob/main/docs_agent/accuracy_tests/261109-Planted%20Bug%20Test.md"}
+      ]
+    },
+    {
+      "id": "B-04",
+      "title": "Ad Service returns empty ad responses",
+      "severity": "SEV3",
+      "service": "ad",
+      "flag": "adEmptyResponse",
+      "tag": "inject:ads-empty",
+      "symptom": "GetAds succeeds but returns an empty AdResponse, so no ads are shown and no request fails.",
+      "question": "Why is the Ad Service returning an empty AdResponse instead of advertisements?",
+      "documented_in": [
+        {"label": "Flag definition (demo.flagd.json)", "url": "https://github.com/yeet302/RAG-to-Riches/blob/4a701124503f86431f52a000c01d2d73322d39e0/src/flagd/demo.flagd.json"},
+        {"label": "Planted bug test", "url": "https://github.com/yeet302/RAG-to-Riches/blob/main/docs_agent/accuracy_tests/261109-Planted%20Bug%20Test.md"}
+      ]
+    },
+    {
+      "id": "B-05",
+      "title": "Long pauses during GetAds calls",
+      "severity": "SEV3",
+      "service": "ad",
+      "flag": "adManualGc",
+      "tag": "inject:ads-gc",
+      "symptom": "GetAds triggers full manual garbage collections, so some ad requests pause for a long time.",
+      "question": "Why does the Ad Service have occasional long pauses during GetAds calls?",
+      "documented_in": [
+        {"label": "Flag definition (demo.flagd.json)", "url": "https://github.com/yeet302/RAG-to-Riches/blob/4a701124503f86431f52a000c01d2d73322d39e0/src/flagd/demo.flagd.json"},
+        {"label": "OpenTelemetry Demo feature flags", "url": "https://opentelemetry.io/docs/demo/feature-flags/"}
+      ]
+    }
+  ]
+}

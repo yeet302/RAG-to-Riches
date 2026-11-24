@@ -39,7 +39,9 @@ class Settings:
     llm_auth_mode: str = "api_key"
     llm_api_style: str = "openai_v1"
     llm_api_version: str = ""
-    llm_timeout_seconds: float = 10.0
+    # Planning deadline. 10 s was too short for reasoning deployments with Entra sign-in: planning
+    # timed out on every question and fell back to keyword routing (routing step = exactly 10 s).
+    llm_timeout_seconds: float = 30.0
     answer_mode: str = "auto"
     synthesis_timeout_seconds: float = 30.0
 
@@ -115,7 +117,7 @@ class Settings:
             llm_auth_mode=os.getenv("AZURE_AI_AUTH_MODE", "api_key").lower(),
             llm_api_style=os.getenv("AZURE_AI_API_STYLE", "openai_v1").lower(),
             llm_api_version=os.getenv("AZURE_AI_API_VERSION", "").strip(),
-            llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "10")),
+            llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "30")),
             timeout_seconds=float(os.getenv("AGENT_TIMEOUT_SECONDS", "20")),
             agent_timeouts={name: float(os.environ[f"{name.upper()}_AGENT_TIMEOUT_SECONDS"])
                             for name in NAMES if os.getenv(f"{name.upper()}_AGENT_TIMEOUT_SECONDS")},

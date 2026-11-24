@@ -99,3 +99,15 @@ def test_this_repository_has_no_conflict_markers():
     report = cs.Report()
     cs.check_conflict_markers(report)
     assert not report.failed, report.lines
+
+
+def test_conflict_markers_are_found_inside_another_repository(tmp_path):
+    """Windows case: the temp folder sits inside another git repository (for example a home folder under git)."""
+    import subprocess
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    folder = tmp_path / "Temp" / "case"
+    folder.mkdir(parents=True)
+    (folder / "agent.py").write_text("x = 1\n<<<<<<< HEAD\ny = 2\n=======\ny = 3\n>>>>>>> main\n")
+    report = cs.Report()
+    cs.check_conflict_markers(report, folder)
+    assert report.failed and "agent.py:2" in report.lines[0][1]

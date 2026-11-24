@@ -5,7 +5,8 @@ Run:  uvicorn main:app --reload --port 8000     (from the orchestrator/ folder)
 
 Endpoints
   GET  /api/health
-  GET  /api/incidents          incidents for the user's team (home screen)
+  GET  /api/incidents          known incidents (incidents_catalog.json) with live status from the logs
+  GET  /api/agents/status      each agent: ready / degraded / offline, from a health check + its last run
   POST /api/ask                {question, incident_id?, conversation_id?} -> CopilotResponse
   POST /api/feedback           {question, step_index, worked}  ("Did this work?")
   GET  /api/route?q=...        just the routing plan, for debugging
@@ -31,7 +32,9 @@ from orchestrator import AGENTS, SETTINGS, investigate
 from suggestions import SuggestionContext, followup_questions
 from query_analysis import analyze_question
 from accuracy import AccuracyReview, AccuracyStore
-from schemas import AskRequest, CopilotResponse, Feedback, Incident, RoutingMode
+import agent_status
+from incidents import IncidentFeedService
+from schemas import AskRequest, CopilotResponse, Feedback, IncidentFeed, RoutingMode
 
 log = logging.getLogger("orchestrator")
 app = FastAPI(title="Incident Copilot Orchestrator", version="0.2.0")
@@ -41,13 +44,16 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 ACCURACY = AccuracyStore(Path(os.getenv("ACCURACY_DB_PATH", str(Path(__file__).parent / "results" / "accuracy.sqlite3"))))
 
 FEEDBACK: list[Feedback] = []  # in-memory local feedback
+INCIDENTS = IncidentFeedService()
 
 
 @app.get("/api/health")
 def health():
     return {"status": "ok", "mode": SETTINGS.mode,
+            # Shown as a banner only when answers are NOT coming from the live agents.
             "source_note": ("Offline walkthrough: repository docs/code and bundled historical logs. No live Azure diagnosis."
-                            if os.getenv("SHOWCASE_OFFLINE") == "1" else "Configured specialist services" if SETTINGS.mode == "remote" else "Operator-selected local files"),
+                            if os.getenv("SHOWCASE_OFFLINE") == "1" else None if SETTINGS.mode == "remote"
+                            else "Local file search only: answers come from files on this computer, not the live agents."),
             "agents": {name: type(agent).__name__ for name, agent in AGENTS.items()},
             "routing_mode": SETTINGS.effective_routing_mode,
             "routing_fast_path": SETTINGS.routing_fast_path,
@@ -56,10 +62,15 @@ def health():
             "agent_timeouts_seconds": {name: SETTINGS.timeout_for(name) for name in AGENTS}}
 
 
-@app.get("/api/incidents", response_model=list[Incident])
-def incidents():
-    # No incident feed is connected; do not populate synthetic incidents.
-    return []
+@app.get("/api/incidents", response_model=IncidentFeed)
+async def incidents():
+    # Documented incidents only (incidents_catalog.json); status comes from the logs, never guessed.
+    return await asyncio.to_thread(INCIDENTS.feed)
+
+
+@app.get("/api/agents/status", response_model=agent_status.AgentStatusReport)
+async def agents_status():
+    return await agent_status.check(AGENTS)
 
 
 @app.get("/api/suggestions")
@@ -95,6 +106,7 @@ async def run_ask(req: AskRequest, on_progress=None):
     response = await investigate(q, incident_id=req.incident_id,
                              conversation_id=req.conversation_id, routing_mode=req.routing_mode,
                              answer_mode=req.answer_mode, **({"on_progress": on_progress} if on_progress else {}))
+    agent_status.remember(response)
     try:
         await asyncio.to_thread(ACCURACY.record, response,
                                "Local source search" if SETTINGS.mode == "local" else "Configured services")
