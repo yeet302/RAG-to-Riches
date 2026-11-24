@@ -207,7 +207,8 @@ async def investigate(question: str, *, incident_id: str | None = None,
     response = apply_confidence(annotate_errors(response))
     timings.append(StepTiming(name="finalization",
         latency_ms=(time.perf_counter() - finalization_started) * 1000))
-    response.performance = summarize((time.perf_counter() - request_started) * 1000, timings)
+    response.performance = summarize((time.perf_counter() - request_started) * 1000, timings,
+                                     analysis=analysis, settings=settings, findings=findings)
     log.info("request_id=%s total_ms=%s slowest_step=%s", response.request_id,
              response.performance.total_ms, response.performance.slowest_step)
     return response

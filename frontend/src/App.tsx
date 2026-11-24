@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
-import type { HealthResponse, Incident, Message } from './types';
+import type { Incident, IncidentFeed, Message } from './types';
 import Composer from './components/Composer';
 import IncidentList from './components/IncidentList';
 import Thread from './components/Thread';
 import AccuracyResults from './components/AccuracyResults';
+import AgentStatus from './components/AgentStatus';
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -18,7 +19,7 @@ const starterQuestions = [
 export default function App() {
   const [view, setView] = useState<'investigate' | 'accuracy'>('investigate');
   const [sourceNote, setSourceNote] = useState('');
-  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [incidentFeed, setIncidentFeed] = useState<IncidentFeed | null>(null);
   const [incidentsError, setIncidentsError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [followups, setFollowups] = useState<string[]>([]);
@@ -27,16 +28,14 @@ export default function App() {
   const suggestionVersion = useRef(0);
   const recentQuestions = useRef<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<HealthResponse['mode'] | null>(null);
+  const [agentRefresh, setAgentRefresh] = useState(0);
   const conversationId = useRef(uid());
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api.incidents().then(setIncidents).catch((e) => setIncidentsError(String(e.message ?? e)));
-    api.health().then((health) => {
-      setMode(health.mode);
-      setSourceNote(health.source_note ?? '');
-    }).catch(() => setMode(null));
+    api.incidents().then(setIncidentFeed).catch((e) => setIncidentsError(String(e.message ?? e)));
+    // Only set when answers are NOT coming from the live agents (local files or offline showcase).
+    api.health().then((health) => setSourceNote(health.source_note ?? '')).catch(() => setSourceNote(''));
   }, []);
 
   useEffect(() => {
@@ -89,6 +88,7 @@ export default function App() {
         setMessages((m) => m.map((x) => (x.id === pendingId ? { id: pendingId, role: 'assistant', status: 'error', error, question: q } : x)));
       } finally {
         setBusy(false);
+        setAgentRefresh((n) => n + 1);   // re-check agent status with this run's outcome
       }
     },
     [busy],
@@ -119,22 +119,13 @@ export default function App() {
             </span>
             <span className="brand-name">Incident Copilot</span>
           </button>
-          {inChat ? (
-            <button className="link back" onClick={goHome}>← All incidents</button>
-          ) : (
-            <span className="team">Ads team</span>
-          )}
+          {inChat && <button className="link back" onClick={goHome}>← All incidents</button>}
           <span className="spacer" />
           <nav className="view-tabs" aria-label="Workspace">
             <button aria-pressed={view === 'investigate'} onClick={() => setView('investigate')}>Investigate</button>
             <button aria-pressed={view === 'accuracy'} onClick={() => setView('accuracy')}>Accuracy results</button>
           </nav>
-          {mode && (
-            <span className="pill">
-              {mode === 'remote' ? 'Remote agents' : 'Local search'}
-            </span>
-          )}
-          <span className="pill oncall">You're on call</span>
+          <AgentStatus refreshKey={agentRefresh} />
         </div>
       </header>
 
@@ -167,7 +158,7 @@ export default function App() {
             <div ref={bottomRef} />
           </>
         ) : (
-          <IncidentList incidents={incidents} error={incidentsError} onOpen={(inc) => ask(inc.question, inc)} />
+          <IncidentList feed={incidentFeed} error={incidentsError} onOpen={(inc: Incident) => ask(inc.question, inc)} />
         )}
         </>}
       </main>

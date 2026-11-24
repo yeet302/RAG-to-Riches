@@ -18,9 +18,13 @@ def normalize_failure(finding: AgentFinding) -> AgentFinding:
 def annotate_errors(response: CopilotResponse) -> CopilotResponse:
     errors = [finding.error for finding in response.findings if finding.error is not None]
     if response.analysis and response.analysis.source == "keyword_fallback":
+        warning = response.analysis.warning or ""
+        timed_out = "did not finish within" in warning
         errors.append(PipelineError(code="PLANNING_FALLBACK", stage="planning",
-            message="LLM planning was unavailable; keyword delegation was used.",
-            resolution="Check the orchestrator model configuration, Azure access, and planning timeout.",
+            message=warning or "LLM planning was unavailable; keyword delegation was used.",
+            resolution=("Raise LLM_TIMEOUT_SECONDS in orchestrator/.env (default 30), restart the orchestrator, and retry."
+                        if timed_out else
+                        "Check the orchestrator model configuration, Azure access, and planning timeout."),
             retryable=True))
     if response.synthesis and response.synthesis.source == "evidence_fallback":
         details = {

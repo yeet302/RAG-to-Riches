@@ -48,10 +48,20 @@ def env_of(path: Path) -> dict[str, str]:
 
 def check_conflict_markers(report: Report, root: Path = ROOT):
     """Unresolved merge markers make Python files fail to import (the 4e36460 problem)."""
+    files = None
     try:
-        listed = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True, check=True).stdout
-        files = [root / name for name in listed.splitlines()]
+        # Only trust git's file list when `root` is itself the top of a repository. If `root` merely sits
+        # inside some other repository (for example a home folder under git, containing the temp folder),
+        # `git ls-files` lists that repository's files instead and would miss everything here.
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=root, capture_output=True,
+                             text=True, check=True).stdout.strip()
+        if top and Path(top).resolve() == Path(root).resolve():
+            listed = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True,
+                                    check=True).stdout
+            files = [root / name for name in listed.splitlines()]
     except (OSError, subprocess.CalledProcessError):
+        pass
+    if files is None:
         files = [p for p in root.rglob("*") if ".git" not in p.parts and "node_modules" not in p.parts]
     hits = []
     for path in files:

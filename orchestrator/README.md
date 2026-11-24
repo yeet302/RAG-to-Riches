@@ -160,7 +160,11 @@ or failed agents report unavailable; they never fall back to prepared answers or
 local corpora. Without supporting evidence, the response states that evidence is
 missing and skips final model generation. Citation validation checks source IDs;
 it does not prove that every generated claim is supported by its cited text.
-`/api/incidents` and `/api/suggestions` remain empty until real sources are connected.
+`/api/suggestions` stays empty until real sources are connected. `/api/incidents` lists only the
+documented planted bugs in `incidents_catalog.json` (B-01 to B-05); their status (active, seen
+recently, not seen) comes from Log Analytics when `INCIDENTS_WORKSPACE_ID` is set, and is
+"unknown" otherwise. `/api/agents/status` reports each agent as ready, degraded or offline from
+its `/health` check and the outcome of its last question.
 
 
 ## Actionable pipeline errors

@@ -139,7 +139,11 @@ def test_timeout_returns_other_evidence(corpus):
             await asyncio.sleep(2)
     registry = local_registry(corpus)
     registry["logs"] = Slow()
-    response = run("Checkout timeout errors", registry, timeout=0.02)
+    # Only the slow logs agent gets the tiny limit. The real local docs and code searches read files from
+    # disk; with one shared 0.02 s limit they also timed out on slower machines (seen on Windows), which
+    # made this test fail at random.
+    response = asyncio.run(orchestrator.investigate("Checkout timeout errors", agents=registry,
+                                                    settings=Settings(timeout_seconds=5, agent_timeouts={"logs": 0.02})))
     assert response.partial and response.evidence
     assert response.findings[0].status == "error"
     assert any("timed out" in gap for gap in response.sources_unavailable)
@@ -235,7 +239,8 @@ def test_request_validation_and_non_demo_incidents():
         assert client.post("/api/ask", json={"question": " "}).status_code == 400
         assert client.post("/api/ask", json={"question": "x" * 2001}).status_code == 400
         assert client.post("/api/ask", json={}).status_code == 422
-        assert client.get("/api/incidents").json() == []
+        feed = client.get("/api/incidents").json()
+        assert {i["id"] for i in feed["incidents"]} <= {"B-01", "B-02", "B-03", "B-04", "B-05"}
 
 
 def test_three_agents_over_real_http(corpus, monkeypatch):
@@ -357,7 +362,14 @@ def test_previous_demo_questions_require_subagent_evidence(monkeypatch, tmp_path
     assert response.synthesis.source == "evidence"
 
 
-def test_home_endpoints_never_return_synthetic_incidents_or_suggestions():
+def test_home_endpoints_never_return_synthetic_incidents_or_suggestions(monkeypatch):
+    # Incidents come only from the documented catalog, and without a log check none is shown as active.
+    monkeypatch.delenv("INCIDENTS_WORKSPACE_ID", raising=False)
+    monkeypatch.delenv("AZURE_LOG_ANALYTICS_WORKSPACE_ID", raising=False)
+    import main
+    monkeypatch.setattr(main.INCIDENTS, "_cache", None)
     with TestClient(app) as client:
-        assert client.get("/api/incidents").json() == []
+        feed = client.get("/api/incidents").json()
+        assert [i["id"] for i in feed["incidents"]] == ["B-01", "B-02", "B-03", "B-04", "B-05"]
+        assert {i["status"] for i in feed["incidents"]} == {"unknown"} and feed["live"] is False
         assert client.get("/api/suggestions").json() == []

@@ -24,7 +24,7 @@ export default function Performance({ response }: { response: CopilotResponse })
           <span>{duration(step.latency_ms)}</span>
         </div>)}
       </div>
-      <details><summary>Ideas to speed up the slowest step</summary><ul>{report.recommendations.map((idea) => <li key={idea}>{idea}</li>)}</ul></details>
+      <details><summary>Where the time went and what to change</summary><ul>{report.recommendations.map((idea) => <li key={idea}>{idea}</li>)}</ul></details>
       <p className="muted small">Parallel calls overlap. Total time measures backend investigation work.</p>
       <p className={response.accuracy_recorded ? 'saved-note' : 'error-text'} role="status">
         {response.accuracy_recorded ? 'Saved to accuracy results | ready for review' : 'This result could not be saved to accuracy results.'}

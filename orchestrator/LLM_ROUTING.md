@@ -28,6 +28,24 @@ each stage run concurrently; stage 2 receives earlier evidence and status gaps.
 Actual teammate models and data sources are connected through configured agent
 URLs; the bundled reference service uses local retrieval.
 
+## When planning falls back to keywords
+
+If the plan is not ready within LLM_TIMEOUT_SECONDS (default 30), or Azure returns an
+error or an invalid plan, keyword rules choose the agents instead. The trace and the
+PLANNING_FALLBACK error say which case it was ("did not finish within
+LLM_TIMEOUT_SECONDS=10 s", "returned HTTP 401", or the error type), and
+`query_analysis_failure_type=... elapsed_s=... limit_s=...` is written to the
+orchestrator log. Each agent still gets the user's question plus a task built from
+the question's own terms, for example for B-01: "Search logs and traces in the Ad
+Service for GetAds, UNAVAILABLE, requests, fail, errors." The routing reason lists
+the routing words and search terms that were used.
+
+Before this, the deadline was 10 s and included the Entra token request, so planning
+with a reasoning deployment and `az login` timed out (in the sprint demo run the
+routing step lasted 10.04 s) and every agent got the same generic task. The token is
+now reused until five minutes before it expires. If your `orchestrator/.env` still has
+`LLM_TIMEOUT_SECONDS=10`, change it to 30.
+
 ## Configuration
 
 Use the ignored orchestrator/.env for credentials. Populate AZURE_AI_ENDPOINT,
@@ -44,7 +62,7 @@ The configured model is preserved; no deployment is substituted.
 | AZURE_AI_API_KEY | Backend key, never a frontend VITE_ variable. |
 | AZURE_AI_API_STYLE | openai_v1 (default), or inference for an existing /models endpoint. |
 | AZURE_AI_API_VERSION | Optional API version; normally omitted for v1. |
-| LLM_TIMEOUT_SECONDS | Input-analysis deadline, default 10 seconds. |
+| LLM_TIMEOUT_SECONDS | Planning deadline, default 30 seconds. When it is hit, keyword routing is used and the trace says "Azure planning did not finish within ...". |
 | SYNTHESIS_TIMEOUT_SECONDS | Answer-generation deadline, default 30 seconds. |
 
 Start from orchestrator/:

@@ -2,15 +2,31 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 import httpx
 
 from settings import Settings
 
 
+# Entra token reused until 5 minutes before it expires. Getting one through `az login` takes
+# seconds on Windows, and planning and answer generation each needed one per question; inside
+# planning's deadline that alone could use most of the time.
+_TOKEN_CACHE: dict[str, tuple[str, float]] = {}
+_TOKEN_MARGIN_SECONDS = 300
+
+
+def clear_token_cache() -> None:
+    _TOKEN_CACHE.clear()
+
+
 async def model_headers(auth_mode: str, api_key: str) -> dict[str, str]:
     if auth_mode == "api_key":
         return {"api-key": api_key}
+    scope = "https://cognitiveservices.azure.com/.default"
+    cached = _TOKEN_CACHE.get(scope)
+    if cached and cached[1] - time.time() > _TOKEN_MARGIN_SECONDS:
+        return {"Authorization": "Bearer " + cached[0]}
 
     def acquire_token():
         from azure.core.exceptions import AzureError
@@ -18,11 +34,15 @@ async def model_headers(auth_mode: str, api_key: str) -> dict[str, str]:
 
         try:
             with DefaultAzureCredential() as credential:
-                return credential.get_token("https://cognitiveservices.azure.com/.default").token
+                return credential.get_token(scope)
         except AzureError as exc:
             raise ValueError("Azure identity authentication failed; check Azure sign-in and access.") from exc
 
-    return {"Authorization": "Bearer " + await asyncio.to_thread(acquire_token)}
+    token = await asyncio.to_thread(acquire_token)
+    expires_on = getattr(token, "expires_on", None)
+    if isinstance(expires_on, (int, float)) and not isinstance(expires_on, bool):
+        _TOKEN_CACHE[scope] = (token.token, float(expires_on))
+    return {"Authorization": "Bearer " + token.token}
 
 
 def completion_url(settings: Settings) -> str:

@@ -68,6 +68,65 @@ def classify(question: str) -> RoutePlan:
     return RoutePlan("unknown", ["logs", "docs"], ["code"], "Unclear intent: default to the full incident path.")
 
 
+# Words that carry no search value on their own. Everything else the user typed is kept.
+STOPWORDS = {
+    "a", "about", "after", "all", "also", "an", "and", "any", "are", "as", "at", "be", "been", "before",
+    "being", "but", "by", "can", "cause", "caused", "causes", "causing", "could", "did", "do", "does",
+    "especially", "for", "from", "get", "getting", "had", "happen", "happening", "has", "have", "how",
+    "i", "if", "in", "instead", "into", "is", "issue", "it", "its", "may", "me", "might", "my", "of",
+    "on", "or", "our", "please", "problem", "should", "so", "some", "than", "that", "the", "their",
+    "them", "then", "there", "these", "this", "those", "to", "unusually", "was", "we", "were", "what",
+    "when", "where", "which", "who", "why", "will", "with", "would", "you", "your", "occasional",
+    "during", "since", "until", "while",
+}
+_SERVICE = re.compile(r"\b([A-Za-z][\w-]*)\s+service\b", re.IGNORECASE)
+_TOKEN = re.compile(r"[A-Za-z0-9][\w./:-]*[A-Za-z0-9]|[A-Za-z0-9]")
+
+
+def _identifier(token: str) -> bool:
+    """GetAds, AdResponse, UNAVAILABLE, CPU, 500, src/ad, ad-service, ad_service."""
+    return bool(re.search(r"[a-z][A-Z]|[0-9_./:-]", token) or (token.isupper() and len(token) > 1))
+
+
+def question_terms(question: str, limit: int = 8) -> list[str]:
+    """The question's own search terms, most specific first, spelled as the user wrote them.
+
+    Order: quoted text, identifiers (GetAds, UNAVAILABLE, 500), the named service ("Ad Service"),
+    then the remaining content words (targeted, binoculars, empty). Duplicates are dropped
+    case-insensitively. Used when Azure planning is unavailable, so the agents still search
+    for what the user asked about instead of a generic task.
+    """
+    terms: list[str] = []
+
+    def add(term: str):
+        term = term.strip(" .,;:!?'\"`()[]{}")
+        if term and term.lower() not in {t.lower() for t in terms}:
+            terms.append(term)
+
+    for quoted in re.findall(r"[\"'`]([^\"'`]{2,80})[\"'`]", question):
+        add(quoted)
+    tokens = _TOKEN.findall(question)
+    for token in tokens:
+        if _identifier(token) and token.lower() not in STOPWORDS:
+            add(token)
+    for match in _SERVICE.finditer(question):
+        if match.group(1).lower() not in STOPWORDS:
+            add(match.group(0))
+    in_service = {m.group(1).lower() for m in _SERVICE.finditer(question)} | {"service"}
+    for token in tokens:
+        word = token.lower()
+        if len(word) >= 3 and word not in STOPWORDS and word not in in_service:
+            add(token)
+    return terms[:limit]
+
+
+def matched_words(question: str) -> list[str]:
+    """The routing keywords that decided classify()'s plan, for the explanation shown to users."""
+    q = question.lower()
+    words = INCIDENT_WORDS | HOWTO_WORDS | CODE_WORDS | LOG_WORDS
+    return sorted(w for w in words if re.search(rf"\b{re.escape(w)}\b", q))
+
+
 def fast_route(question: str) -> RoutePlan | None:
     """Bypass planning only for short, explicit, single-source retrieval requests."""
     q = question.strip().lower()

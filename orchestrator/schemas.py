@@ -142,19 +142,35 @@ class CopilotResponse(BaseModel):
     synthesis: Optional[AnswerSynthesis] = None
 
 
+class IncidentDoc(BaseModel):
+    label: str
+    url: str
+
+
 class Incident(BaseModel):
-    id: str
+    """A known incident from incidents_catalog.json, with live status from the logs when available."""
+    id: str                                       # e.g. "B-01"
     title: str
     severity: Literal["SEV1", "SEV2", "SEV3"]
-    status: Literal["Open", "Investigating", "Resolved"]
+    # active: logged in the last INCIDENTS_ACTIVE_MINUTES; recent: within the lookback window;
+    # not_seen: the logs were checked and it didn't appear; unknown: the logs couldn't be checked.
+    status: Literal["active", "recent", "not_seen", "unknown"] = "unknown"
     service: str
-    team: str
-    started: str
-    assignee: Optional[str] = None
-    summary_label: str                            # "Likely cause (90%)" / "Fix worked"
-    summary: str
-    other_team: bool = False
-    question: str                                 # what "See diagnosis" asks the orchestrator
+    flag: str                                     # the feature flag that turns it on
+    tag: str                                      # the inject:* tag it writes to the logs
+    symptom: str
+    question: str                                 # what "Investigate" asks the orchestrator
+    occurrences: Optional[int] = None             # log events in the lookback window
+    last_seen: Optional[str] = None               # ISO time of the newest log event
+    documented_in: list[IncidentDoc] = Field(default_factory=list)
+
+
+class IncidentFeed(BaseModel):
+    incidents: list[Incident]
+    live: bool                                    # True when status came from Log Analytics
+    live_detail: str                              # one line for the UI: what was checked, or why not
+    lookback_hours: int
+    checked_at: Optional[str] = None
 
 
 class Feedback(BaseModel):
