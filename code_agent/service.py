@@ -14,6 +14,12 @@ from .contracts import AgentFinding, AgentRequest
 from agent_contracts import PipelineError
 
 log = logging.getLogger('code_agent.service')
+agent_log = logging.getLogger('code_agent')
+if not agent_log.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s'))
+    agent_log.addHandler(handler)
+agent_log.setLevel(logging.INFO)
 
 
 def create_app(agent=None):

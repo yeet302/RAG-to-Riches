@@ -70,6 +70,20 @@ def test_invalid_role_deadlines_are_rejected(overrides):
         config(agent_timeouts=overrides)
 
 
+def test_code_response_can_outlive_general_deadline_without_relaxing_docs():
+    settings=config(agent_timeouts={'logs':.5,'code':.5})
+    registry=build_agents(settings)
+    async def respond(request):
+        await asyncio.sleep(.03)
+        return httpx.Response(200,json=dict(agent='code',status='ok',summary='Verified source',
+            evidence=[dict(source_type='code',agent='code',summary='Source implementation',ref='service.py:L1')]))
+    registry['code'].transport=httpx.MockTransport(respond)
+    result=asyncio.run(investigate('Where is GetAds implemented in the source code?',agents=registry,settings=settings))
+    assert result.findings[0].status=='ok'
+    assert result.findings[0].agent=='code'
+    assert settings.timeout_for('docs')==.01
+
+
 def test_role_timeout_environment_overrides_fall_back_to_general_deadline(monkeypatch):
     monkeypatch.setenv('AGENT_TIMEOUT_SECONDS','60')
     monkeypatch.setenv('LOGS_AGENT_TIMEOUT_SECONDS','180')

@@ -1,6 +1,7 @@
 """Configuration: hard boundary is a single approved public GitHub repository."""
 
 import os
+import math
 from dataclasses import dataclass
 
 APPROVED_REPOSITORY = "yeet302/RAG-to-Riches"
@@ -15,6 +16,13 @@ class Settings:
     repo: str
     agent_name: str
     default_ref: str = ""  # Empty means the repository's current default branch.
+    investigation_timeout_seconds: float = 120
+    request_timeout_seconds: float = 30
+
+    def __post_init__(self):
+        for value in (self.investigation_timeout_seconds, self.request_timeout_seconds):
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError("Code agent timeouts must be positive and finite")
 
     @classmethod
     def load(cls):
@@ -43,4 +51,6 @@ class Settings:
             APPROVED_REPOSITORY,
             os.getenv("FOUNDRY_CODE_AGENT_NAME", "rag-to-riches-code-agent"),
             os.getenv("CODE_REF", "").strip(),
+            float(os.getenv("CODE_INVESTIGATION_TIMEOUT_SECONDS", "120")),
+            float(os.getenv("CODE_REQUEST_TIMEOUT_SECONDS", "30")),
         )

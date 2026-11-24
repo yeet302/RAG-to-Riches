@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 from azure.core.exceptions import ClientAuthenticationError
 from .config import Settings
 from .retrieval import CodeRetriever
+from .budget import CodeDeadlineExceeded, InvestigationBudget, use_budget, perform, network_timeout, azure_options
 from agent_contracts import PipelineError
 
 log = logging.getLogger("code_agent")
@@ -185,9 +186,11 @@ class CodeAgent:
         self.settings = settings or Settings.load()
         self.retriever = retriever or CodeRetriever(self.settings)
         self.project = AIProjectClient(
-            endpoint=self.settings.project_endpoint, credential=DefaultAzureCredential()
+            endpoint=self.settings.project_endpoint, credential=DefaultAzureCredential(),
+            **azure_options(self.settings.request_timeout_seconds),
         )
-        self.client = self.project.get_openai_client()
+        self.client = self.project.get_openai_client().with_options(
+            timeout=self.settings.request_timeout_seconds, max_retries=0)
         self._version = None
 
     def _agent_reference(self):
@@ -197,13 +200,27 @@ class CodeAgent:
                 definition=PromptAgentDefinition(model=self.settings.model_deployment,
                                                   instructions=INSTRUCTIONS, tools=tool_definitions(),
                     text=PromptAgentDefinitionTextOptions(format=TextResponseFormatJsonSchema(
-                        name=MODEL_FORMAT['name'], schema=MODEL_FORMAT['schema'], strict=True))))
+                        name=MODEL_FORMAT['name'], schema=MODEL_FORMAT['schema'], strict=True))),
+                **azure_options(getattr(self.settings, 'request_timeout_seconds', 30)))
         return {'agent_reference': {'name': self._version.name, 'version': self._version.version, 'type': 'agent_reference'}}
 
     def _investigate(self, question, context):
-        ref = self._agent_reference()
+        budget = context.get('_budget') or InvestigationBudget(
+            getattr(self.settings, 'investigation_timeout_seconds', 120), context.get('request_id', '-'))
+        with use_budget(budget):
+            return self._investigate_bounded(question, context)
+
+    def _model_call(self, resource, **kwargs):
+        client = self.client
+        if hasattr(client, 'with_options'):
+            client = client.with_options(timeout=network_timeout(
+                getattr(self.settings, 'request_timeout_seconds', 30)), max_retries=0)
+        return getattr(client, resource).create(**kwargs)
+
+    def _investigate_bounded(self, question, context):
+        ref = perform('foundry.agent', self._agent_reference)
         bundle = context.get("evidence_bundle") or {}
-        pinned_sha = self.retriever.resolve_commit()
+        pinned_sha = perform('github.resolve_commit', self.retriever.resolve_commit)
         prompt = json.dumps(
             {
                 "question": question,
@@ -217,8 +234,8 @@ class CodeAgent:
             },
             default=str,
         )
-        conversation = self.client.conversations.create()
-        response = self.client.responses.create(
+        conversation = perform('foundry.conversation', self._model_call, 'conversations')
+        response = perform('foundry.response.1', self._model_call, 'responses',
             input=prompt, conversation=conversation.id, extra_body=ref
         )
         verified = {}
@@ -239,27 +256,29 @@ class CodeAgent:
                         # An incident must not mix GitHub revisions even if the LLM requests one.
                         args["ref"] = pinned_sha
                     if call.name == "list_repository_files":
-                        result = self.retriever.list_repository_files(**args)
+                        result = perform('tool.list_repository_files', self.retriever.list_repository_files, **args)
                         searched.append("GitHub repository tree")
                     elif call.name == "search_code":
-                        result = self.retriever.search_code(**args)
+                        result = perform('tool.search_code', self.retriever.search_code, **args)
                         searched.append(f"Azure AI Search: {args.get('query', '')}")
                     elif call.name == "read_source":
-                        result = self.retriever.read_source(**args)
+                        result = perform('tool.read_source', self.retriever.read_source, **args)
                         verified.setdefault(
                             (result["path"], result["commit"]), set()
                         ).update(line["line"] for line in result["lines"])
                         searched.append(f"GitHub: {result['path']}@{result['commit']}")
                     elif call.name == "get_issue":
-                        result = self.retriever.get_issue(**args)
+                        result = perform('tool.get_issue', self.retriever.get_issue, **args)
                         searched.append(f"GitHub issue #{args.get('number')}")
                     else:
                         result = {"error": "Unknown tool"}
+                except CodeDeadlineExceeded:
+                    raise
                 except Exception as exc:
                     result = {'error': str(exc)}
                 outputs.append(FunctionCallOutput(type='function_call_output', call_id=call.call_id,
                                                   output=json.dumps(result, default=str)))
-            response = self.client.responses.create(input=outputs, conversation=conversation.id,
+            response = perform(f'foundry.response.{_ + 2}', self._model_call, 'responses', input=outputs, conversation=conversation.id,
                                                     extra_body=ref,
                                                     tool_choice='none' if _ == 9 else 'auto')
         status = getattr(response, 'status', None)
@@ -277,9 +296,13 @@ class CodeAgent:
         from .contracts import AgentFinding, Evidence
 
         start = time.perf_counter()
+        budget = InvestigationBudget(getattr(self.settings, 'investigation_timeout_seconds', 120), context.get('request_id', '-'))
+        context = {**context, '_budget': budget}
         phase = "source"
         try:
-            raw, verified, searched, bundle = await asyncio.to_thread(self._investigate, question, context)
+            raw, verified, searched, bundle = await asyncio.wait_for(
+                asyncio.to_thread(self._investigate, question, context),
+                timeout=getattr(self.settings, 'investigation_timeout_seconds', 120))
             phase = 'model_output'
             result = parse_model_result(raw)
             evidence = []
@@ -333,6 +356,20 @@ class CodeAgent:
                 else 0.0,
                 latency_ms=int((time.perf_counter() - start) * 1000),
             )
+        except asyncio.CancelledError:
+            budget.cancelled.set()
+            log.warning('request_id=%s stage=%s event=cancelled', budget.request_id, budget.stage)
+            raise
+        except (CodeDeadlineExceeded, asyncio.TimeoutError) as exc:
+            budget.cancelled.set()
+            stage = getattr(exc, 'stage', budget.stage)
+            log.warning('request_id=%s stage=%s event=deadline_exceeded', budget.request_id, stage)
+            return AgentFinding(agent='code', status='error', summary='Code investigation reached its time budget.',
+                sources_unavailable=['Code investigation deadline exceeded'],
+                error=PipelineError(code='CODE_INVESTIGATION_TIMEOUT', agent='code', stage='dispatch',
+                    message=f'The code investigation reached its time budget during {stage}.',
+                    resolution='Check the request ID and stage timings in the code-agent log; retry a narrower investigation.', retryable=True),
+                latency_ms=round((time.perf_counter()-start)*1000))
         except Exception as exc:
             if isinstance(exc, CodeModelOutputError):
                 phase = 'model_output'
