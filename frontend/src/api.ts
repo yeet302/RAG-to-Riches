@@ -1,4 +1,4 @@
-import type { InvestigationProgress, AccuracyResult, AccuracyReview, AnswerMode, CopilotResponse, HealthResponse, Incident, RoutingMode } from './types';
+import type { InvestigationProgress, AccuracyResult, AccuracyReview, AgentStatusReport, AnswerMode, CopilotResponse, HealthResponse, IncidentFeed, RoutingMode } from './types';
 
 // Same origin in production (FastAPI serves the build); Vite proxies /api in dev.
 const BASE = import.meta.env.VITE_API_URL ?? '';
@@ -67,7 +67,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ question, incident_id: incidentId, conversation_id: conversationId, routing_mode: routingMode, answer_mode: answerMode }),
     }),
-  incidents: () => request<Incident[]>('/api/incidents'),
+  incidents: () => request<IncidentFeed>('/api/incidents'),
+  agentStatus: () => request<AgentStatusReport>('/api/agents/status'),
   followups: (response: CopilotResponse, recentQuestions: string[]) =>
     request<{ questions: string[]; source: 'llm' | 'unavailable' }>('/api/suggestions', {
       method: 'POST', body: JSON.stringify({

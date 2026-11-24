@@ -488,3 +488,42 @@ h1, h2, h3 { margin: 0; }
 @media (max-width: 480px) { .query-starters { grid-template-columns: 1fr; } }
 /* Keep the composer unobscured when the mobile header wraps onto multiple rows. */
 @media (max-width: 640px) { .query-workspace.compact { position: static; } }
+
+/* ---- Header: agent status (replaces the static "Remote agents" / "You're on call" labels) ---- */
+.agent-status { position: relative; }
+.agent-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.agent-pill.good { background: var(--green-bg); color: var(--green); border-color: transparent; }
+.agent-pill.warn { background: var(--amber-bg); color: var(--amber); border-color: transparent; }
+.agent-pill.bad { background: var(--red-bg); color: var(--red); border-color: transparent; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; display: inline-block; }
+.status-dot.ready, .status-dot.local { background: var(--green); }
+.status-dot.degraded { background: var(--amber); }
+.status-dot.offline, .status-dot.bad { background: var(--red); }
+.agent-panel { position: absolute; right: 0; top: calc(100% + 8px); width: min(360px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgba(15, 23, 42, .14); padding: 14px; z-index: 20; }
+.agent-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.agent-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); }
+.agent-row .status-dot { margin-top: 6px; }
+.agent-row-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.agent-state { font-size: 12px; font-weight: 600; }
+.agent-state.ready, .agent-state.local { color: var(--green); }
+.agent-state.degraded { color: var(--amber); }
+.agent-state.offline { color: var(--red); }
+.agent-error { color: var(--red); margin-top: 2px; overflow-wrap: anywhere; }
+.agent-panel-foot { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+
+/* Banner now only appears when answers are NOT from the live agents, so it reads as a warning. */
+.source-notice { background: var(--amber-bg); border-color: transparent; color: var(--amber); }
+
+/* ---- Known incidents with live status ---- */
+.incidents-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.incidents-head .section-title { margin-bottom: 0; }
+.live-note { max-width: 460px; }
+.live-note.live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 6px; vertical-align: 1px; }
+.incident-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.incident-status.active { color: var(--red); }
+.incident-status.recent { color: var(--amber); }
+.incident.status-active { border-color: var(--red); }
+.incident-activity { margin: -6px 0 14px; }
+.incident-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.incident-docs a { color: var(--blue-ink); }
+.incident code, .incident-activity code { font-size: 12px; }

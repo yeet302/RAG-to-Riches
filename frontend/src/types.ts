@@ -35,7 +35,7 @@ export type SourceType = 'log' | 'code' | 'doc' | 'incident' | 'metric';
 
 export interface HealthResponse {
   routing_fast_path?: boolean;
-  source_note?: string;
+  source_note?: string | null;
   status: string;
   mode: 'local' | 'remote';
   agents: Record<AgentName, string>;
@@ -127,19 +127,48 @@ export interface CopilotResponse {
   synthesis?: AnswerSynthesis | null;
 }
 
+export interface IncidentDoc {
+  label: string;
+  url: string;
+}
+
+/** A known incident from orchestrator/incidents_catalog.json, with live status from the logs. */
 export interface Incident {
   id: string;
   title: string;
   severity: 'SEV1' | 'SEV2' | 'SEV3';
-  status: 'Open' | 'Investigating' | 'Resolved';
+  status: 'active' | 'recent' | 'not_seen' | 'unknown';
   service: string;
-  team: string;
-  started: string;
-  assignee?: string | null;
-  summary_label: string;
-  summary: string;
-  other_team: boolean;
+  flag: string;
+  tag: string;
+  symptom: string;
   question: string;
+  occurrences?: number | null;
+  last_seen?: string | null;
+  documented_in: IncidentDoc[];
+}
+
+export interface IncidentFeed {
+  incidents: Incident[];
+  live: boolean;
+  live_detail: string;
+  lookback_hours: number;
+  checked_at?: string | null;
+}
+
+export interface AgentState {
+  name: AgentName;
+  state: 'ready' | 'degraded' | 'offline' | 'local';
+  detail: string;
+  latency_ms?: number | null;
+  last_run?: { status: string; error_code?: string | null; message?: string | null; at: string } | null;
+}
+
+export interface AgentStatusReport {
+  agents: AgentState[];
+  ready: number;
+  total: number;
+  checked_at: string;
 }
 
 export type Message =
