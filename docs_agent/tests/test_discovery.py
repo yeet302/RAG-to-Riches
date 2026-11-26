@@ -106,3 +106,19 @@ def test_truncated_tree_and_file_limit_reported():
     evidence, searched, errors = asyncio.run(agent(handler, website_seeds=(), max_github_docs=1).retrieve('Ad'))
     assert evidence and len(searched) == 1
     assert len(errors) == 2
+
+
+def test_feature_flag_row_keeps_name_and_behavior_together():
+    docs, _ = parse_page(
+        '<main><h2 id="flags">Flags</h2><table>'
+        '<tr><td><code>adFailure</code></td><td>Ad Service</td>'
+        '<td>GetAds returns an error one time in ten.</td></tr>'
+        '<tr><td>adHighCpu</td><td>Ad Service</td><td>Raises CPU load.</td></tr>'
+        '</table></main>', ROOT)
+    assert [document.text for document in docs] == [
+        'Flags',
+        'adFailure Ad Service GetAds returns an error one time in ten.',
+        'adHighCpu Ad Service Raises CPU load.',
+    ]
+    assert [document.offset for document in docs] == [0, 1, 2]
+    assert all(document.link == ROOT + '#flags' for document in docs)

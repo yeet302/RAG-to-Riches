@@ -198,10 +198,14 @@ A successful `no_evidence` result means the model abstained because the sources 
 answer the question. The existing stdin CLI and HTTP contract remain available.
 Never commit `.env` or share API keys in chat.
 
-## Initial Accuracy Evaluation
+## Accuracy Evaluation and Progress
 
 See [accuracy tests](accuracy_tests/README.md) for the initial evaluation and results.
 
+- **2026-11-03.** Ran the first live documentation evaluation. Four of six answers passed review.
+- **2026-11-09.** Established a retrieval baseline for four planted bugs. Two had directly supporting documentation at rank 1.
+- **2026-11-12.** Compared No Docs, Top 5, and All Docs on eight cases. They earned full credit on 0/8, 5/8, and 6/8 cases, respectively.
+- **2026-11-24.** Improved excerpt selection and ranking, then reran the same eight cases with Top 5. Full-credit answers increased from 5/8 to 6/8. Two fork-specific cases still produced unsupported diagnoses.
 
 ## Model response recovery
 

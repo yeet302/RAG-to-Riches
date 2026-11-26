@@ -45,7 +45,7 @@ B-02 or B-04, so their exact retrieval correctness is unscored.
 ## Root Cause Comparison (2026-11-12)
 
 [Case file](<261112-Root Cause Comparison - Cases.json>) and
-[scoring protocol](<261112-Root Cause Comparison - Scoring.md>) for D01–D04 and
+[scoring protocol](<Root Cause Comparison - Scoring.md>) for D01–D04 and
 B01–B04 across No Docs, Top 5, and All Docs. The D cases reuse the November 3
 questions. The B cases use symptoms and log markers from the planted bugs in the
 [shared Results sheet](https://docs.google.com/spreadsheets/d/1xh9ISOvCvEJxssYZx1dvHBlHR4EbAQ07Mi0Bzk18rVc/edit#gid=584638028).
@@ -81,3 +81,38 @@ Each record includes the case, variant, Docs input, final response, and any
 error. The runner does not score answers.
 
 Azure token usage is saved in azure_usage.
+
+## Docs Agent Regression Test (2026-11-24)
+
+### What changed
+
+- **Feature flag parsing.** Keep the flag name, service, and documented behavior from each HTML table row in the same excerpt.
+- **Excerpt selection and ranking.** Preserve Markdown section boundaries, use overlapping excerpts for longer sections, and apply BM25-style scoring to give more weight to distinctive query terms.
+
+### What we tested
+
+We reran the same eight questions from November 12 (D01–D04 and B01–B04) using live documentation and the same Azure model (`gpt-4.1-mini`). This run evaluated **Top 5** only. We manually scored the final answers and citations using the root-cause scoring protocol.
+
+### Results compared with November 12
+
+| Metric | Nov 12 Top 5 | Nov 24 Top 5 |
+| --- | ---: | ---: |
+| Full-credit answers | 5/8 (62.5%) | **6/8 (75%)** |
+| Documentation cases | 3/4 | **4/4** |
+| Planted-bug cases | 2/4 | 2/4 |
+| Wrong attributions | 2 | 2 |
+
+The November 12 scores reflect targeted retries. All eight November 24 attempts returned usable answers.
+
+**D01 accounted for the improvement.** The excerpt documenting that `adFailure` causes roughly one in ten GetAds calls to fail moved from rank 8 to rank 1. The answer cited the excerpt and connected the flag to the reported failure rate. D01 improved from 0 to 2 points.
+
+### Remaining failures
+
+B02 and B04 cover fork-specific behaviors whose root causes were undocumented in the retrieved excerpts. A correct answer should identify the root cause when the evidence supports it and return `no_evidence` otherwise. Both cases scored 0 in both runs.
+
+- **B02 — Targeted GetAds requests return `UNAVAILABLE`.** The answer attributed the behavior to `adFailure`. The cited excerpt describes general GetAds errors and leaves the targeted-only condition unexplained.
+- **B04 — GetAds succeeds with an empty `AdResponse`.** The answer treated the `inject:ads-empty` log marker as a feature flag. The cited excerpt describes GetAds errors and provides no evidence for a successful empty response.
+
+### Next step
+
+Return `no_evidence` if the cited docs do not connect the proposed cause to both the specific trigger and the observed outcome.

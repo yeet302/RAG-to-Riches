@@ -2,12 +2,14 @@
 
 Freeze this protocol before generating answers. Evaluate D01–D04 and B01–B04 with No Docs, Top 5, and All Docs. Each version has eight planned cases. Score each variant’s final answer. No Docs uses the same Azure deployment with a question-only debugging prompt. Keep the known causes and scoring criteria out of the model input.
 
+Use official documentation to assess the expected answers for D01–D04. For B01–B04, use the known planted causes to check diagnoses and the official documentation to assess whether the available evidence supports them.
+
 ## Scoring each answer
 
 | Score | Criteria |
 | --- | --- |
-| 2 | Identifies the known root cause as the leading diagnosis and connects it to the observed symptom. Equivalent wording and a qualified diagnosis are acceptable. The explanation can draw on any retrieved source or combination of sources. |
-| 1 | Gives a case-specific clue or a concrete check that narrows the investigation, but falls short of identifying and explaining the known cause. An unranked list containing the right cause qualifies only if it also offers a specific reason or check that narrows the investigation. |
+| 2 | Identifies the known root cause as the leading diagnosis and connects it to the observed symptom. Equivalent wording and a qualified diagnosis are acceptable. The explanation can draw on any retrieved source or combination of sources. A Docs Agent answer also earns 2 when a review of the official documentation finds insufficient support for the specific symptom and the answer returns `no_evidence`, identifies the gap, cites useful partial evidence when available, and gives the next agent a concrete check. |
+| 1 | Gives a case-specific clue or a concrete check that narrows the investigation without meeting the 2-point criteria. A Docs Agent answer that correctly returns `no_evidence` and identifies the specific gap earns 1 if it omits useful available context or lacks a concrete next check. An unranked list containing the right cause qualifies only if it also offers a specific reason or check that narrows the investigation. |
 | 0 | Repeats symptoms, offers generic advice, only states that evidence is insufficient, or makes an incorrect leading diagnosis. A run that ends without a usable final answer also scores 0 and is flagged as a run failure. |
 
 Mark **Wrong attribution = Yes** when the answer presents an incorrect cause as the leading or confirmed diagnosis. Mark it **No** for a cautious answer that leaves the cause open and for run failures. Record run failures separately from answer errors. An incomplete comparison with missing planned records is pending. Once all attempts are recorded, the denominator includes failures.
@@ -21,7 +23,7 @@ Record which evidence the answer actually used. Document retrieval and keyword m
 | D01 | The `adFailure` feature flag can cause intermittent GetAds errors and accounts for the roughly one-in-ten rate described in this scenario. |
 | D02 | The `adHighCpu` feature flag triggers extra CPU work in Ad Service, explaining the high CPU load. |
 | D03 | The `adManualGc` feature flag triggers full manual garbage collection, explaining the repeated collections in the scenario. |
-| D04 | Ad Service requires JDK 21 or higher, so building with JDK 17 fails the version requirement. Score the build instructions separately. A complete answer also gives `./gradlew installDist` from the Ad Service directory. |
+| D04 | The official Ad Service README specifies JDK 21 or higher, so JDK 17 fails the version requirement. A complete build answer gives the documented Java requirement and `./gradlew installDist`. |
 | B01 | The fork's `adFailure` injection path makes GetAds return `UNAVAILABLE`. No trigger rate is required for this case. |
 | B02 | The fork's `adTargetedFailure` injection path makes targeted GetAds requests return `UNAVAILABLE`. |
 | B03 | The `adHighCpu` flag triggers CPU-generating work in Ad Service, explaining the high CPU load. Naming `CPULoad.execute()` is one way to explain the mechanism. |

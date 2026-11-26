@@ -16,6 +16,7 @@ def create_app(agent=None):
     async def health():
         return {'agent': 'docs', 'llm_configured': agent.settings.configured}
 
+    # Incoming: The orchestrator POSTs an AgentRequest to this endpoint.
     @app.post('/agents/docs/run', response_model=AgentFinding)
     async def run(request: AgentRequest, response: Response,
                   authorization: Optional[str] = Header(default=None)):
@@ -23,6 +24,7 @@ def create_app(agent=None):
         if token and not hmac.compare_digest((authorization or '').encode(), f'Bearer {token}'.encode()):
             raise HTTPException(status_code=401, detail='Invalid agent credential')
         response.headers['X-Request-ID'] = request.request_id
+        # Outgoing: FastAPI sends the AgentFinding back to the orchestrator.
         return await agent.run(request)
 
     return app

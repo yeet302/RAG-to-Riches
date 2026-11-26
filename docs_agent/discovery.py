@@ -52,7 +52,16 @@ def parse_page(html, url):
             lines.clear()
 
     for node in body.descendants:
-        if isinstance(node, Tag) and re.fullmatch(r'h[1-6]', node.name):
+        if isinstance(node, Tag) and node.name == 'tr':
+            # A table row carries a flag's name, service and behavior together.
+            row = ' '.join(node.stripped_strings)
+            if row:
+                flush()
+                lines.append(' '.join(row.split()))
+                flush()
+        elif node.find_parent('tr') is not None:
+            continue
+        elif isinstance(node, Tag) and re.fullmatch(r'h[1-6]', node.name):
             flush()
             anchor = node.get('id', '')
         elif isinstance(node, NavigableString) and not isinstance(node, Comment) and node.parent.name not in {'script', 'style'}:
